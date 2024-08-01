@@ -7,12 +7,32 @@ export default {
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
+        './resources/**/*.js',
+        './resources/**/*.css',
+        './resources/**/*.vue',
     ],
 
     theme: {
         extend: {
+            colors: {
+                primary: '#00A761', //green
+                secondary: '#005073', //dark blue
+                accent: '#72A4F4', //light blue
+                success: '#16AA39', //pigmanent green
+                danger: '#DC3545', //red
+                warning: '#FFC107', //yellow abmer
+                info: '#2474E3', //blue
+                light: '#F8F9FA',
+                dark: '#272B35',
+                gray: '#374151',
+            },
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                // sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Open Sans', 'Source Sans Pro', 'Nunito', 'Arial', 'sans-serif'],
+                serif: ['Lora', 'Merriweather', 'serif'],
+            },
+            borderWidth: {
+                '3': '3px',
             },
         },
     },
