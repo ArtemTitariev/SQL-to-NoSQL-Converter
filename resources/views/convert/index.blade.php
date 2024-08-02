@@ -1,7 +1,13 @@
 <x-app-layout>
     <x-header-content>
-        {{ __('Dashboard') }}
+        {{ __('Converts') }}
+        <x-slot name="button">
+            <x-link href="{{ route('converts.create') }}" >
+                {{ __('New Convert') }}
+            </x-link>
+        </x-slot>
     </x-header-content>
+    
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
