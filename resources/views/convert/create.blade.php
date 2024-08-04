@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-header-content>
-        {{ __('Create convert') }}
+        {{ __('Create Convert') }}
     </x-header-content>
 
     <div class="py-12">

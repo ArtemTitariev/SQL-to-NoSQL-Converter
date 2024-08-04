@@ -19,7 +19,7 @@
                                 class="border-gray-300 text-secondary focus:border-secondary focus:ring-secondary rounded-md shadow-sm cursor-pointer p-4 peer-checked:bg-primary peer-checked:text-light flex items-center gap-4">
                                 <img src="{{ asset('database-icons/' . $name . '.png') }}"
                                     alt="{{ $name }} Logo" class="h-24 w-24 object-contain">
-                                <h5 class="font-bold">{{ $name }} {{ __('Database') }}</h5>
+                                <h5 class="font-bold">{{ $name }} {{ __('database') }}</h5>
                             </div>
                         </label>
                     @endforeach

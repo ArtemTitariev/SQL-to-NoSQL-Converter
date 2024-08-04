@@ -7,7 +7,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('welcome') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-light" />
+                        <x-application-logo class="block h-14 w-auto fill-current text-light" />
                     </a>
                 </div>
 
@@ -17,6 +17,27 @@
                         {{ __('Converts') }}
                     </x-nav-link>
                 </div>
+            </div>
+
+        <div class="flex">
+            <!-- Language Dropdown -->
+            <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <x-dropdown align="right" width="48">
+                    <x-slot name="trigger">
+                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100 focus:outline-none transition ease-in-out duration-150">
+                            <div class="font-serif">{{ ucfirst(app()->getLocale()) }}</div>
+                            <div class="ms-2">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        </button>
+                    </x-slot>
+
+                    <x-slot name="content">
+                        @include('partials.language_switcher')
+                    </x-slot>
+                </x-dropdown>
             </div>
 
             <!-- Settings Dropdown -->
@@ -52,7 +73,7 @@
                     </x-slot>
                 </x-dropdown>
             </div>
-
+        </div>
             <!-- Hamburger -->
             <div class="-me-2 flex items-center sm:hidden">
                 <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
@@ -74,10 +95,15 @@
         </div>
 
         <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200">
+        <div class="pt-4 pb-1 border-t border-gray">
             <div class="px-4">
                 <div class="font-medium text-base text-gray">{{ Auth::user()->name }}</div>
                 {{-- <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div> --}}
+            </div>
+
+            <div class="mt-3 space-y-1 py-3 border-t border-b border-gray">
+                <span class="block px-4 py-2 text-primary font-semibold font-serif">{{ __('Language:') }}</span>
+                @include('partials.language_switcher')
             </div>
 
             <div class="mt-3 space-y-1">

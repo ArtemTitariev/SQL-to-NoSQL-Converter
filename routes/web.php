@@ -3,6 +3,17 @@
 use App\Http\Controllers\ConvertController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Session;
+
+Route::get('language/{locale}', function ($locale) {
+    
+    if (isset($locale) && in_array($locale, config('app.available_locales'))) {
+        app()->setLocale($locale);
+        Session::put('locale', $locale);
+    }
+
+    return back();
+})->name('lang');
 
 Route::get('/', function () {
     return view('welcome');
