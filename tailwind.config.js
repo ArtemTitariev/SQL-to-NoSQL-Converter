@@ -29,10 +29,13 @@ export default {
             fontFamily: {
                 // sans: ['Figtree', ...defaultTheme.fontFamily.sans],
                 sans: ['Open Sans', 'Source Sans Pro', 'Nunito', 'Arial', 'sans-serif'],
-                serif: ['Lora', 'Merriweather', 'serif'],
+                serif: ['Merriweather', 'Lora', 'serif'],
             },
             borderWidth: {
                 '3': '3px',
+            },
+            height: {
+                '50': '12rem',
             },
         },
     },
