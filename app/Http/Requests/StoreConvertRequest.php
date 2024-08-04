@@ -25,7 +25,7 @@ class StoreConvertRequest extends FormRequest
             'sql_database.driver' => 'required|string|max:10',
             // 'sql_database.url' => 'required|string',
             'sql_database.host' => 'required|string',
-            'sql_database.port' => 'required|integer|gte:0',
+            'sql_database.port' => 'required|integer|gte:0|lte:65535',
             'sql_database.database' => 'required|string',
             'sql_database.username' => 'required|string',
             // 'sql_database.password' => 'required|string',
@@ -40,7 +40,7 @@ class StoreConvertRequest extends FormRequest
             'mongo_database.dsn' => 'required|string',
             'mongo_database.database' => 'required|string',
 
-            'description' => 'required|string',
+            'description' => 'nullable|string',
         ];
     }
 }

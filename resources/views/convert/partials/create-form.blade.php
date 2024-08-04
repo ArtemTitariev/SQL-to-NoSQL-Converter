@@ -94,7 +94,7 @@
                     <x-input-label for="description" :value="__('Provide short description')" />
                     <x-textarea id="description" name="description"
                         value="{{ old('description') }}" type="text" class="mt-1 block w-full"
-                        required />
+                     />
                     <x-input-error class="mt-2" :messages="$errors->get('description')" />
                 </div>
             </div>

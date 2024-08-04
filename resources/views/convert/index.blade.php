@@ -21,7 +21,6 @@
                     <thead class="bg-light border-b border-gray text-secondary">
                         <tr>
                             <th class="py-3 px-6 text-left text-sm font-medium text-gray-700">ID</th>
-                            <th class="py-3 px-6 text-left text-sm font-medium text-gray-700">User</th>
                             <th class="py-3 px-6 text-left text-sm font-medium text-gray-700">SQL Database</th>
                             <th class="py-3 px-6 text-left text-sm font-medium text-gray-700">Mongo Database</th>
                             <th class="py-3 px-6 text-left text-sm font-medium text-gray-700">Description</th>
@@ -33,9 +32,8 @@
                         @foreach ($converts as $convert)
                             <tr class="{{ $loop->even ? 'bg-white' : 'bg-light' }} border-b border-gray-200">
                                 <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->id }}</td>
-                                <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->user->name ?? 'N/A' }}</td>
-                                <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->sqlDatabase->connection_name ?? 'N/A' }}</td>
-                                <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->mongoDatabase->connection_name ?? 'N/A' }}</td>
+                                <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->sqlDatabase->database ?? 'N/A' }}</td>
+                                <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->mongoDatabase->database ?? 'N/A' }}</td>
                                 <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->description ?? 'No description' }}</td>
                                 <td class="py-3 px-6 text-sm text-gray-900">
                                     @switch($convert->status)

@@ -8,6 +8,10 @@ Route::get('/', function () {
     return view('welcome');
 })->name('welcome');
 
+Route::get('/dashboard', function () {
+    return view('welcome');
+})->name('dashboard');
+
 Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('converts', ConvertController::class)->except([

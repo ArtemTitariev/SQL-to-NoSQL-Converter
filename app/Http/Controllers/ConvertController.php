@@ -10,7 +10,6 @@ use App\Models\SQLSchema\SQLDatabase;
 use App\Services\DatabaseConnections\SQLConnectionParamsProvider;
 use App\Services\DatabaseConnections\ConnectionCreator;
 use App\Services\DatabaseConnections\ConnectionTester;
-use Exception;
 use Illuminate\Http\Request;
 
 class ConvertController extends Controller
@@ -52,7 +51,7 @@ class ConvertController extends Controller
             ConnectionTester::testSQLConnection($sqlDatabaseParams);
             ConnectionTester::testMongoConnection($mongoDatabaseParams);
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return back()
                 ->withInput()
                 ->withErrors($e->getMessage());
