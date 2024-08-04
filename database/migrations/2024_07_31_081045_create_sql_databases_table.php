@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('username');
             $table->string('password');
             $table->string('charset', 30);
-            $table->string('collation');
+            $table->string('collation')->nullable();;
             $table->string('prefix')->nullable();
             $table->boolean('strict')->nullable();
             $table->string('engine')->nullable();

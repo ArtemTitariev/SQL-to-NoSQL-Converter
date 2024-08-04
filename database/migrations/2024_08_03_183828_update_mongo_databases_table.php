@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('mongo_databases', function (Blueprint $table) {
-            $table->string('dsn')->change();
+            $table->string('dsn', 4500)->change();
+            $table->string('database', 150)->change();
         });
     }
 
@@ -22,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('mongo_databases', function (Blueprint $table) {
-            $table->string('dsn', 255)->change();
+            // $table->string('dsn', 255)->change();
         });
     }
 };

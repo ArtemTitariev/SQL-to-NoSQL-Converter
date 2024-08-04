@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('converts', function (Blueprint $table) {
-            $table->text('status_message')->nullable(false)->change();
+            // $table->text('status_message')->nullable(false)->change();
         });
     }
 };

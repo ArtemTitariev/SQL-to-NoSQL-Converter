@@ -12,7 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('sql_databases', function (Blueprint $table) {
-            $table->string('password')->nullable()->change();
+            $table->string('host', 700)->change();
+            $table->string('port', 200)->change();
+            $table->string('database', 150)->change();
+            $table->string('username', 300)->change();
+            $table->string('password', 700)->nullable()->change();
         });
     }
 
@@ -22,7 +26,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('sql_databases', function (Blueprint $table) {
-            $table->string('password')->nullable(false)->change();
+            // $table->string('password')->nullable(false)->change();
         });
     }
 };
