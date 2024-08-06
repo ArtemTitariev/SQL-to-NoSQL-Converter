@@ -5,6 +5,12 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 
+use Illuminate\Support\Facades\DB;
+use App\Schema\SQL\Reader;
+use App\Schema\SQL\Mapper;
+use App\Models\SQLSchema\SQLDatabase;
+use App\Services\DatabaseConnections\ConnectionCreator;
+
 Route::get('language/{locale}', function ($locale) {
     
     if (isset($locale) && in_array($locale, config('app.available_locales'))) {
@@ -39,3 +45,17 @@ Route::middleware('auth')->group(function () {
 Route::view('/test', 'test');
 
 require __DIR__.'/auth.php';
+
+
+Route::get('/read', function() {
+
+    $database = SQLDatabase::find(3);
+
+    $connection = ConnectionCreator::create($database);
+    
+    $reader = new Reader($connection->getSchemaBuilder());
+    $mapper = new Mapper($reader);
+
+    
+    $mapper->mapSchema($database);
+});
