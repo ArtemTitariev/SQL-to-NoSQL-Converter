@@ -64,8 +64,8 @@ class SQLDatabase extends Model
     private function cryptedAttribute(): Attribute
     {
         return Attribute::make(
-            get: fn (string $value) => Crypt::decryptString($value),
-            set: fn (string $value) => Crypt::encryptString($value),
+            get: fn ($value) => Crypt::decryptString($value),
+            set: fn ($value) => Crypt::encryptString($value),
         );
     }
 
@@ -97,9 +97,10 @@ class SQLDatabase extends Model
         });
     }
 
-    private function clearFields() {
+    private function clearFields()
+    {
         $driver = $this->driver;
-    
+
         $fieldsToClear = [
             'mysql' => [
                 'search_path', 'sslmode', 'encrypt', 'trust_server_certificate'
@@ -114,12 +115,11 @@ class SQLDatabase extends Model
                 'collation', 'strict', 'engine', 'search_path', 'sslmode', 'encrypt'
             ]
         ];
-    
+
         $fields = $fieldsToClear[$driver] ?? [];
-    
+
         foreach ($fields as $field) {
             $this->$field = null;
         }
     }
-    
 }

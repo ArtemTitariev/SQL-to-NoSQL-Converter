@@ -11,8 +11,6 @@ class ConnectionCreator
     /**
      * Create new database connection
      * 
-     * @param string $name connection name
-     * 
      * @param array | App\Models\MongoSchema\MongoDatabase | App\Models\SQLSchema\SQLDatabase $params
      * 
      * @throws InvalidArgumentException
@@ -21,12 +19,14 @@ class ConnectionCreator
      * @return \Illuminate\Database\Connection
      */
     public static function create(
-        string $name,
-        array | MongoDatabase | SQLDatabase &$params
+        array | MongoDatabase | SQLDatabase $params
     ) {
         if (is_object($params)) {
             $params = $params->toArray();
         }
+        $name = $params['connection_name'];
+        unset($params['id']);
+        unset($params['connection_name']);
 
         config(["database.connections.$name" => $params]);
 
