@@ -50,7 +50,7 @@ class MongoDatabase extends Model
 
     public function collections()
     {
-        return $this->hasMany(Collection::class);
+        return $this->hasMany(Collection::class, 'mongo_database_id', 'id');
     }
 
     public function convert() {

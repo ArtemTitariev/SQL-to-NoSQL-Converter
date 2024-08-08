@@ -71,12 +71,12 @@ class SQLDatabase extends Model
 
     public function tables()
     {
-        return $this->hasMany(Table::class);
+        return $this->hasMany(Table::class, 'sql_database_id', 'id');
     }
 
     public function circularRefs()
     {
-        return $this->hasMany(CircularRef::class);
+        return $this->hasMany(CircularRef::class, 'sql_database_id', 'id');
     }
 
     public function convert()

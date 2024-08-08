@@ -36,6 +36,6 @@ class Collection extends Model
 
     public function database()
     {
-        return $this->belongsTo(MongoDatabase::class);
+        return $this->belongsTo(MongoDatabase::class, 'mongo_database_id', 'id');
     }
 }

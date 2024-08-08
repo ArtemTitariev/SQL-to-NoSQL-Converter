@@ -31,6 +31,6 @@ class Table extends Model
 
     public function database()
     {
-        return $this->belongsTo(SQLDatabase::class);
+        return $this->belongsTo(SQLDatabase::class, 'sql_database_id', 'id');
     }
 }

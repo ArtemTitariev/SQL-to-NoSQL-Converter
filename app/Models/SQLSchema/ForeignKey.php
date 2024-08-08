@@ -11,12 +11,12 @@ class ForeignKey extends Model
 
     public $timestamps = false;
     
-    public const RELATION_TYPES = [
-        'ONE-TO-ONE' => '1-1', 
-        'ONE-TO-MANY' => '1-N', 
-        'MANY-TO-MANY' => 'N-N', 
-        'COMPLEX' => 'Complex multiple',
-    ];
+    // public const RELATION_TYPES = [
+    //     'ONE-TO-ONE' => '1-1', 
+    //     'ONE-TO-MANY' => '1-N', 
+    //     'MANY-TO-MANY' => 'N-N', 
+    //     'COMPLEX' => 'Complex multiple',
+    // ];
 
     protected $fillable = [
         'table_id', 'name', 'columns', 'foreign_schema', 'foreign_table', 
@@ -35,6 +35,7 @@ class ForeignKey extends Model
 
     public function isValidRelationType($type)
     {
-        return in_array($type, self::RELATION_TYPES);
+        // return in_array($type, self::RELATION_TYPES);
+        return in_array($type, RELATION_TYPES);
     }
 }
