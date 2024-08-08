@@ -20,6 +20,6 @@ class RdbDataTypeRulesFactory
             }
         }
 
-        throw new InvalidArgumentException("Unsupported database driver: $driver");
+        throw new InvalidArgumentException(__("Database driver :driver is not supported.", ['driver' => $driver]));
     }
 }

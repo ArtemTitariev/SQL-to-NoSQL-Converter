@@ -19,7 +19,7 @@ class MySQLRules implements RdbDataTypeRulesInterface
         'mediumint' => ['int', 'string'],
         'smallint' => ['int', 'string'],
         'tinyint' => ['int', 'string'],
-        
+
         // fractional numbers
         'decimal' => ['decimal128', 'string'],
         'double' => ['double', 'string'],
@@ -39,7 +39,7 @@ class MySQLRules implements RdbDataTypeRulesInterface
         'date' => ['date', 'string'],
         'time' => ['date', 'string'],
         'timestamp' => ['date', 'string'],
-        
+
         // JSON
         'json' => ['object'],
 
@@ -51,8 +51,15 @@ class MySQLRules implements RdbDataTypeRulesInterface
         foreach ($this->rules as $pattern => $types) {
             if ($this->matchPattern($pattern, $typeName, $type)) {
                 return $types;
+            } else {
+                throw new UnsupportedDataTypeException(
+                    $type,
+                    __(
+                        ":driver :dataType data type is not supported.",
+                        ['driver' => 'MySQL', 'dataType' => $type]
+                    )
+                );
             }
         }
-        return [];
     }
 }

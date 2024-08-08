@@ -49,8 +49,15 @@ class PostgreSQLRules implements RdbDataTypeRulesInterface
         foreach ($this->rules as $pattern => $types) {
             if ($this->matchPattern($pattern, $typeName, $type)) {
                 return $types;
+            } else {
+                throw new UnsupportedDataTypeException(
+                    $type,
+                    __(
+                        ":driver :dataType data type is not supported.",
+                        ['driver' => 'PostgreSQL', 'dataType' => $type]
+                    )
+                );
             }
         }
-        return [];
     }
 }
