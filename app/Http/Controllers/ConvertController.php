@@ -47,19 +47,20 @@ class ConvertController extends Controller
         $sqlDatabaseParams = $request->validated('sql_database');
         $mongoDatabaseParams = $request->validated('mongo_database');
         $mongoDatabaseParams['driver'] = 'mongodb';
+
+        // create connection names
+        $sqlDatabaseParams['connection_name'] = $createConnectionName->create($sqlDatabaseParams['database']);
+        $mongoDatabaseParams['connection_name'] = $createConnectionName->create($mongoDatabaseParams['database']);
+
         try {
             ConnectionTester::testSQLConnection($sqlDatabaseParams);
             ConnectionTester::testMongoConnection($mongoDatabaseParams);
-
         } catch (\Exception $e) {
             return back()
                 ->withInput()
                 ->withErrors($e->getMessage());
             // dd($e->getMessage());
         }
-        // create connection names
-        $sqlDatabaseParams['connection_name'] = $createConnectionName->create($sqlDatabaseParams['database']);
-        $mongoDatabaseParams['connection_name'] = $createConnectionName->create($mongoDatabaseParams['database']);
 
         // create database models
         $sqlDatabase = SQLDatabase::create($sqlDatabaseParams);

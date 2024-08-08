@@ -18,13 +18,12 @@ class ConnectionTester
      * @return \Illuminate\Database\Connection
      */
     public static function testSQLConnection(array &$params): bool {
-        $connectionName = 'sql_' . Str::random();
-        $connection = ConnectionCreator::create($connectionName, $params);
+        $connection = ConnectionCreator::create($params);
         
         // Get PDO
         $connection->getPdo();
         // Check access to schema
-        $builder = Schema::connection($connectionName);
+        $builder = Schema::connection($params['connection_name']);
         $builder->getTables();
 
         return true;
@@ -41,15 +40,14 @@ class ConnectionTester
      * @return \Illuminate\Database\Connection
      */
     public static function testMongoConnection(array &$params): bool {
-        $connectionName = 'mongo_' . Str::random();
-        $connection = ConnectionCreator::create($connectionName, $params);
+        $connection = ConnectionCreator::create($params);
 
         // Get client
         $client = $connection->getMongoClient();
 
         // Check connection
         $databases = $client->listDatabases();
-        // dd($databases);
+        
         $databaseName = $params['database'];
         // Check if database exists
         $databaseExists = collect(iterator_to_array($databases))->contains(function ($database) use ($databaseName) {

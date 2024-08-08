@@ -5,10 +5,8 @@ namespace App\Services\DatabaseConnections;
 class SQLConnectionParamsProvider {
     
     public function getSupportedDatabases(): array {
-        return [
-            'mysql' => 'MySQL', 
-            'pgsql' => 'PostgreSQL',
-        ];
+        
+        return array_map(fn($db) => $db['name'], SUPPORTED_DATABASES);
     }
 
     public function getCommonConnectionParams(): array {
