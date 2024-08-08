@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ConvertController;
 use App\Http\Controllers\ProfileController;
+use App\Models\Convert;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 
@@ -9,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use App\Schema\SQL\Reader;
 use App\Schema\SQL\Mapper;
 use App\Models\SQLSchema\SQLDatabase;
+use App\Models\MongoSchema\MongoDatabase;
 use App\Services\DatabaseConnections\ConnectionCreator;
 
 Route::get('language/{locale}', function ($locale) {
@@ -46,16 +48,41 @@ Route::view('/test', 'test');
 
 require __DIR__.'/auth.php';
 
-
+// FOR TESTING ONLY------------------
 Route::get('/read', function() {
 
-    $database = SQLDatabase::find(3);
+    $database = SQLDatabase::find(1);
 
     $connection = ConnectionCreator::create($database);
     
     $reader = new Reader($connection->getSchemaBuilder());
-    $mapper = new Mapper($reader);
+    $mapper = new Mapper($database, $reader);
 
-    
     $mapper->mapSchema($database);
+
+    return 'done';
+});
+
+Route::get('/delete', function() {
+
+    $convert = Convert::find(1);
+
+    $convert->sqlDatabase->delete();
+    $convert->mongoDatabase->delete();
+    $convert->delete();
+
+    return 'deleted';
+});
+
+Route::get('/delete-data', function() {
+
+    $convert = Convert::find(1);
+
+    $sqlDatabase = $convert->sqlDatabase;
+    $sqlDatabase->circularRefs()->delete();
+    $sqlDatabase->tables()->delete();
+
+    $mongoDatabase = $convert->mongoDatabase;
+    $mongoDatabase->collections()->delete();
+    return 'data deleted';
 });
