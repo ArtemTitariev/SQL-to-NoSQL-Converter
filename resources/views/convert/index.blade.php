@@ -21,6 +21,7 @@
                     <thead class="bg-light border-b border-gray text-secondary">
                         <tr>
                             <th class="py-3 px-6 text-left text-sm font-medium text-gray-700">{{ __('ID') }}</th>
+                            <th class="py-3 px-6 text-left text-sm font-medium text-gray-700">{{ __('SQL Database Driver') }}</th>
                             <th class="py-3 px-6 text-left text-sm font-medium text-gray-700">{{ __('SQL Database') }}</th>
                             <th class="py-3 px-6 text-left text-sm font-medium text-gray-700">{{ __('MongoDB Database') }}</th>
                             <th class="py-3 px-6 text-left text-sm font-medium text-gray-700">{{ __('Description') }}</th>
@@ -32,8 +33,9 @@
                         @foreach ($converts as $convert)
                             <tr class="{{ $loop->even ? 'bg-white' : 'bg-light' }} border-b border-gray-200">
                                 <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->id }}</td>
-                                <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->sqlDatabase->database ?? 'N/A' }}</td>
-                                <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->mongoDatabase->database ?? 'N/A' }}</td>
+                                <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->sqlDatabase->driver }}</td>
+                                <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->sqlDatabase->database}}</td>
+                                <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->mongoDatabase->database }}</td>
                                 <td class="py-3 px-6 text-sm text-gray-900">{{ $convert->description ?? __('No description') }}</td>
                                 <td class="py-3 px-6 text-sm text-gray-900">
                                     @switch($convert->status)

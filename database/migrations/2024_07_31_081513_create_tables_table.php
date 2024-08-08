@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('tables', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sql_database_id')
-                ->constrained()
+                ->constrained('sql_databases')
                 ->cascadeOnDelete();
             $table->string('name');
             $table->json('primary_key')->nullable();

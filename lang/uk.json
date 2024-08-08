@@ -1,11 +1,12 @@
 {
-    "Converts": "Конвертуваня",
-    "New Convert": "Нове конвертуваня",
-    "Create Convert": "Створити конвертуваня",
-    "My Converts": "Мої конвертуваня",
+    "Converts": "Конвертування",
+    "New Convert": "Нове конвертування",
+    "Create Convert": "Створити конвертування",
+    "My Converts": "Мої конвертування",
     "No converts found.": "Конвертувань не знайдено",
     
     "SQL Database": "База даних SQL",
+    "SQL Database Driver": "Драйвер бази даних SQL",
     "MongoDB Database": "База даних MongoDB",
     
     "Description": "Опис",
