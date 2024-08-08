@@ -16,14 +16,21 @@ class PostgreSQLRules implements RdbDataTypeRulesInterface
         'bigint' => ['long', 'string'],
         'integer' => ['int', 'string'],
         'smallint' => ['int', 'string'],
+
+        'bigserial' => ['int', 'string'],
+        'serial' => ['int', 'string'],
+        'smallserial' => ['int', 'string'],
         
         // fractional numbers
+        'decimal' => ['decimal128', 'string'],
         'numeric' => ['decimal128', 'string'],
+        'real' => ['double', 'string'],
         'double precision' => ['double', 'string'],
 
         // strings
         'character' => ['string'],
         'character varying' => ['string'],
+        'bpchar' => ['string'],
         'text' => ['string'],
 
         // dates / times
@@ -31,7 +38,8 @@ class PostgreSQLRules implements RdbDataTypeRulesInterface
         'timestamp(0) without time zone' => ['date', 'string'],
         'time(0) with time zone' => ['date', 'string'],
         'time(0) without time zone' => ['date', 'string'],
-        
+        'date' => ['date', 'string'],
+
         // networking
         'inet' => ['string'],
         'cidr' => ['string'],

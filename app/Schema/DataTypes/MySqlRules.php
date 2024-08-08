@@ -11,19 +11,28 @@ class MySQLRules implements RdbDataTypeRulesInterface
     protected $rules = [
         //bool
         'tinyint(1)' => ['bool', 'int', 'string'],
-
+        'bool' => ['bool', 'int', 'string'],
+        
         //integer numbers
         'bigint unsigned' => ['long', 'string'],
         'bigint' => ['long', 'string'],
+        'int unsigned' => ['long', 'string'],
         'int' => ['int', 'string'],
+        'mediumint unsigned' => ['int', 'string'],
         'mediumint' => ['int', 'string'],
+        'smallint unsigned' => ['int', 'string'],
         'smallint' => ['int', 'string'],
+        'tinyint unsigned' => ['int', 'string'],
         'tinyint' => ['int', 'string'],
 
         // fractional numbers
+        'decimal unsigned' => ['decimal128', 'string'],
         'decimal' => ['decimal128', 'string'],
+        'double unsigned' => ['double', 'string'],
         'double' => ['double', 'string'],
+        'float unsigned' => ['double', 'string'],
         'float' => ['double', 'string'],
+        'double precision' => ['double', 'string'],
 
         // strings
         'char' => ['string'],
