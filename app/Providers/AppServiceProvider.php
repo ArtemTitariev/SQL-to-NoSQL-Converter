@@ -19,9 +19,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Languages partial
         view()->composer('partials.language_switcher', function ($view) {
             // $view->with('current_locale', app()->getLocale());
             $view->with('available_locales', config('app.available_locales'));
         });
+
+        // Load constants
+        $constants = config('constants');
+        foreach ($constants as $key => $value) {
+            if (!defined($key)) {
+                define($key, $value);
+            }
+        }
     }
 }

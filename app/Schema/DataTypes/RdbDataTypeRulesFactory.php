@@ -8,14 +8,18 @@ class RdbDataTypeRulesFactory
 {
     public static function create(string $driver): RdbDataTypeRulesInterface
     {
-        switch ($driver) {
-            case 'mysql':
-                return new MySqlRules();
-            case 'pgsql':
-                return new PgSqlRules();
+        $drivers = SUPPORTED_DATABASES;
+
+        if (isset($drivers[$driver])) {
+            $className = $drivers[$driver]['rules_class'];
             
-            default:
-                throw new InvalidArgumentException("Unsupported database driver: $driver");
+            if (class_exists($className)) {
+                return new $className();
+            } else {
+                throw new InvalidArgumentException("Class $className does not exist");
+            }
         }
+
+        throw new InvalidArgumentException("Unsupported database driver: $driver");
     }
 }

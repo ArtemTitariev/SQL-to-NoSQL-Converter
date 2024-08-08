@@ -4,7 +4,7 @@ namespace App\Schema\DataTypes;
 
 use App\Models\SQLSchema\Column;
 
-class PgSqlRules implements RdbDataTypeRulesInterface
+class PostgreSQLRules implements RdbDataTypeRulesInterface
 {
     use HasColumnNamePattern;
     
@@ -44,10 +44,10 @@ class PgSqlRules implements RdbDataTypeRulesInterface
         // інші
     ];
 
-    public function getSupportedTypes(Column $column): array
+    public function getSupportedTypes(string $typeName, string $type): array
     {
         foreach ($this->rules as $pattern => $types) {
-            if ($this->matchPattern($pattern, $column->type_name, $column->type)) {
+            if ($this->matchPattern($pattern, $typeName, $type)) {
                 return $types;
             }
         }

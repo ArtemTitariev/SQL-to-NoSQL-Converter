@@ -2,9 +2,7 @@
 
 namespace App\Schema\DataTypes;
 
-use App\Models\SQLSchema\Column;
-
 interface RdbDataTypeRulesInterface
 {
-    public function getSupportedTypes(Column $column): array;
+    public function getSupportedTypes(string $typeName, string $type): array;
 }

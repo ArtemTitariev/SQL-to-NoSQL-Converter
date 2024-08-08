@@ -4,7 +4,7 @@ namespace App\Schema\DataTypes;
 
 use App\Models\SQLSchema\Column;
 
-class MySqlRules implements RdbDataTypeRulesInterface
+class MySQLRules implements RdbDataTypeRulesInterface
 {
     use HasColumnNamePattern;
 
@@ -29,6 +29,7 @@ class MySqlRules implements RdbDataTypeRulesInterface
         'char' => ['string'],
         'varchar' => ['string'],
         'longtext' => ['string'],
+        'mediumtext' => ['string'],
         'text' => ['string'],
         'tinytext' => ['string'],
 
@@ -45,10 +46,10 @@ class MySqlRules implements RdbDataTypeRulesInterface
         // інші
     ];
 
-    public function getSupportedTypes(Column $column): array
+    public function getSupportedTypes(string $typeName, string $type): array
     {
         foreach ($this->rules as $pattern => $types) {
-            if ($this->matchPattern($pattern, $column->type_name, $column->type)) {
+            if ($this->matchPattern($pattern, $typeName, $type)) {
                 return $types;
             }
         }
