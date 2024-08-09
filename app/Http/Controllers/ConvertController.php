@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\CreateConnectionName;
 use App\Http\Requests\StoreConvertRequest;
+use App\Models\ConversionProgress;
 use App\Models\Convert;
 use App\Models\MongoSchema\MongoDatabase;
 use App\Models\SQLSchema\SQLDatabase;
@@ -11,6 +12,7 @@ use App\Services\DatabaseConnections\SQLConnectionParamsProvider;
 use App\Services\DatabaseConnections\ConnectionCreator;
 use App\Services\DatabaseConnections\ConnectionTester;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class ConvertController extends Controller
 {
@@ -67,12 +69,19 @@ class ConvertController extends Controller
         $mongoDatabase = MongoDatabase::create($mongoDatabaseParams);
 
         // Create Convert model
-        Convert::create([
-            'user_id' => auth()->id(),
+        $convert = Convert::create([
+            'user_id' => Auth::id(),
             'sql_database_id' => $sqlDatabase->id,
             'mongo_database_id' => $mongoDatabase->id,
             'description' => $request->validated('description'),
-            'status' => Convert::STATUSES['IN_PROGRESS'],
+            'status' => Convert::STATUSES['CONFIGURING'],
+        ]);
+
+        ConversionProgress::create([
+            'convert_id' => $convert->id,
+            'step' => 1,
+            'status' => ConversionProgress::STATUSES['COMPLETED'],
+            'details' => 'The databases connections have been successfully tested. The parameters have been saved.',
         ]);
 
         return redirect()->route('converts.index');
@@ -82,9 +91,11 @@ class ConvertController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Convert $convert)
     {
-        return 'show page';
+        $convert->load(['sqlDatabase', 'mongoDatabase', 'progresses']);
+
+        return view('convert.show', compact('convert'));
     }
 
     // /**

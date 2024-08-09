@@ -3,6 +3,7 @@
 use App\Http\Controllers\ConvertController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Convert;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 
@@ -49,23 +50,25 @@ Route::view('/test', 'test');
 require __DIR__.'/auth.php';
 
 // FOR TESTING ONLY------------------
-Route::get('/read', function() {
+Route::get('/read', function(Request $request) {
+    $id = $request->input('id');
+    $database = SQLDatabase::find($id);
+    try {
+        $connection = ConnectionCreator::create($database);
+        
+        $reader = new Reader($connection->getSchemaBuilder());
+        $mapper = new Mapper($database, $reader);
 
-    $database = SQLDatabase::find(1);
-
-    $connection = ConnectionCreator::create($database);
-    
-    $reader = new Reader($connection->getSchemaBuilder());
-    $mapper = new Mapper($database, $reader);
-
-    $mapper->mapSchema($database);
-
+        $mapper->mapSchema($database);
+    } catch (\Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
     return 'done';
 });
 
-Route::get('/delete', function() {
-
-    $convert = Convert::find(1);
+Route::get('/delete', function(Request $request) {
+    $id = $request->input('id');
+    $convert = Convert::find($id);
 
     $convert->sqlDatabase->delete();
     $convert->mongoDatabase->delete();
@@ -74,9 +77,10 @@ Route::get('/delete', function() {
     return 'deleted';
 });
 
-Route::get('/delete-data', function() {
+Route::get('/delete-data', function(Request $request) {
 
-    $convert = Convert::find(1);
+    $id = $request->input('id');
+    $convert = Convert::find($id);
 
     $sqlDatabase = $convert->sqlDatabase;
     $sqlDatabase->circularRefs()->delete();
