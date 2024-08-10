@@ -62,7 +62,7 @@ class PostgreSQLRules implements RdbDataTypeRulesInterface
                     $type,
                     __(
                         ":driver :dataType data type is not supported.",
-                        ['driver' => 'PostgreSQL', 'dataType' => $type]
+                        ['driver' => 'PostgreSQL', 'dataType' => $typeName]
                     )
                 );
             }

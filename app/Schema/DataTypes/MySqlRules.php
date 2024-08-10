@@ -60,15 +60,15 @@ class MySQLRules implements RdbDataTypeRulesInterface
         foreach ($this->rules as $pattern => $types) {
             if ($this->matchPattern($pattern, $typeName, $type)) {
                 return $types;
-            } else {
-                throw new UnsupportedDataTypeException(
-                    $type,
-                    __(
-                        ":driver :dataType data type is not supported.",
-                        ['driver' => 'MySQL', 'dataType' => $type]
-                    )
-                );
             }
         }
+
+        throw new UnsupportedDataTypeException(
+            $type,
+            __(
+                ":driver :dataType data type is not supported.",
+                ['driver' => 'MySQL', 'dataType' => $typeName]
+            )
+        );
     }
 }
