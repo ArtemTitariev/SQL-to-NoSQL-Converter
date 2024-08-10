@@ -134,6 +134,22 @@ class Reader
         return $this->builder->getForeignKeys($tableName);
     }
 
+    /**
+     * Filter foreign keys that refer to other databases.
+     * Return an array with foreign keys that refer only to the current database.
+     * 
+     * @param string $tableName
+     * 
+     * @return array
+     */
+    private function getFilteredForeignKeys(string $tableName)
+    {
+        $foreignKeys = $this->getForeignKeys($tableName);
+        $tableNames = array_flip($this->getTableListing());
+
+        return array_filter($foreignKeys, fn ($fK) => !isset($tableNames[$fK['foreign_table']]));
+    }
+
     /*
     Правила визначення зв'язків 
 
@@ -153,11 +169,17 @@ class Reader
         так і комбінація протих і складених.
         Якщо є два 1-N, які не покриті одним складеним індексом - це два окремі 1-N.
 
-    complex: мінімум два 1-N (або ldf N-N) та інші (один або декілька), будь які типи зв'язку.
+    complex: мінімум два 1-N (або два N-N) та інші (один або декілька), будь які типи зв'язку.
         Іншими словами, два 1-N (або ж N-N) та ще хоча б один будь-який зв'язок.
         Важливо: якщо в таблиці є два або більше ключів, які посилаються 
         на одну й ту саму таблицю, це теж вважається складеним зв'язком
         (навіть якщо це два зв'язки 1-1, які посилаються на одну і ту ж таблицю).
+
+    Self join також вважаються complex зв'язком.
+
+    Foreign key на іншу БД не дозволені - виникне помилки при спробі отримати 
+        дані звідти. Тому вони просто ігноруються. Щоб уникнути цього, 
+        масив з foreign kays фільтрується.
     */
 
     /**
@@ -169,10 +191,9 @@ class Reader
      */
     public function getForeignKeysWithRelationType(string $tableName): array
     {
-        $foreignKeys = $this->getForeignKeys($tableName);
+        $foreignKeys = $this->getFilteredForeignKeys($tableName);
         $indexes = $this->getIndexes($tableName);
-
-        // dd($foreignKeys, $indexes);
+        
         // Create an associative array to quickly look up unique indexes
         $uniqueIndexes = [];
         foreach ($indexes as $index) {
@@ -202,6 +223,10 @@ class Reader
                 $relationType = RELATION_TYPES['ONE-TO-ONE'];
             }
 
+            if ($foreignTable === $tableName) { // Self join
+                $relationType = RELATION_TYPES['COMPLEX'];
+            }
+
             $foreignKeysWithTypes[] = array_merge($fk, ['relation_type' => $relationType]);
         }
 
@@ -218,7 +243,11 @@ class Reader
                     $foreignTables = array_unique(array_column($relatedForeignKeys, 'foreign_table'));
                     if (count($foreignTables) == 2) {
                         foreach ($foreignKeysWithTypes as &$fkWithType) {
-                            if (in_array($fkWithType['columns'][0], $index['columns'])) {
+                            if (
+                                in_array($fkWithType['columns'][0], $index['columns'])
+                                && $fkWithType['relation_type'] !== RELATION_TYPES['COMPLEX']
+                            ) {
+
                                 $fkWithType['relation_type'] = RELATION_TYPES['MANY-TO-MANY'];
                                 $nNRelationships[] = $fkWithType;
                             }
@@ -238,10 +267,11 @@ class Reader
 
         // Check for complex relationships by counting relation types
         $relationTypeCounts = [
-            RELATION_TYPES['ONE-TO-ONE'] => 0, 
-            RELATION_TYPES['ONE-TO-MANY'] => 0, 
-            RELATION_TYPES['MANY-TO-MANY'] => 0, 
-            RELATION_TYPES['COMPLEX'] => 0];
+            RELATION_TYPES['ONE-TO-ONE'] => 0,
+            RELATION_TYPES['ONE-TO-MANY'] => 0,
+            RELATION_TYPES['MANY-TO-MANY'] => 0,
+            RELATION_TYPES['COMPLEX'] => 0
+        ];
 
         // dd($foreignKeysWithTypes, $relationTypeCounts);
 
