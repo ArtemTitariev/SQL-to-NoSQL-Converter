@@ -33,6 +33,7 @@ return [
         'ONE-TO-ONE' => '1-1',
         'ONE-TO-MANY' => '1-N',
         'MANY-TO-MANY' => 'N-N',
+        'SELF-REF' => 'Self reference',
         'COMPLEX' => 'Complex multiple',
     ],
 ];

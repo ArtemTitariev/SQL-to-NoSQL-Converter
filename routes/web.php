@@ -61,6 +61,13 @@ Route::get('/read', function(Request $request) {
 
         $mapper->mapSchema($database);
     } catch (\Exception $e) {
+
+        // clear data
+        $convert = Convert::find($id);
+        $sqlDatabase = $convert->sqlDatabase;
+        $sqlDatabase->circularRefs()->delete();
+        $sqlDatabase->tables()->delete();
+
         return "Error: " . $e->getMessage();
     }
     return 'done';
