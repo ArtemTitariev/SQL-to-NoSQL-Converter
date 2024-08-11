@@ -6,7 +6,7 @@ class SQLConnectionParamsProvider {
     
     public function getSupportedDatabases(): array {
         
-        return array_map(fn($db) => $db['name'], SUPPORTED_DATABASES);
+        return array_map(fn($db) => $db['name'], config('constants.SUPPORTED_DATABASES'));
     }
 
     public function getCommonConnectionParams(): array {

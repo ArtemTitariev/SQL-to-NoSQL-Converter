@@ -36,6 +36,6 @@ class ForeignKey extends Model
     public function isValidRelationType($type)
     {
         // return in_array($type, self::RELATION_TYPES);
-        return in_array($type, RELATION_TYPES);
+        return in_array($type, config('constants.RELATION_TYPES'));
     }
 }

@@ -8,7 +8,7 @@ class RdbDataTypeRulesFactory
 {
     public static function create(string $driver): RdbDataTypeRulesInterface
     {
-        $drivers = SUPPORTED_DATABASES;
+        $drivers = config('constants.SUPPORTED_DATABASES');
 
         if (isset($drivers[$driver])) {
             $className = $drivers[$driver]['rules_class'];

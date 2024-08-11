@@ -25,12 +25,12 @@ class AppServiceProvider extends ServiceProvider
             $view->with('available_locales', config('app.available_locales'));
         });
 
-        // Load constants
-        $constants = config('constants');
-        foreach ($constants as $key => $value) {
-            if (!defined($key)) {
-                define($key, $value);
-            }
-        }
+        // // Load constants
+        // $constants = config('constants');
+        // foreach ($constants as $key => $value) {
+        //     if (!defined($key)) {
+        //         define($key, $value);
+        //     }
+        // }
     }
 }
