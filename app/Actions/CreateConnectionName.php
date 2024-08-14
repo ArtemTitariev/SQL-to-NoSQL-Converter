@@ -1,7 +1,9 @@
 <?php
+
 namespace App\Actions;
 
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class CreateConnectionName {
 
@@ -16,7 +18,7 @@ class CreateConnectionName {
      * @return string
      */
     public function create(string $databaseName): string {
-        return 'db_' . auth()->user()->id . '_' 
+        return 'db_' . Auth::user()->id . '_' 
             . $databaseName . '_'
             . Str::random(10);
     }

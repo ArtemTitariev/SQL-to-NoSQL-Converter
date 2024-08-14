@@ -56,12 +56,18 @@ class ConvertController extends Controller
 
         try {
             ConnectionTester::testSQLConnection($sqlDatabaseParams);
+        } catch (\Exception $e) {
+            return back()
+                ->withInput()
+                ->withErrors(__('SQL database connection error: ') . $e->getMessage());
+        }
+
+        try {
             ConnectionTester::testMongoConnection($mongoDatabaseParams);
         } catch (\Exception $e) {
             return back()
                 ->withInput()
-                ->withErrors($e->getMessage());
-            // dd($e->getMessage());
+                ->withErrors(__('MongoDB connection error: ') . $e->getMessage());
         }
 
         // create database models
@@ -80,8 +86,9 @@ class ConvertController extends Controller
         ConversionProgress::create([
             'convert_id' => $convert->id,
             'step' => 1,
+            'name' => 'SOME NAME',
             'status' => ConversionProgress::STATUSES['COMPLETED'],
-            'details' => 'The databases connections have been successfully tested. The parameters have been saved.',
+            'details' => 'The databases connections have been successfully tested. The parameters have been saved.', //without __()
         ]);
 
         return redirect()->route('converts.index');
