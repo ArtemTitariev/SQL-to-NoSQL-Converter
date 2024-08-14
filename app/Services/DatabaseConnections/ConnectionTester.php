@@ -45,19 +45,24 @@ class ConnectionTester
         // Get client
         $client = $connection->getMongoClient();
 
-        // Check connection
-        $databases = $client->listDatabases();
-        
-        $databaseName = $params['database'];
-        // Check if database exists
-        $databaseExists = collect(iterator_to_array($databases))->contains(function ($database) use ($databaseName) {
-            return $database->getName() === $databaseName;
-        });
-        
-        if (!$databaseExists) {
-            throw new MongoDBException(__("Connected successfully to MongoDB, but the database does not exist."));
+        $db = $client->selectDatabase($params['database']);
+        $collectionName = 'test';
+
+        // Find collection name, that doesn't exist in the database 
+        while (!empty(iterator_to_array($db->listCollections(['filter' => ['name' => $collectionName]])))) {
+            $collectionName .= rand(1, 1000);
         }
-    
+
+        // Create collection and insert a document
+        $collection = $db->$collectionName;
+        $collection->insertOne(['name' => 'testDocument']);
+
+        // Create an index
+        $collection->createIndex(['name' => 1]);
+
+         // Delete the collection
+         $db->dropCollection($collectionName);
+
         return true;
     }
 }
