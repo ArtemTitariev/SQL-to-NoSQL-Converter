@@ -21,7 +21,8 @@ class ConversionProgress extends Model
     ];
 
     protected $fillable = [
-        'id', 'convert_id', 'step', 'status', 'details',
+        'id', 'convert_id', 'step', 'name', 
+        'status', 'details',
         'created_at', 'updated_at',
     ];
 
