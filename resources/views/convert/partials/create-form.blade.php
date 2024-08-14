@@ -11,8 +11,8 @@
                 <div class="flex flex-wrap gap-4 mt-2">
                     @foreach ($supportedDatabases as $type => $name)
                         <label class="cursor-pointer flex items-center">
-                            <input type="radio" id="driver" name="sql_database[driver]" value="{{ $type }}"
-                                class="hidden peer"
+                            <input type="radio" id="{{ 'driver' . $name }}" name="sql_database[driver]"
+                                value="{{ $type }}" class="hidden peer"
                                 {{ $type === old('sql_database.driver', 'mysql') ? 'checked' : '' }} />
 
                             <div
@@ -74,7 +74,18 @@
             <div class="py-2 mt-5">
                 <h2 class="text-l font-semibold text-secondary">{{ __('MongoDB Connection Params') }}</h2>
                 <div class="mt-4 gap-6">
-                    <x-input-label for="mongo_dsn" :value="__('DSN')" />
+                    <div class="flex items-center">
+                        <x-input-label for="mongo_dsn" :value="__('Data Source Name (DSN)')" />
+
+                        <x-tooltip iconColor="text-info" position="bottom">
+                            <p class="font-semibold text-primary">{{ __('Format:') }}</p>
+                            <p><code>mongodb://username:password@host:port/database?parameter=value</code></p>
+                            <p class="mt-2 font-semibold text-primary">{{ __('Example:') }}</p>
+                            <p><code>mongodb://admin:secret@localhost:27017/mydatabase?retryWrites=true&w=majority</code>
+                            </p>
+                        </x-tooltip>
+                    </div>
+
                     <x-text-input id="mongo_dsn" name="mongo_database[dsn]" value="{{ old('mongo_database.dsn') }}"
                         type="text" class="mt-1 block w-full" required />
                     <x-input-error class="mt-2" :messages="$errors->get('mongo_database.dsn')" />
@@ -92,9 +103,8 @@
                 <h2 class="text-l font-semibold text-secondary">{{ __('Additional') }}</h2>
                 <div class="mt-4 gap-6">
                     <x-input-label for="description" :value="__('Provide short description')" />
-                    <x-textarea id="description" name="description"
-                        value="{{ old('description') }}" type="text" class="mt-1 block w-full"
-                     />
+                    <x-textarea id="description" name="description" value="{{ old('description') }}" type="text"
+                        class="mt-1 block w-full" />
                     <x-input-error class="mt-2" :messages="$errors->get('description')" />
                 </div>
             </div>

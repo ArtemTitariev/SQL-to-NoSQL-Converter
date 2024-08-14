@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-header-content>
-        {{ __('Converts') }}
+        {{ __('Conversion Details') }}
         <x-slot name="button">
             <x-link href="{{ route('converts.index') }}">
                 {{ __('Continue') }}
@@ -9,7 +9,7 @@
     </x-header-content>
 
     <x-container>
-        <x-h-info>{{ __('Conversion Details') }}</x-h-info>
+        {{-- <x-h-info>{{ __('Conversion Details') }}</x-h-info> --}}
 
         <div class="mb-4">
             <!-- Convert Details -->
@@ -45,10 +45,10 @@
             </div>
 
             <!-- Convert Description -->
-            @if ($convert->description)
+            @if (!$convert->description)
                 <div class="bg-white p-6 rounded-lg shadow-lg mt-4 mb-4">
                     <h2 class="text-xl font-bold text-info font-sans">{{ __('Description') }}</h2>
-                    <p class="mt-2">{{ $convert->description }}</p>
+                    <p class="mt-2">{{ $convert->description }} sdasdsadsd dfdfds fdf df ghfwegfghwejgfwgfh weg efhwg fhegwhgewhfgwekhfgwekhfgewgfewgfweufwegdeohxwejroiewxjhuioehuiehfuyh</p>
                 </div>
             @endif
         </div>
@@ -66,6 +66,7 @@
                     <x-table>
                         <x-table-header>
                             <x-table-header-cell>{{ __('Step') }}</x-table-header-cell>
+                            <x-table-header-cell>{{ __('Name') }}</x-table-header-cell>
                             <x-table-header-cell>{{ __('Status') }}</x-table-header-cell>
                             <x-table-header-cell>{{ __('Details') }}</x-table-header-cell>
                             <x-table-header-cell>{{ __('Started At') }}</x-table-header-cell>
@@ -75,6 +76,7 @@
                             @foreach ($convert->progresses as $progress)
                                 <x-table-row :class="$loop->even ? 'bg-light' : 'bg-white'">
                                     <x-table-cell>{{ $progress->step }}</x-table-cell>
+                                    <x-table-cell>{{ $progress->name }}</x-table-cell>
                                     <x-table-cell>
                                         <x-status-badge :status="$progress->status" />
                                     </x-table-cell>

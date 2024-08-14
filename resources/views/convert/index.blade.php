@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-header-content>
-        {{ __('Converts') }}
+        {{ __('My Converts') }}
         <x-slot name="button">
             <x-link href="{{ route('converts.create') }}">
                 {{ __('New Convert') }}
@@ -9,7 +9,7 @@
     </x-header-content>
 
     <x-container>
-        <x-h-info>{{ __('My Converts') }}</x-h-info>
+        {{-- <x-h-info>{{ __('My Converts') }}</x-h-info> --}}
 
         @if (is_null($converts) || $converts->isEmpty())
             <x-no-records>
