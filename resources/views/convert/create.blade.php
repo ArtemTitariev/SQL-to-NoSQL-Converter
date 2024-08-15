@@ -33,45 +33,35 @@
             <div class="space-y-4">
                 <h2 class="text-md font-semibold flex items-center text-accent">
                     <x-icons.info />
-                    Загальні вимоги:
+                    {{ __('modals.general_requirements') }}
                 </h2>
-                <p>Спершу оберіть тип реляційної бази даних та надайте параметри для підключення до неї. Також
-                    надайте
-                    параметри для підключення до бази даних MongoDB.</p>
-                <p>Конвертер протестує підключення.</p>
-                <p>Будь ласка, переконайтесь, що в обидві бази даних не вносяться будь які зміни (оновлення даних,
-                    індексів, зв’язків) під час конфігурування або виконання конвертації.</p>
+                <p>{{ __('modals.provide_params') }}</p>
+                <p>{{ __('modals.test_connections') }}</p>
+                <p>{{ __('modals.ensure_no_changes') }}</p>
 
                 <h2 class="text-md font-semibold flex items-center text-accent">
                     <x-icons.info />
-                    Вимоги до реляційної бази даних:
+                    {{ __('modals.sql_requirements') }}
                 </h2>
                 <ul class="list-disc pl-6 space-y-2">
-                    <li><strong>Права доступу:</strong> Користувач бази даних повинен мати доступ на вибірку даних з
-                        цільової бази даних.</li>
+                    <li><strong>{{ __('modals.access_rights') }} </strong> {{ __('modals.sql_acces_rights') }}</li>
 
-                    <li><strong>Зовнішні ключі:</strong> Всі зовнішні ключі (<code>foreign keys</code>) мають бути в
-                        межах однієї
-                        бази даних. Зовнішні ключі на інші бази даних будуть проігноровані.</li>
-                    <li><strong>Консистентність даних:</strong> Якщо таблиця має зовнішній ключ (<code>foreign
-                            key</code>), то всі
-                        його поля мають бути або <code>nullable</code>, або <code>non-nullable</code>
-                        (<code>required</code>).
-                        Комбінація може порушити цілісність даних і алгоритм не зможе коректно обробити такий
-                        зв'язок.</li>
+                    <li><strong>{{ __('modals.foreign_keys') }} </strong> {!! __('modals.sql_foreign_keys') !!}</li>
+                    <li><strong>{{ __('modals.data_consistency') }}</strong> {!! __('modals.nosql_data_consistency') !!}</li>
                 </ul>
 
                 <h2 class="text-md font-semibold flex items-center text-accent">
                     <x-icons.info />
-                    Вимоги до нереляційної бази даних:
+                    {{ __('modals.nosql_requirements') }}
                 </h2>
                 <ul class="list-disc pl-6 space-y-2">
-                    <li>Переконайтесь, що база даних MongoDB не містить важливі для Вас дані.</li>
-                    <li><strong>Для уникнення конфліктів, конвертер буде видаляти колекції з такою ж назвою, як
-                            таблиці реляційної бази даних.</strong></li>
-                    <li><strong>Користувач MongoDB повинен мати роль <code>readWrite</code> або
-                            <code>dbAdmin</code></strong> (для видалення конфліктних колекцій, створення нових
-                        колекцій та вставки документів).</li>
+                    <li><strong>{{ __('modals.access_rights') }}</strong>
+                        {!! __('modals.nosql_acces_rights') !!}</li>
+                    <li><strong>{{ __('modals.lack_of_important_data:') }} </strong>
+                        {{ __('modals.nosql_lack_of_important_data:') }}</li>
+
+                    <li><strong>{{ __('modals.avoiding_conflicts:') }}</strong>
+                        {{ __('modals.nosql_avoiding_conflicts:') }}</li>
                 </ul>
 
             </div>
