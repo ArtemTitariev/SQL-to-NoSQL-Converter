@@ -1,18 +1,16 @@
 <?php
 
-if (! function_exists('values')) {
+use Carbon\Carbon;
+
+if (! function_exists('datetimeToStr')) {
     /**
      * Return all the values of an array without indexes.
      * @var array $data
      * 
      * @return array
      */
-    function values(array &$data) {
-        $result = [];
-        foreach ($data as $k => $v){
-            array_push($result, $v);
-        }
-
-        return $result;
+    function datetimeToStr(Carbon $carbon): string
+    {
+        return $carbon->format('Y-m-d H:i:s');
     }
 }
