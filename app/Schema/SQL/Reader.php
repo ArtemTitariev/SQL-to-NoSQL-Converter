@@ -142,10 +142,11 @@ class Reader
      * 
      * @return array
      */
-    private function getFilteredForeignKeys(string $tableName)
+    private function getFilteredForeignKeys(string $tableName, array &$allTables)
     {
         $foreignKeys = $this->getForeignKeys($tableName);
-        $tableNames = array_flip($this->getTableListing());
+        // $tableNames = array_flip($this->getTableListing());
+        $tableNames = array_flip($allTables);
 
         return array_filter($foreignKeys, fn ($fK) => isset($tableNames[$fK['foreign_table']]));
     }
@@ -189,11 +190,11 @@ class Reader
      * 
      * @return array
      */
-    public function getForeignKeysWithRelationType(string $tableName): array
+    public function getForeignKeysWithRelationType(string $tableName, array &$allTables): array
     {
         $relationTypes = config('constants.RELATION_TYPES');
 
-        $foreignKeys = $this->getFilteredForeignKeys($tableName);
+        $foreignKeys = $this->getFilteredForeignKeys($tableName, $allTables);
         $indexes = $this->getIndexes($tableName);
         
         // Create an associative array to quickly look up unique indexes

@@ -44,12 +44,14 @@ class Mapper
     {
         $tables = $this->reader->getTables();
 
+        $tableListing = $this->reader->getTableListing();
+
         foreach (array_chunk($tables, 10) as $tableChunk) {
             $database = $this->sqlDatabase;
 
-            DB::transaction(function () use ($database, $tableChunk) {
+            DB::transaction(function () use ($database, $tableChunk, $tableListing) {
                 foreach ($tableChunk as $table) {
-                    $this->mapTable($database, $table);
+                    $this->mapTable($database, $table, $tableListing);
                 }
             });
         }
@@ -59,7 +61,7 @@ class Mapper
         });
     }
 
-    protected function mapTable(SQLDatabase $sqlDatabase, array $tableData)
+    protected function mapTable(SQLDatabase $sqlDatabase, array $tableData, array &$allTables)
     {
         $table = new Table([
             'sql_database_id' => $sqlDatabase->id,
@@ -67,13 +69,13 @@ class Mapper
             'primary_key' => $this->reader->getPrimaryKey($tableData['name']),
         ]);
         $table->save();
-        
+
         $columns = $this->reader->getColumns($tableData['name']);
         foreach ($columns as $column) {
             $this->mapColumn($table, $column);
         }
 
-        $foreignKeys = $this->reader->getForeignKeysWithRelationType($tableData['name']);
+        $foreignKeys = $this->reader->getForeignKeysWithRelationType($tableData['name'], $allTables);
         foreach ($foreignKeys as $foreignKey) {
             $this->mapForeignKey($table, $foreignKey);
         }
@@ -113,8 +115,8 @@ class Mapper
         $tablesForeignKeys = $this->reader->getTablesAndForeignKeys();
 
         $circularRefs = CircularRefsDetector::detect($tablesForeignKeys);
-        
-        foreach($circularRefs as $ref) {
+
+        foreach ($circularRefs as $ref) {
             CircularRef::create([
                 'sql_database_id' => $this->sqlDatabase->id,
                 'circular_refs' => $ref,

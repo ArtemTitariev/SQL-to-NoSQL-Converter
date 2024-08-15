@@ -11,6 +11,7 @@ class MySQLRules implements RdbDataTypeRulesInterface
     protected $rules = [
         //bool
         'tinyint(1)' => ['bool', 'int', 'string'],
+        'tinyint(1) unsigned' => ['bool', 'int', 'string'],
         'bool' => ['bool', 'int', 'string'],
         
         //integer numbers
