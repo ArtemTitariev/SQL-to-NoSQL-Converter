@@ -24,11 +24,18 @@ class Reader
     ];
 
     /**
+     * @var array
+     */
+    private $tableNames;
+
+    /**
      * @var Illuminate\Database\Schema\Builder $builder;
      */
     public function __construct(Builder $builder)
     {
         $this->builder = $builder;
+
+        $this->tableNames = array_flip($this->getTableListing());
     }
 
     /**
@@ -41,6 +48,16 @@ class Reader
         return $this->builder->getTables();
     }
 
+    // /**
+    //  * Get the names of the tables that belong to the database.
+    //  * 
+    //  * @return array
+    //  */
+    // public function getTableNames(): array
+    // {
+    //     return $this->tableListing;
+    // }
+    
     /**
      * Get the names of the tables that belong to the database.
      * 
@@ -142,13 +159,13 @@ class Reader
      * 
      * @return array
      */
-    private function getFilteredForeignKeys(string $tableName, array &$allTables)
+    private function getFilteredForeignKeys(string $tableName)
     {
         $foreignKeys = $this->getForeignKeys($tableName);
         // $tableNames = array_flip($this->getTableListing());
-        $tableNames = array_flip($allTables);
+        // $tableNames = array_flip($this->tableListing);
 
-        return array_filter($foreignKeys, fn ($fK) => isset($tableNames[$fK['foreign_table']]));
+        return array_filter($foreignKeys, fn ($fK) => isset($this->tableNames[$fK['foreign_table']]));
     }
 
     /*
@@ -190,11 +207,11 @@ class Reader
      * 
      * @return array
      */
-    public function getForeignKeysWithRelationType(string $tableName, array &$allTables): array
+    public function getForeignKeysWithRelationType(string $tableName): array
     {
         $relationTypes = config('constants.RELATION_TYPES');
 
-        $foreignKeys = $this->getFilteredForeignKeys($tableName, $allTables);
+        $foreignKeys = $this->getFilteredForeignKeys($tableName);
         $indexes = $this->getIndexes($tableName);
         
         // Create an associative array to quickly look up unique indexes

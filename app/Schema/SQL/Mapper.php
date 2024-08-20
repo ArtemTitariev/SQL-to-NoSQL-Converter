@@ -44,14 +44,12 @@ class Mapper
     {
         $tables = $this->reader->getTables();
 
-        $tableListing = $this->reader->getTableListing();
-
         foreach (array_chunk($tables, 10) as $tableChunk) {
             $database = $this->sqlDatabase;
 
-            DB::transaction(function () use ($database, $tableChunk, $tableListing) {
+            DB::transaction(function () use ($database, $tableChunk) {
                 foreach ($tableChunk as $table) {
-                    $this->mapTable($database, $table, $tableListing);
+                    $this->mapTable($database, $table);
                 }
             });
         }
@@ -61,7 +59,7 @@ class Mapper
         });
     }
 
-    protected function mapTable(SQLDatabase $sqlDatabase, array $tableData, array &$allTables)
+    protected function mapTable(SQLDatabase $sqlDatabase, array $tableData)
     {
         $table = new Table([
             'sql_database_id' => $sqlDatabase->id,
@@ -75,7 +73,7 @@ class Mapper
             $this->mapColumn($table, $column);
         }
 
-        $foreignKeys = $this->reader->getForeignKeysWithRelationType($tableData['name'], $allTables);
+        $foreignKeys = $this->reader->getForeignKeysWithRelationType($tableData['name']);
         foreach ($foreignKeys as $foreignKey) {
             $this->mapForeignKey($table, $foreignKey);
         }
