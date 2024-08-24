@@ -103,8 +103,9 @@
                 <h2 class="text-l font-semibold text-secondary">{{ __('Additional') }}</h2>
                 <div class="mt-4 gap-6">
                     <x-input-label for="description" :value="__('Provide short description')" />
-                    <x-textarea id="description" name="description" value="{{ old('description') }}" type="text"
-                        class="mt-1 block w-full" />
+                    <x-textarea id="description" name="description" type="text"
+                        class="mt-1 block w-full">{{ old('description') }}
+                    </x-textarea>
                     <x-input-error class="mt-2" :messages="$errors->get('description')" />
                 </div>
             </div>

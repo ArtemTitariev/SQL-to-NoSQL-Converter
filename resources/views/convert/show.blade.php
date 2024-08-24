@@ -1,11 +1,13 @@
 <x-app-layout>
     <x-header-content>
         {{ __('Conversion Details') }}
-        <x-slot name="button">
-            <x-link href="{{ route('convert.resume', ['convert' => $convert]) }}">
-                {{ __('Continue') }}
-            </x-link>
-        </x-slot>
+        @if ($convert->isConfiguring())
+            <x-slot name="button">
+                <x-link href="{{ route('convert.resume', ['convert' => $convert]) }}">
+                    {{ __('Continue Configuring') }}
+                </x-link>
+            </x-slot>
+        @endif
     </x-header-content>
 
     <x-container>
@@ -105,13 +107,20 @@
                             @foreach ($convert->progresses as $progress)
                                 <x-table-row :class="$loop->even ? 'bg-light' : 'bg-white'">
                                     <x-table-cell>{{ $progress->step }}</x-table-cell>
-                                    <x-table-cell>{{ $progress->name }}</x-table-cell>
+                                    <x-table-cell>{{ __($progress->name) }}</x-table-cell>
                                     <x-table-cell>
                                         <x-status-badge :status="$progress->status" />
                                     </x-table-cell>
                                     <x-table-cell>{{ __($progress->details) }}</x-table-cell>
                                     <x-table-cell>{{ datetimeToStr($progress->created_at) }}</x-table-cell>
-                                    <x-table-cell>{{ datetimeToStr($progress->updated_at) }}</x-table-cell>
+                                    <x-table-cell>
+                                        @if ($progress->isCompletedOrError())
+                                            {{ datetimeToStr($progress->updated_at) }}
+                                        @else
+                                            N/A
+                                        @endif
+
+                                    </x-table-cell>
                                 </x-table-row>
                             @endforeach
                         </tbody>

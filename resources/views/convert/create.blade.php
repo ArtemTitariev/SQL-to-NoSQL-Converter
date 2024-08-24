@@ -10,7 +10,7 @@
     </x-header-content>
 
     <x-info-block class="mb-0">
-        {{ __('texts.store_connection_params_policy') }}
+        {{ __('messages.store_connection_params_policy') }}
     </x-info-block>
 
     <x-big-form-container>

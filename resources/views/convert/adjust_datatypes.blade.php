@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-header-content>
-        {{ __('Adjust Datatypes') }}
+        {{ __('Adjust Data Types') }}
     </x-header-content>
 
 </x-app-layout>
