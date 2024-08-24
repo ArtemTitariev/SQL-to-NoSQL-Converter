@@ -2,6 +2,8 @@
 
 namespace App\Schema\DataTypes;
 
+use function PHPSTORM_META\type;
+
 trait HasColumnNamePattern {
     
     protected function matchPattern(string $pattern, string $typeName, string $type): bool

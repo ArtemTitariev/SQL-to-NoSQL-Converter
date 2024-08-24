@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ConversionProgress extends Model
 {
     use HasFactory;
-    
+
     protected $table = 'conversion_progresses';
 
     public const STATUSES = [
@@ -21,9 +21,14 @@ class ConversionProgress extends Model
     ];
 
     protected $fillable = [
-        'id', 'convert_id', 'step', 'name', 
-        'status', 'details',
-        'created_at', 'updated_at',
+        'id',
+        'convert_id',
+        'step',
+        'name',
+        'status',
+        'details',
+        'created_at',
+        'updated_at',
     ];
 
     protected $casts = [
@@ -35,5 +40,10 @@ class ConversionProgress extends Model
     public function convert(): BelongsTo
     {
         return $this->belongsTo(Convert::class);
+    }
+
+    public function canContinue(): bool
+    {
+        return $this->status === static::STATUSES['CONFIGURING'];
     }
 }

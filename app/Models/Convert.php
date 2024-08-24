@@ -20,13 +20,13 @@ class Convert extends Model
         'COMPLETED' => 'Completed',
         'ERROR' => 'Error',
     ];
-    
+
     protected $fillable = [
         'user_id',
         'sql_database_id',
         'mongo_database_id',
         'description',
-        'created_at', 
+        'created_at',
         'updated_at',
     ];
 
@@ -55,9 +55,16 @@ class Convert extends Model
         return $this->hasMany(ConversionProgress::class);
     }
 
-    public function getLastProgress(): ?ConversionProgress
+    public function lastProgress(): ?ConversionProgress
     {
         return $this->progresses()->orderBy('step', 'desc')->first();
+    }
+
+    public function lastCompletedStep(): ?int
+    {
+        return $this->progresses()
+            ->where('status', ConversionProgress::STATUSES['COMPLETED'])
+            ->max('step');
     }
 
     // public function failStep(int $step, string $details)

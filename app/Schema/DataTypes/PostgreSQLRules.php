@@ -7,7 +7,7 @@ use App\Models\SQLSchema\Column;
 class PostgreSQLRules implements RdbDataTypeRulesInterface
 {
     use HasColumnNamePattern;
-    
+
     protected $rules = [
         //bool
         'boolean' => ['bool', 'string'],
@@ -20,7 +20,7 @@ class PostgreSQLRules implements RdbDataTypeRulesInterface
         'bigserial' => ['int', 'string'],
         'serial' => ['int', 'string'],
         'smallserial' => ['int', 'string'],
-        
+
         // fractional numbers
         'decimal' => ['decimal128', 'string'],
         'numeric' => ['decimal128', 'string'],
@@ -29,7 +29,9 @@ class PostgreSQLRules implements RdbDataTypeRulesInterface
 
         // strings
         'character' => ['string'],
+        'char' => ['string'],
         'character varying' => ['string'],
+        'varchar' => ['string'],
         'bpchar' => ['string'],
         'text' => ['string'],
 
@@ -57,15 +59,15 @@ class PostgreSQLRules implements RdbDataTypeRulesInterface
         foreach ($this->rules as $pattern => $types) {
             if ($this->matchPattern($pattern, $typeName, $type)) {
                 return $types;
-            } else {
-                throw new UnsupportedDataTypeException(
-                    $type,
-                    __(
-                        ":driver :dataType data type is not supported.",
-                        ['driver' => 'PostgreSQL', 'dataType' => $typeName]
-                    )
-                );
             }
         }
+        
+        throw new UnsupportedDataTypeException(
+            $type,
+            __(
+                ":driver :dataType data type is not supported.",
+                ['driver' => 'PostgreSQL', 'dataType' => $type]
+            )
+        );
     }
 }
