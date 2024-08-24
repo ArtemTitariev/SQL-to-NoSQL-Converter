@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', [
             \App\Http\Middleware\LocalizationMiddleware::class,
         ]);
+
+        $middleware->alias([
+            'check.step.access' =>  \App\Http\Middleware\CheckStepAccess::class
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
