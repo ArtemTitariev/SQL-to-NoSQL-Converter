@@ -67,21 +67,24 @@ class Convert extends Model
             ->max('step');
     }
 
-    // public function failStep(int $step, string $details)
-    // {
-    //     ConversionProgress::updateOrCreate(['convert_id' => $this->id, 'step' => $step],
-    //     [
-    //         'is_completed' => false,
-    //         'details' => $details,
-    //     ]);
-    // }
+    public function clearData()
+    {
+        $sqlDatabase = $this->sqlDatabase;
+        $sqlDatabase->circularRefs()->delete();
+        $sqlDatabase->tables()->delete();
 
-    // public function completeStep(int $step, string $details)
-    // {
-    //     ConversionProgress::updateOrCreate(['convert_id' => $this->id, 'step' => $step],
-    //     [
-    //         'is_completed' => true,
-    //         'details' => $details,
-    //     ]);
-    // }
+        $mongoDatabase = $this->mongoDatabase;
+        $mongoDatabase->collections()->delete();
+    }
+
+    public function fail()
+    {
+        $this->status = static::STATUSES['ERROR'];
+        $this->save();
+    }
+
+    public function isConfiguring(): bool 
+    {
+        return $this->status == static::STATUSES['CONFIGURING'];
+    }
 }

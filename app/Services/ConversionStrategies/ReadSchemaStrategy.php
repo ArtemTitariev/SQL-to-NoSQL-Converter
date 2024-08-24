@@ -22,21 +22,19 @@ class ReadSchemaStrategy implements ConversionStrategyInterface
 
         $mapper->mapSchema($sqlDatabase);
     } catch (\Exception $e) {
+        $convert->clearData();
 
-        // clear data
-        $sqlDatabase->circularRefs()->delete();
-        $sqlDatabase->tables()->delete();
-
-        return [
-            'status' => 'failed',
-            'error' => $e->getMessage(),
-        ];
+        // return [
+        //     'status' => 'failed',
+        //     'error' => $e->getMessage(),
+        // ];
+        throw $e;
     }
 
         // Return success response
         return [
             'status' => 'success',
-            'details' => 'Retational database schema has been analyzed.',
+            'details' => 'Relational database schema has been analyzed.',
             'next' => config('convert_steps.read_schema.next'),
         ];
     }

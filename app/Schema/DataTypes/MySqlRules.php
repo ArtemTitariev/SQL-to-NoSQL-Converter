@@ -67,8 +67,8 @@ class MySQLRules implements RdbDataTypeRulesInterface
         throw new UnsupportedDataTypeException(
             $type,
             __(
-                ":driver :dataType data type is not supported.",
-                ['driver' => 'MySQL', 'dataType' => $typeName]
+                "messages.unsupported_data_type",
+                ['driver' => 'MySQL', 'dataTypeName' => $typeName, 'dataType' => $type]
             )
         );
     }

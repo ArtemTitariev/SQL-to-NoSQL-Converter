@@ -54,9 +54,12 @@ class ConvertController extends Controller
     {
         $convert = new Convert();
 
-        // Execute the first step
-        $result = $this->conversionStepExecutor->firstStep($convert, $request);
-
+        try {
+            // Execute the first step
+            $result = $this->conversionStepExecutor->firstStep($convert, $request);
+        } catch (\Exception $e) {
+            return redirect()->route('converts.show', compact('convert'))->withErrors(['error' => $e->getMessage()]);
+        }
         // Handle the result to determine the next step
         return StepResultHandler::handle($result);
     }
@@ -100,8 +103,13 @@ class ConvertController extends Controller
 
     public function storeStep(Request $request, Convert $convert, string $step)
     {
-        // Валідація та збереження даних для кроку $step
-        return $this->conversionStepExecutor->executeStep($convert, $request, $step);
+        try {
+            // Валідація та збереження даних для кроку $step
+            return $this->conversionStepExecutor
+                ->executeStep($convert, $request, $step);
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+        }
     }
 
     /**

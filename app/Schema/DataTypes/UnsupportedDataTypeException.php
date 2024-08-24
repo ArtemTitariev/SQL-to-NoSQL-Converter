@@ -17,9 +17,9 @@ class UnsupportedDataTypeException extends \InvalidArgumentException
         $code = 0,
         \Throwable $previous = null
     ) {
-        $this->dataType = $dataType;
-        
         parent::__construct($message, $code, $previous);
+        
+        $this->dataType = $dataType;
     }
 
     

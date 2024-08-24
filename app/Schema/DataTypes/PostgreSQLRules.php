@@ -65,8 +65,8 @@ class PostgreSQLRules implements RdbDataTypeRulesInterface
         throw new UnsupportedDataTypeException(
             $type,
             __(
-                ":driver :dataType data type is not supported.",
-                ['driver' => 'PostgreSQL', 'dataType' => $type]
+                "messages.unsupported_data_type",
+                ['driver' => 'PostgreSQL', 'dataTypeName' => $typeName, 'dataType' => $type]
             )
         );
     }

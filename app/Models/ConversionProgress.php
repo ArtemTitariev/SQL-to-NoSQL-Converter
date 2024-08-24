@@ -46,4 +46,34 @@ class ConversionProgress extends Model
     {
         return $this->status === static::STATUSES['CONFIGURING'];
     }
+
+    /**
+     * Перевіряє, чи є статус завершеним.
+     *
+     * @return bool
+     */
+    public function isCompleted()
+    {
+        return $this->status === self::STATUSES['COMPLETED'];
+    }
+
+    /**
+     * Перевіряє, чи є статус помилковим.
+     *
+     * @return bool
+     */
+    public function isError()
+    {
+        return $this->status === self::STATUSES['ERROR'];
+    }
+
+    /**
+     * Перевіряє, чи є статус завершеним або помилковим.
+     *
+     * @return bool
+     */
+    public function isCompletedOrError()
+    {
+        return $this->isCompleted() || $this->isError();
+    }
 }

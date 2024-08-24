@@ -57,15 +57,6 @@ class InitializeConversionStrategy implements ConversionStrategyInterface
             'description' => $request->validated('description'),
             'status' => Convert::STATUSES['CONFIGURING'],
         ])->save();
-        
-        // // Log the progress
-        // ConversionProgress::create([
-        //     'convert_id' => $convert->id,
-        //     'step' => 1,
-        //     'name' => config('convert_steps.initialize_conversion.name'),
-        //     'status' => ConversionProgress::STATUSES['COMPLETED'],
-        //     'details' => 'The databases connections have been successfully tested. The parameters have been saved.',
-        // ]);
 
         // Return success response
         return [
