@@ -2,11 +2,15 @@
     <x-header-content>
         {{ __('Conversion Details') }}
         <x-slot name="button">
-            <x-link href="{{ route('converts.index') }}">
+            <x-link href="{{ route('convert.resume', ['convert' => $convert]) }}">
                 {{ __('Continue') }}
             </x-link>
         </x-slot>
     </x-header-content>
+
+    <x-container>
+        <x-error-block />
+    </x-container>
 
     <x-container>
         {{-- <x-h-info>{{ __('Conversion Details') }}</x-h-info> --}}
@@ -17,7 +21,7 @@
                 <div class="p-4 bg-light rounded-lg shadow-sm flex items-center">
                     <div class="ml-4">
                         <h2 class="text-xl font-semibold text-secondary">{{ __('Status') }}</h2>
-                        <x-status-badge :status="$convert->status" class="mt-3 font-semibold"/>
+                        <x-status-badge :status="$convert->status" class="mt-3 font-semibold" />
                     </div>
                 </div>
 
@@ -37,46 +41,46 @@
             </div>
         </div>
 
-            <!-- Convert Details -->
-            <div class="bg-white p-6 rounded-lg shadow-lg mb-5">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-                    <!-- SQL Database -->
-                    <div class="p-4 bg-light rounded-lg shadow-sm flex items-center">
-                        <div class="flex-shrink-0">
+        <!-- Convert Details -->
+        <div class="bg-white p-6 rounded-lg shadow-lg mb-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                <!-- SQL Database -->
+                <div class="p-4 bg-light rounded-lg shadow-sm flex items-center">
+                    <div class="flex-shrink-0">
 
-                            <img src="{{ asset("database-icons/{$convert->sqlDatabase->driver}.png") }}"
-                                alt="{{ $convert->sqlDatabase->driver }}" class="w-16 h-16 object-cover">
+                        <img src="{{ asset("database-icons/{$convert->sqlDatabase->driver}.png") }}"
+                            alt="{{ $convert->sqlDatabase->driver }}" class="w-16 h-16 object-cover">
 
-                        </div>
-                        <div class="ml-4">
-                            <h2 class="text-xl font-semibold text-secondary">{{ __('SQL Database') }}</h2>
-                            <p class="mt-2"><strong>{{ __('Driver:') }}</strong> {{ $convert->sqlDatabase->driver }}
-                            </p>
-                            <p><strong>{{ __('Database:') }}</strong> {{ $convert->sqlDatabase->database }}</p>
-                        </div>
                     </div>
-                    <!-- Mongo Database -->
-                    <div class="p-4 bg-light rounded-lg shadow-sm flex items-center">
-                        <div class="flex-shrink-0">
-                            <img src="{{ asset('database-icons/MongoDB.png') }}"
-                                alt="{{ $convert->mongoDatabase->driver }}" class="w-16 h-16 object-cover">
-                        </div>
-                        <div class="ml-4">
-                            <h2 class="text-xl font-semibold text-secondary">{{ __('MongoDB Database') }}</h2>
-                            <p class="mt-2"><strong>{{ __('Database:') }}</strong>
-                                {{ $convert->mongoDatabase->database }}</p>
-                        </div>
+                    <div class="ml-4">
+                        <h2 class="text-xl font-semibold text-secondary">{{ __('SQL Database') }}</h2>
+                        <p class="mt-2"><strong>{{ __('Driver:') }}</strong> {{ $convert->sqlDatabase->driver }}
+                        </p>
+                        <p><strong>{{ __('Database:') }}</strong> {{ $convert->sqlDatabase->database }}</p>
+                    </div>
+                </div>
+                <!-- Mongo Database -->
+                <div class="p-4 bg-light rounded-lg shadow-sm flex items-center">
+                    <div class="flex-shrink-0">
+                        <img src="{{ asset('database-icons/MongoDB.png') }}"
+                            alt="{{ $convert->mongoDatabase->driver }}" class="w-16 h-16 object-cover">
+                    </div>
+                    <div class="ml-4">
+                        <h2 class="text-xl font-semibold text-secondary">{{ __('MongoDB Database') }}</h2>
+                        <p class="mt-2"><strong>{{ __('Database:') }}</strong>
+                            {{ $convert->mongoDatabase->database }}</p>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Convert Description -->
-            @if ($convert->description)
-                <div class="bg-white p-6 rounded-lg shadow-lg mt-5 mb-5">
-                    <h2 class="text-xl font-bold text-info font-sans">{{ __('Description') }}</h2>
-                    <p class="mt-2">{{ $convert->description }}</p>
-                </div>
-            @endif
+        <!-- Convert Description -->
+        @if ($convert->description)
+            <div class="bg-white p-6 rounded-lg shadow-lg mt-5 mb-5">
+                <h2 class="text-xl font-bold text-info font-sans">{{ __('Description') }}</h2>
+                <p class="mt-2">{{ $convert->description }}</p>
+            </div>
+        @endif
 
         <!-- Progress Information -->
         <div class="bg-white p-6 rounded-lg shadow-lg">

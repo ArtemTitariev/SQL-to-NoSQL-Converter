@@ -8,11 +8,6 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 
 use Illuminate\Support\Facades\DB;
-use App\Schema\SQL\Reader;
-use App\Schema\SQL\Mapper;
-use App\Models\SQLSchema\SQLDatabase;
-use App\Models\MongoSchema\MongoDatabase;
-use App\Services\DatabaseConnections\ConnectionCreator;
 
 Route::get('language/{locale}', function ($locale) {
     
@@ -37,6 +32,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('converts', ConvertController::class)->except([
         'edit', 'update',
     ]);
+
+    Route::get('/converts/{convert}/resume', [ConvertController::class, 'resume'])->name('convert.resume');
+    Route::middleware(['check.step.access'])->group(function () {
+        Route::get('/converts/{convert}/steps/{step}', [ConvertController::class, 'showStep'])->name('convert.step.show');
+        Route::post('/converts/{convert}/steps/{step}', [ConvertController::class, 'storeStep'])->name('convert.step.store');
+    });
+
 });
 
 Route::middleware('auth')->group(function () {
@@ -50,28 +52,6 @@ Route::view('/test', 'test');
 require __DIR__.'/auth.php';
 
 // FOR TESTING ONLY------------------
-Route::get('/read', function(Request $request) {
-    $id = $request->input('id');
-    $database = SQLDatabase::find($id);
-    try {
-        $connection = ConnectionCreator::create($database);
-        
-        $reader = new Reader($connection->getSchemaBuilder());
-        $mapper = new Mapper($database, $reader);
-
-        $mapper->mapSchema($database);
-    } catch (\Exception $e) {
-
-        // clear data
-        $convert = Convert::find($id);
-        $sqlDatabase = $convert->sqlDatabase;
-        $sqlDatabase->circularRefs()->delete();
-        $sqlDatabase->tables()->delete();
-
-        return "Error: " . $e->getMessage();
-    }
-    return 'done';
-});
 
 Route::get('/delete', function(Request $request) {
     $id = $request->input('id');
@@ -96,4 +76,12 @@ Route::get('/delete-data', function(Request $request) {
     $mongoDatabase = $convert->mongoDatabase;
     $mongoDatabase->collections()->delete();
     return 'data deleted';
+});
+
+Route::get('/delete-all', function(Request $request) {
+
+    
+    DB::table('converts')->truncate();
+
+    return 'all converts deleted';
 });
