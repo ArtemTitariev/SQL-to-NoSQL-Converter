@@ -17,6 +17,8 @@ return [
         'name' => 'Analyzing the relational database schema',
         'next' => 'adjust_datatypes',
         'is_manual' => false
+        // 'is_manual' => true,
+        // 'view' => 'convert.read_schema-loading'
     ],
 
     'adjust_datatypes' => [ // вибір типів даних, збереження схеми MongoDB

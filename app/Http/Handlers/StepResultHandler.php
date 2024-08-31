@@ -6,15 +6,21 @@ class StepResultHandler
 {
     public static function handle($result)
     {
-        if (is_array($result) && $result['status'] === 'failed') {
-            return back()->withInput()->withErrors($result['error']);
+        if (
+            $result instanceof \App\Services\ConversionStrategies\StrategyResult &&
+            $result->isFailed()
+        ) {
+            return back()->withInput()->withErrors($result->getDetails());
         }
 
-        if ($result instanceof \Illuminate\Http\RedirectResponse) {
+        if (
+            $result instanceof \Illuminate\Http\RedirectResponse ||
+            $result instanceof \Illuminate\Contracts\View\View
+        ) {
             return $result;
         }
 
-        dd('StepResultHendler not array and not redirect'); //------------
+        dd('StepResultHendler not StrategyResult, not redirect and not view'); //------------
         return redirect()->route('converts.index');
     }
 }

@@ -7,15 +7,14 @@ use Illuminate\Http\Request;
 
 class EtlStrategy implements ConversionStrategyInterface
 {
-    public function execute(Convert $convert, Request $request, array $extraParams = [])
+    public function execute(Convert $convert, Request $request, array $extraParams = []): StrategyResult
     {
         // Логіка для кроку etl
 
         // Return success response
-        return [
-            'status' => 'success',
-            'details' => 'elt srategy.',
-            'next' => null,
-        ];
+        return new StrategyResult (
+            result: StrategyResult::STATUSES['COMPLETED'],
+            details: 'elt strategy.',
+        );
     }
 }

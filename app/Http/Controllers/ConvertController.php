@@ -53,7 +53,7 @@ class ConvertController extends Controller
     public function store(StoreConvertRequest $request)
     {
         $convert = new Convert();
-
+        set_time_limit(10);
         try {
             // Execute the first step
             $result = $this->conversionStepExecutor->firstStep($convert, $request);
@@ -84,7 +84,7 @@ class ConvertController extends Controller
         if ($lastStep->canContinue()) {
             return redirect()->route('convert.step.show', ['convert' => $convert, 'step' => 'adjust_datatypes']);
         } else {
-            return redirect()->route('convert.show', ['convert' => $convert])->withErrors(['error' => "Can't resume this step"]);
+            return redirect()->route('converts.show', ['convert' => $convert])->withErrors(['error' => "Can't resume this step"]);
         }
     }
 

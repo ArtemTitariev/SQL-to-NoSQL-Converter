@@ -67,6 +67,9 @@ class Convert extends Model
             ->max('step');
     }
 
+    /**
+     * Delete data on database schemas. Database connection parameters remain.
+     */
     public function clearData()
     {
         $sqlDatabase = $this->sqlDatabase;
@@ -77,6 +80,9 @@ class Convert extends Model
         $mongoDatabase->collections()->delete();
     }
 
+    /**
+     * Set status as `error`
+     */
     public function fail()
     {
         $this->status = static::STATUSES['ERROR'];

@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Auth;
 
 class InitializeConversionStrategy implements ConversionStrategyInterface
 {
-    public function execute(Convert $convert, Request $request, array $extraParams = [])
+    public function execute(Convert $convert, Request $request, array $extraParams = []): StrategyResult
     {
 
         $sqlDatabaseParams = $request->validated('sql_database');
@@ -28,10 +28,14 @@ class InitializeConversionStrategy implements ConversionStrategyInterface
             ConnectionTester::testSQLConnection($sqlDatabaseParams);
         } catch (\Exception $e) {
             // throw new \Exception(__('SQL database connection error: ') . $e->getMessage());
-            return [
-                'status' => 'failed',
-                'error' => __('SQL database connection error: ') . $e->getMessage(),
-            ];
+            return new StrategyResult (
+                result: StrategyResult::STATUSES['FAILED'],
+                details: __('SQL database connection error: ') . $e->getMessage(),
+            );
+            // return [
+            //     'status' => 'failed',
+            //     'error' => __('SQL database connection error: ') . $e->getMessage(),
+            // ];
         }
 
         // Test MongoDB connection
@@ -39,10 +43,15 @@ class InitializeConversionStrategy implements ConversionStrategyInterface
             ConnectionTester::testMongoConnection($mongoDatabaseParams);
         } catch (\Exception $e) {
             // throw new \Exception(__('MongoDB connection error: ') . $e->getMessage());
-            return [
-                'status' => 'failed',
-                'error' => __('MongoDB connection error: ') . $e->getMessage(),
-            ];
+            // return [
+            //     'status' => 'failed',
+            //     'error' => 
+            // ];
+            return new StrategyResult (
+                result: StrategyResult::STATUSES['FAILED'],
+                details: __('MongoDB connection error: ') . $e->getMessage(),
+            );
+            
         }
 
         // Create database models
@@ -59,10 +68,15 @@ class InitializeConversionStrategy implements ConversionStrategyInterface
         ])->save();
 
         // Return success response
-        return [
-            'status' => 'success',
-            'details' => 'The databases connections have been successfully tested. The parameters have been saved.',
-            'next' => config('convert_steps.initialize_conversion.next'),
-        ];
+        return new StrategyResult (
+            result: StrategyResult::STATUSES['COMPLETED'],
+            details: 'The databases connections have been successfully tested. The parameters have been saved.',
+            next: config('convert_steps.initialize_conversion.next'),
+        );
+        // return [
+        //     'status' => 'success',
+        //     'details' => 'The databases connections have been successfully tested. The parameters have been saved.',
+        //     'next' => config('convert_steps.initialize_conversion.next'),
+        // ];
     }
 }

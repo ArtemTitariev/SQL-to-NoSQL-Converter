@@ -42,6 +42,11 @@ class ConversionProgress extends Model
         return $this->belongsTo(Convert::class);
     }
 
+    /**
+     * Check if currect step has `configuring` status
+     * 
+     * @return bool
+     */
     public function canContinue(): bool
     {
         return $this->status === static::STATUSES['CONFIGURING'];

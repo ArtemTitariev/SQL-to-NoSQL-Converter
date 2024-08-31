@@ -7,5 +7,5 @@ use Illuminate\Http\Request;
 
 interface ConversionStrategyInterface
 {
-    public function execute(Convert $convert, Request $request, array $extraParams = []);
+    public function execute(Convert $convert, Request $request, array $extraParams = []): StrategyResult;
 }

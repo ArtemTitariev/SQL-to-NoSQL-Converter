@@ -7,15 +7,15 @@ use Illuminate\Http\Request;
 
 class AdjustRelationshipsStrategy implements ConversionStrategyInterface
 {
-    public function execute(Convert $convert, Request $request, array $extraParams = [])
+    public function execute(Convert $convert, Request $request, array $extraParams = []): StrategyResult
     {
         // Логіка для кроку збереження зв'язків
 
         // Return success response
-        return [
-            'status' => 'success',
-            'details' => 'Adjust relationships srategy.',
-            'next' => config('convert_steps.adjust_relationships.next'),
-        ];
+        return new StrategyResult (
+            result: StrategyResult::STATUSES['COMPLETED'],
+            details: 'Adjust relationships strategy.',
+            next: config('convert_steps.adjust_relationships.next'),
+        );
     }
 }
