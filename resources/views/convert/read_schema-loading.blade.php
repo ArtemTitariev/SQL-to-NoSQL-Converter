@@ -16,9 +16,9 @@
             window.Echo.private("users.{{ auth()->user()->id }}.converts.{{ $convert->id }}.ReadSchema").listen("ReadSchema", (event) => {
                 console.log('event');
                 console.log(event);
-                // window.location.href = "{{ route('welcome') }}";
+                window.location.href = "{{ route('convert.resume', [$convert->id]) }}";
             });
-
+            
             window.Echo.private("delivery.{{ auth()->user()->id }}").listen("PackageSent", (event) => {
                 console.log(event);
             });

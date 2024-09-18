@@ -53,7 +53,7 @@ class ConvertController extends Controller
     public function store(StoreConvertRequest $request)
     {
         $convert = new Convert();
-        set_time_limit(10);
+        // set_time_limit(10);
         try {
             // Execute the first step
             $result = $this->conversionStepExecutor->firstStep($convert, $request);
