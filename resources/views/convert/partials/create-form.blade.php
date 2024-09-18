@@ -173,9 +173,15 @@
             });
         });
 
-        // Викликати showFields з поточний вибраним значенням 
-        // одразу після завантаження сторінки
-        const selectedDbType = document.querySelector(radioButtonsSelector + ':checked').value;
-        showFields(selectedDbType);
+        // Прямий виклик showFields після завантаження сторінки з обраним значенням
+        const selectedRadioButton = document.querySelector(radioButtonsSelector + ':checked');
+        if (selectedRadioButton) {
+            showFields(selectedRadioButton.value);
+        }
+
+        // // Викликати showFields з поточний вибраним значенням 
+        // // одразу після завантаження сторінки
+        // const selectedDbType = document.querySelector(radioButtonsSelector + ':checked').value;
+        // showFields(selectedDbType);
     });
 </script>
