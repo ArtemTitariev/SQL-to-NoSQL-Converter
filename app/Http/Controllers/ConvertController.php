@@ -80,12 +80,24 @@ class ConvertController extends Controller
     public function resume(Convert $convert)
     {
         $lastStep = $convert->lastProgress($convert);
-
+        // dd($lastStep);
         if ($lastStep->canContinue()) {
-            return redirect()->route('convert.step.show', ['convert' => $convert, 'step' => 'adjust_datatypes']);
-        } else {
-            return redirect()->route('converts.show', ['convert' => $convert])->withErrors(['error' => "Can't resume this step"]);
+            $steps = config('convert_steps');
+
+            $stepKey = null;
+            foreach ($steps as $key => $stepData) {
+                if ($stepData['name'] === $lastStep->name) {
+                    $stepKey = $key;
+                    break;
+                }
+            }
+            
+            if ($stepKey) {
+                return redirect()->route('convert.step.show', ['convert' => $convert, 'step' => $stepKey]);
+            }
         }
+
+        return redirect()->route('converts.show', ['convert' => $convert])->withErrors(['error' => "Can't resume this step"]);
     }
 
     public function showStep(Request $request, Convert $convert, string $step)
@@ -103,13 +115,13 @@ class ConvertController extends Controller
 
     public function storeStep(Request $request, Convert $convert, string $step)
     {
-        try {
-            // Валідація та збереження даних для кроку $step
-            return $this->conversionStepExecutor
-                ->executeStep($convert, $request, $step);
-        } catch (\Exception $e) {
-            dd($e->getMessage());
-        }
+        // try {
+        // Валідація та збереження даних для кроку $step
+        return $this->conversionStepExecutor
+            ->executeStep($convert, $request, $step);
+        // } catch (\Exception $e) {
+        //     return redirect()->back()->withErrors($e->getMessage());
+        // }
     }
 
     /**

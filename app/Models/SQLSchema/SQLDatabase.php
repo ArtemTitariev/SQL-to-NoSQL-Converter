@@ -6,6 +6,8 @@ use App\Models\Convert;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Crypt;
 
 class SQLDatabase extends Model
@@ -69,19 +71,19 @@ class SQLDatabase extends Model
         );
     }
 
-    public function tables()
+    public function tables(): HasMany
     {
         return $this->hasMany(Table::class, 'sql_database_id', 'id');
     }
 
-    public function circularRefs()
+    public function circularRefs(): HasMany
     {
         return $this->hasMany(CircularRef::class, 'sql_database_id', 'id');
     }
 
-    public function convert()
+    public function convert(): BelongsTo
     {
-        return $this->belongsTo(Convert::class);
+        return $this->belongsTo(Convert::class, 'sql_database_id', 'id');
     }
 
     protected static function boot()

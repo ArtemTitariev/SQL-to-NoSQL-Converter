@@ -4,6 +4,7 @@ namespace App\Models\MongoSchema;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Embedding extends Model
 {
@@ -29,7 +30,7 @@ class Embedding extends Model
         'foreign_fields' => 'array',
     ];
 
-    public function collection()
+    public function collection(): BelongsTo
     {
         return $this->belongsTo(Collection::class);
     }

@@ -4,6 +4,8 @@ namespace App\Models\SQLSchema;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Table extends Model
 {
@@ -19,17 +21,17 @@ class Table extends Model
         'primary_key' => 'array',
     ];
 
-    public function columns()
+    public function columns(): HasMany
     {
         return $this->hasMany(Column::class);
     }
 
-    public function foreignKeys()
+    public function foreignKeys(): HasMany
     {
         return $this->hasMany(ForeignKey::class);
     }
 
-    public function database()
+    public function database()//: BelongsTo
     {
         return $this->belongsTo(SQLDatabase::class, 'sql_database_id', 'id');
     }

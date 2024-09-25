@@ -4,6 +4,7 @@ namespace App\Models\MongoSchema;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Link extends Model
 {
@@ -32,7 +33,7 @@ class Link extends Model
         'old_foreigns' => 'array',
     ];
 
-    public function collection()
+    public function collection(): BelongsTo
     {
         return $this->belongsTo(Collection::class);
     }

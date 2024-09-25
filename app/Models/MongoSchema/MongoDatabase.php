@@ -6,6 +6,8 @@ use App\Models\Convert;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Crypt;
 
 class MongoDatabase extends Model
@@ -48,12 +50,12 @@ class MongoDatabase extends Model
         );
     }
 
-    public function collections()
+    public function collections(): HasMany
     {
         return $this->hasMany(Collection::class, 'mongo_database_id', 'id');
     }
 
-    public function convert() {
+    public function convert(): BelongsTo {
         return $this->belongsTo(Convert::class);
     }
 }

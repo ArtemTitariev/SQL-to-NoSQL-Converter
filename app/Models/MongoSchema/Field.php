@@ -4,6 +4,7 @@ namespace App\Models\MongoSchema;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Field extends Model
 {
@@ -15,7 +16,7 @@ class Field extends Model
         'collection_id', 'name', 'type'
     ];
 
-    public function collection()
+    public function collection(): BelongsTo
     {
         return $this->belongsTo(Collection::class);
     }

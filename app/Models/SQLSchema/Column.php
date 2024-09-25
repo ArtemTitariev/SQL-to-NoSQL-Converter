@@ -4,6 +4,7 @@ namespace App\Models\SQLSchema;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Column extends Model
 {
@@ -20,7 +21,7 @@ class Column extends Model
         'convertable_types' => 'array',
     ];
 
-    public function table()
+    public function table(): BelongsTo
     {
         return $this->belongsTo(Table::class);
     }

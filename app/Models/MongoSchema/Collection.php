@@ -4,6 +4,8 @@ namespace App\Models\MongoSchema;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Collection extends Model
 {
@@ -19,22 +21,22 @@ class Collection extends Model
         'schema_validator' => 'array',
     ];
 
-    public function fields()
+    public function fields(): HasMany
     {
         return $this->hasMany(Field::class);
     }
 
-    public function embeddings()
+    public function embeddings(): HasMany
     {
         return $this->hasMany(Embedding::class);
     }
 
-    public function links()
+    public function links(): HasMany
     {
         return $this->hasMany(Link::class);
     }
 
-    public function database()
+    public function database(): BelongsTo
     {
         return $this->belongsTo(MongoDatabase::class, 'mongo_database_id', 'id');
     }

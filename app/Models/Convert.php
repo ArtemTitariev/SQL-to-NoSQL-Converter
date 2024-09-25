@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Convert extends Model
 {
@@ -40,14 +41,14 @@ class Convert extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function sqlDatabase(): BelongsTo
+    public function sqlDatabase(): HasOne
     {
-        return $this->belongsTo(SQLDatabase::class, 'sql_database_id', 'id');
+        return $this->hasOne(SQLDatabase::class, 'id', 'sql_database_id');
     }
 
-    public function mongoDatabase(): BelongsTo
+    public function mongoDatabase(): HasOne
     {
-        return $this->belongsTo(MongoDatabase::class, 'mongo_database_id', 'id');
+        return $this->hasOne(MongoDatabase::class, 'id', 'mongo_database_id');
     }
 
     public function progresses(): HasMany

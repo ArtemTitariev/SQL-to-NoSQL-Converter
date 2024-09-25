@@ -4,6 +4,7 @@ namespace App\Models\SQLSchema;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ForeignKey extends Model
 {
@@ -28,7 +29,7 @@ class ForeignKey extends Model
         'foreign_columns' => 'array',
     ];
 
-    public function table()
+    public function table(): BelongsTo
     {
         return $this->belongsTo(Table::class);
     }

@@ -21,6 +21,8 @@ class CheckStepAccess
         $convert = $request->route('convert');
         $step = $request->route('step');
 
+        // dd($step);
+
         if (! $this->isStepAccessible($convert, $step)) {
             return redirect()->route('converts.show', ['convert' => $convert])->withErrors(['error' => __('You cannot skip steps.')]);
         }
@@ -33,6 +35,11 @@ class CheckStepAccess
         $steps = config('convert_steps');
 
         if (! isset($steps[$step])) {
+            return false;
+        }
+
+        $lastStep = $convert->lastProgress();
+        if ($lastStep->isError()) {
             return false;
         }
 
