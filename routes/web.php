@@ -3,6 +3,7 @@
 use App\Http\Controllers\ConvertController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Convert;
+use App\Models\SQLSchema\CircularRef;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
@@ -85,3 +86,14 @@ Route::get('/delete-all', function(Request $request) {
 
     return 'all converts deleted';
 });
+
+// Route::get('/circular', function(Request $request) {
+
+//     $id = $request->input('id');
+//     $convert = Convert::find($id);
+//     $sqlDatabase = $convert->sqlDatabase;
+//     // dd(CircularRef::getByAllTableNames($sqlDatabase->id, ["table1", 'table5']));
+//     dd($sqlDatabase->circularRefs);
+    
+//     return 'done';
+// });

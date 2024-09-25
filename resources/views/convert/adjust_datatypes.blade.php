@@ -38,34 +38,103 @@
 
     @endphp
 
+
+    <section class="space-y-6">
+        <x-modal name="select-action" :show="!empty(session('missingTables'))" focusable>
+            <div class="p-6">
+                <h2 class="text-2xl font-medium text-info">
+                    {{ session('message', __('Action Required for Missing Tables')) }}
+                </h2>
+
+                @if (!empty(session('missingTables')))
+                    <p class="mt-6 text-lg text-danger">
+                        {{ __('Обрані вами таблиці мають зв`язки з наступними таблицями, які ви не обрали:') }}
+                    </p>
+                    <div class="mt-2 text-lg text-gray font-bold">
+                        {{ implode(', ', session('missingTables', [])) }}
+                    </div>
+                @endif
+
+                <div class="mt-6">
+                    <h3 class="text-2xl font-medium text-info">
+                        {{ __('Please select an action:') }}
+                    </h3>
+
+                    <div class="flex justify-between">
+                        <div class="mt-4 mx-1">
+                            <x-primary-button onclick="selectMissingTables()" x-on:click="$dispatch('close')">
+                                {{ __('Automatically Select These Tables') }}
+                            </x-primary-button>
+                        </div>
+
+                        <div class="mt-4 mx-1">
+                            <x-danger-button onclick="breakRelationsAndSumbit()">
+                                {{ __('Break Relations and Continue') }}
+                            </x-danger-button>
+                        </div>
+
+                        <div class="mt-4 mx-1" x-on:click="$dispatch('close')">
+                            <x-secondary-button>
+                                {{ __('Leave for Manual Editing') }}
+                            </x-secondary-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </x-modal>
+    </section>
+
+
     <div class="container mx-auto p-6">
 
         <x-input-errors-block />
-        
-        <div class="mb-4">
-            <input type="text" id="search-input" placeholder="Пошук таблиць..." class="border rounded px-4 py-2 w-full">
+
+        <div class="mb-4 flex items-center space-x-2">
+            <input type="text" id="search-input" placeholder="Пошук таблиць..."
+                class="border-2 border-accent rounded px-4 py-2 flex-grow">
+
+            <button id="select-all" onclick="selectAll()"
+                class="bg-primary text-white rounded px-4 py-2 hover:bg-accent">
+                Відмітити всі
+            </button>
+
+            <button id="deselect-all" onclick="deselectAll()"
+                class="bg-secondary text-white rounded px-4 py-2 hover:bg-accent">
+                Зняти всі
+            </button>
         </div>
 
         <!-- Загальна форма для вибору таблиць і стовпців -->
-        <form action="{{ route('convert.step.store', [$convert, 'adjust_datatypes']) }}" method="POST">
+        <form action="{{ route('convert.step.store', [$convert, 'adjust_datatypes']) }}" method="POST" id="form">
             @csrf
+            <input type="hidden" name="break_relations" id="break-relations" value="no-break">
 
             <h1 class="text-3xl font-bold mb-6">Перелік таблиць</h1>
 
             @foreach ($tables as $table)
                 <!-- Таблиці -->
-                <div class="border p-4 rounded mb-4 table-container" data-table-name="{{ $table->name }}">
+                <div class="border p-4 rounded mb-4 table-container
+                @if ($loop->odd) bg-light @endif
+                 "
+                    data-table-name="{{ $table->name }}">
                     <div class="flex justify-between items-center">
 
                         <!-- Чекбокс для вибору таблиці -->
-                        <input type="checkbox" name="tables[]" value="{{ $table->name }}" checked
-                            class="mr-2" onchange="toggleNestedForm(this, 'table-{{ $table->name }}')">
+                        <input type="checkbox" name="tables[]" value="{{ $table->name }}"
+                            @if (is_array(old('tables')) && in_array($table->name, old('tables'))) checked 
+                            @elseif (!is_array(old('tables'))) 
+                                checked @endif
+                            class="mr-2 text-xl table-check"
+                            onchange="toggleNestedForm(this, 'table-{{ $table->name }}')">
 
-                        <h2 class="text-xl font-semibold">{{ $table->name }}</h2>
+                        <h2
+                            class="text-xl @if ($loop->odd) text-primary @else text-secondary @endif font-semibold">
+                            {{ $table->name }}</h2>
                         <!-- Кнопка розгортання -->
                         {{-- <button type="button" class="text-secondary"
                         onclick="toggleTable('table-{{ $table->name }}')">Розгорнути</button> --}}
-                        <x-secondary-button onsubmit="return false;" onclick="toggleTable('table-{{ $table->name }}')">
+                        <x-secondary-button onsubmit="return false;"
+                            onclick="toggleTable('table-{{ $table->name }}')">
                             Розгорнути
                         </x-secondary-button>
                     </div>
@@ -74,7 +143,13 @@
                     <!-- Підформа для стовпців таблиці -->
                     <div id="table-{{ $table->name }}"
                         class="max-h-0 overflow-hidden transition-all duration-300 ease-in-out hidden mt-4 nested-form">
-                        <table class="min-w-full bg-white border border-gray-200">
+
+                        {{-- <div class="mb-4">
+                            <input type="text" id="search-input-{{ $table->name }}" placeholder="Пошук стовпців..."
+                                class="border-2 border-accent rounded px-4 py-2 w-full">
+                        </div> --}}
+
+                        <table class="min-w-full border">
                             <thead>
                                 <tr>
                                     <th class="px-4 py-2 border">Стовпець</th>
@@ -100,10 +175,11 @@
                                         <td class="px-4 py-2 border">
 
                                             @if ($table->primary_key && in_array($column->name, $table->primary_key))
-                                                PK
+                                                <span class="font-bold text-secondary">PK</span>
                                             @elseif (findEl($column->name, $table->foreignKeys->toArray()))
-                                                FK
+                                                <span class="font-bold text-accent">FK</span>
                                             @endif
+
                                         </td>
                                     </tr>
                                 @endforeach
@@ -112,11 +188,11 @@
 
 
                         @if ($table->foreignKeys->count() > 0)
-                            <h3 class="min-w-full text-center text-2-xl font-bold mt-2">Зв'язки</h3>
-                            
+                            <h3 class="min-w-full text-center text-2-xl text-accent font-bold mt-4 mb-2">Зв`язки</h3>
+
                             <div id="table-{{ $table->name }}-relations"
                                 class="overflow-hidden transition-all duration-300 ease-in-out mt-4 nested-form">
-                                <table class="min-w-full bg-white border border-gray-200">
+                                <table class="min-w-full border border-gray-200">
                                     <thead>
                                         <tr>
                                             <th class="px-4 py-2 border">Локальні стовпці</th>
@@ -185,6 +261,22 @@
     </script>
 
     <script>
+        function selectAll() {
+            const tableCheckboxes = document.querySelectorAll('.table-check');
+            tableCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+        }
+
+        function deselectAll() {
+            const tableCheckboxes = document.querySelectorAll('.table-check');
+            tableCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+        }
+    </script>
+
+    <script>
         // Функція для розгортання/згортання таблиці
         function toggleTable(tableId) {
             const table = document.getElementById(tableId);
@@ -226,5 +318,47 @@
             }
         });
     </script>
+
+    @if (session()->has('missingTables'))
+        <script>
+            function selectMissingTables() {
+                const tables = @json(session('missingTables'));
+                // const message = "{{ session('message', '') }}";
+
+                // console.log(message);
+
+                // Викликаємо функцію для автоматичного вибору таблиць
+                // selectMissingTables(missingTables);
+
+                if (!Array.isArray(tables)) {
+                    tables = [tables];
+                }
+                // console.log(tables)
+
+                tables.forEach(table => {
+                    const checkbox = document.querySelector(`input[value="${table}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        toggleNestedForm(checkbox, 'table-' + table); // Відкриваємо вкладену форму
+                    }
+                });
+            }
+
+            function breakRelationsAndSumbit() {
+                activateBreakRelationsMode()
+                submitForm();
+            }
+
+            function activateBreakRelationsMode() {
+                let input = document.querySelector('#break-relations');
+                input.value = 'break';
+            }
+
+            function submitForm() {
+                let form = document.querySelector('#form');
+                form.submit();
+            }
+        </script>
+    @endif
 
 </x-app-layout>
