@@ -2,53 +2,38 @@
 
 namespace App\Services\ConversionStrategies;
 
+use App\Http\Validators\TableColumnValidator;
 use App\Models\Convert;
 use App\Models\MongoSchema\Collection;
 use App\Models\MongoSchema\Field;
+use App\Models\SQLSchema\CircularRef;
+use App\Models\SQLSchema\Table;
+use App\Models\SQLSchema\ForeignKey;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class AdjustDatatypesStrategy implements ConversionStrategyInterface
 {
+    public const BREAK_RELATIONS = [
+        'BREAK' => 'break',
+        'NO_BREAK' => 'no-break',
+    ];
+
     public function execute(Convert $convert, Request $request, array $extraParams = []): StrategyResult
     {
         // Логіка для кроку збереження типів даних
 
-        $tables = $request->tables;
-        $columns = $request->columns;
+        $validated = TableColumnValidator::validate($request);
 
-        $sqlDatabase = $convert->sqlDatabase()->with(['tables'])->first();
-        $sqlTables = $sqlDatabase->tables()->with(['columns'])->get();
+        $validationResult = $this->validate($convert, $validated);
 
-        //Перевірка чи не додав користувач зайвих таблиць
-        if (!empty(array_diff($tables, $sqlTables->map(function ($table) {
-            return $table->name;
-        })->toArray()))) {
-            throw new \Exception("Ви вручну додали нові таблиці. Їх немає в схемі)))");
+        if (! is_null($validationResult)) {
+            return $validationResult;
         }
 
-        // Перевірка чи не додав користувач зайвих типів даних  --- а ще ж перевірити чи нема лишніх стовпців
-        foreach ($tables as $table) {
-            $sqlTable = $sqlTables[$sqlTables->search(function ($sqlTable) use ($table) {
-                return $sqlTable->name === $table;
-            })];
-
-            // dd($sqlTable);
-
-            foreach ($columns[$table] as $column => $type) {
-
-                $sqlColumns = $sqlTable->columns;
-                $sqlColumn = $sqlColumns[$sqlColumns->search(function($sqlColumn) use ($column) {
-                    return $sqlColumn->name === $column;
-                })];
-
-
-                if (!in_array($type, $sqlColumn->convertable_types)) {
-                    throw new \Exception("Ви вручну додали тип даних для стовпця таблиці. Цей тип даних не може бути використаний)))");
-                }
-            }
-        }
-        // dd('ОК');
+        $tables = $validated['tables'];
+        $columns = $validated['columns'];
 
         DB::transaction(function () use ($convert, $tables, $columns) {
             $mongoDatabaseId = $convert->mongoDatabase->id;
@@ -69,15 +54,121 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
             }
         });
 
-
-
-
         // dd($request, $tables, $columns);
         // Return success response
         return new StrategyResult(
             result: StrategyResult::STATUSES['COMPLETED'],
-            details: 'Обрані таблиці й типи даних збереено',
+            details: 'Обрані таблиці й типи даних збережено',
             next: config('convert_steps.adjust_datatypes.next'),
         );
+    }
+
+    private function validate($convert, array &$data)
+    {
+        $tables = $data['tables']; // ['users', 'phones', 'roles', ...]
+        $columns = $data['columns']; // ['users' => ['id' => 'int', 'name' => 'string', ...], 'phones' => [...], ...]
+        $break = $data['break_relations'] === static::BREAK_RELATIONS['BREAK']; //bool
+
+        $sqlDatabase = $convert->sqlDatabase()->with(['tables'])->first();
+        $sqlTables = $sqlDatabase->tables()->with(['columns'])->get();
+
+        // Масив назв таблиць для перевірки
+        $sqlTableNames = $sqlTables->pluck('name')->toArray();
+
+        // Перевірка чи не додав користувач зайвих таблиць
+        if (!empty(array_diff($tables, $sqlTableNames))) {
+            throw ValidationException::withMessages(['tables' => "Ви вручну додали нові таблиці. Їх немає в схемі)))"]);
+        }
+
+        // Асоціативний масив для таблиць і стовпців
+        $tableMap = $sqlTables->keyBy('name');
+
+        // Перевірка чи не додав користувач зайвих типів даних 
+        foreach ($tables as $table) {
+            $sqlTable = $tableMap[$table] ?? null;
+
+            if (!$sqlTable) {
+                continue; // Якщо таблиця не знайдена, пропустити (можливо, це потрібно обробити окремо)
+            }
+
+            $sqlColumns = $sqlTable->columns->keyBy('name');
+
+            // Перевірити чи нема лишніх стовпців
+            $firstArrayKeys = array_keys($columns[$table]);
+            $secondArrayNames = $sqlColumns->keys()->toArray();
+
+            // Перевіряємо, чи всі ключі з першого масиву присутні у другому масиві
+            if (array_diff($firstArrayKeys, $secondArrayNames)) {
+                throw ValidationException::withMessages(['columns' => "Ви вручну додали стовпці)))"]);
+            }
+
+            foreach ($columns[$table] as $column => $type) {
+                $sqlColumn = $sqlColumns[$column] ?? null;
+
+                if (!$sqlColumn) {
+                    throw ValidationException::withMessages(['columns' => "Стовпець $column не знайдено у таблиці $table."]);
+                }
+
+                if (!in_array($type, $sqlColumn->convertable_types)) {
+                    throw ValidationException::withMessages(['columns' => "Ви вручну додали тип даних для стовпця таблиці. Цей тип даних не може бути використаний)))"]);
+                }
+            }
+        }
+
+        // перевірка на зв'язки
+        $neededTables = DB::table('foreign_keys')
+            ->select('foreign_table')
+            ->whereIn('table_id', function ($query) use ($tables, $sqlDatabase) {
+                $query->select('id')
+                    ->from('tables')
+                    ->whereIn('name', $tables)
+                    ->where('sql_database_id', $sqlDatabase->id);
+            })
+            ->distinct()
+            ->pluck('foreign_table')
+            ->toArray();
+
+        $missingTables = array_values(array_diff($neededTables, $tables));
+
+        if (!empty($missingTables)) {
+
+            if (! $break) {
+                return new StrategyResult(
+                    result: StrategyResult::STATUSES['REDIRECT'],
+                    // details: 'Вибрані не всі необхідні таблиці',
+                    with: [
+                        'missingTables' => $missingTables,
+                        'message' => "Вибрані не всі необхідні таблиці",
+                    ],
+                );
+                // throw ValidationException::withMessages(["Вибрані не всі необхідні таблиці"]);
+            } else {
+                // Видалити зв'язки
+                $tablesCollection = $sqlDatabase->tables()->whereIn('name', $tables)->with(['foreignKeys'])->get();
+                ForeignKey::whereIn('table_id', $tablesCollection->pluck('id'))
+                    ->whereNotIn('foreign_table', $tables)
+                    ->delete();
+
+                // Видалити кругові залежності
+                foreach ($missingTables as $table) {
+                    $circularRefs = CircularRef::getByAllTableNames($sqlDatabase->id, [$table]);
+                    $circularRefs->each(function ($circularRef) {
+                        $circularRef->delete();
+                    });
+                }
+
+                // foreach ($tablesCollection as $table) {
+                //     $keys = $table->foreignKeys;
+                //     foreach ($keys as $key) {
+                //         if (! in_array($key->foreign_table, $tables)) {
+                //             $key->delete();
+                //         }
+                //     }
+                // }
+            }
+        }
+        // dd('ОК');
+
+        return null;
     }
 }

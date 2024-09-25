@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Actions\CreateConnectionName;
 use App\Models\Convert;
 use App\Models\ConversionProgress;
-use App\Services\ConversionStrategies\ConversionStrategyInterface;
+use App\Services\ConversionStrategies\StrategyResult;
 use Illuminate\Http\Request;
 
 class ConversionStepExecutor
@@ -39,7 +39,7 @@ class ConversionStepExecutor
     public function executeStep(Convert $convert, Request $request, string $step, array $data = [])
     {
         if (! isset($this->strategies[$step])) {
-            abort(403); //--------------------------------
+            abort(403); // Невірний крок ----------------------
         }
 
         if (($this->steps[$step]['number'] !== 1) && (! $this->steps[$step]['is_manual'])) {
@@ -49,34 +49,53 @@ class ConversionStepExecutor
 
         try {
             $result = $this->strategies[$step]->execute($convert, $request, $data);
-            // Якщо "штатна" помилка
-            if ($result->isFailed()) {
-                // Перехід в контролер
-                return $result;
-            }
-            // якщо крок виконаний одразу
-            if ($result->isCompleted()) {
-                ConversionService::updateConversionProgress($convert, $step, ConversionProgress::STATUSES['COMPLETED'], $result->getDetails());
-            }
         } catch (\App\Schema\DataTypes\UnsupportedDataTypeException $e) {
-            ConversionService::failConvert($convert, $step, 'The data type of the relational database column is not supported.');
-            throw $e;
+            return $this->handleStepFailure($convert, $step, 'The data type of the relational database column is not supported.', $e);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()->withInput()->withErrors($e->getMessage());
         } catch (\Exception $e) {
-            ConversionService::failConvert($convert, $step, 'Error: ' . $e->getMessage());
-            throw $e;
-        }
-        if ($result->isProcessing()) {
-            // dd($result->getView());
-            ConversionService::updateConversionProgress($convert, $step, ConversionProgress::STATUSES['IN_PROGRESS'], $result->getDetails());
-            return view($result->getView())->with($result->getWith() ?? []);
+            dd($e->getMessage()); //---------------------------------------------------------
+            return $this->handleStepFailure($convert, $step, 'Error: ' . $e->getMessage(), $e);
         }
 
+        return $this->processResult($convert, $step, $result, $request, $data);
+    }
+
+    private function processResult(Convert $convert, string $step, StrategyResult $result, Request $request, array $data)
+    {
+        if ($result->isProcessing()) {
+            ConversionService::updateConversionProgress($convert, $step, ConversionProgress::STATUSES['IN_PROGRESS'], $result->getDetails());
+            return view($result->getView())->with($result->getWith());
+        }
+
+        if ($result->isRedirect()) {
+            return redirect()->back()->with($result->getWith())->withInput(); //->withError();
+        }
+
+        if ($result->isFailed()) {
+            throw new \Exception($result->getDetails());
+        }
+
+        if ($result->isCompleted()) {
+            ConversionService::updateConversionProgress($convert, $step, ConversionProgress::STATUSES['COMPLETED'], $result->getDetails());
+        }
+
+        return $this->proceedToNextStep($convert, $step, $request, $data);
+    }
+
+    private function handleStepFailure(Convert $convert, string $step, string $message, \Throwable $e)
+    {
+        ConversionService::failConvert($convert, $step, $message);
+        throw $e;
+    }
+
+    private function proceedToNextStep(Convert $convert, string $step, Request $request, array $data)
+    {
         $nextStep = $this->steps[$step]['next'] ?? null;
 
         if ($nextStep !== null) {
             if ($this->steps[$nextStep]['is_manual'] ?? false) {
                 ConversionService::createConversionProgress($convert, $nextStep, ConversionProgress::STATUSES['CONFIGURING'], 'Configuring step');
-
                 return redirect()->route('convert.step.show', ['convert' => $convert, 'step' => $nextStep]);
             } else {
                 return $this->executeStep($convert, $request, $nextStep, $data);
@@ -85,7 +104,6 @@ class ConversionStepExecutor
 
         $convert->update(['status' => Convert::STATUSES['COMPLETED']]);
 
-        dd('convert.complete reached');
         return redirect()->route('convert.complete', $convert);
     }
 }

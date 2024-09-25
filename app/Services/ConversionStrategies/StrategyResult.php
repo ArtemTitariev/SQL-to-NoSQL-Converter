@@ -10,9 +10,9 @@ class StrategyResult
     private string $result;
 
     /**
-     * @var string $details Additional details about the strategy result
+     * @var string|null $details Additional details about the strategy result
      */
-    private string $details;
+    private ?string $details;
 
     /**
      * @var string|null $view The view name to be returned after the strategy execution
@@ -33,13 +33,14 @@ class StrategyResult
         'COMPLETED' => 'completed',
         'FAILED' => 'failed',
         'PROCESSING' => 'processing',
+        'REDIRECT' => 'redirect',
     ];
 
     /**
      * StrategyResult constructor.
      *
      * @param string $result
-     * @param string $details
+     * @param string|null $details
      * @param string|null $next
      * @param string|null $view
      * @param array $with
@@ -48,7 +49,7 @@ class StrategyResult
      */
     public function __construct(
         string $result,
-        string $details,
+        string $details = null,
         ?string $next = null,
         ?string $view = null,
         array $with = [],
@@ -65,7 +66,7 @@ class StrategyResult
         return $this->result;
     }
 
-    public function getDetails(): string
+    public function getDetails(): ?string
     {
         return $this->details;
     }
@@ -105,7 +106,7 @@ class StrategyResult
         $this->details = $details;
     }
 
-    public function setView(?string $view): void
+    public function setView(string $view): void
     {
         $this->view = $view;
     }
@@ -115,7 +116,7 @@ class StrategyResult
         $this->with = $with;
     }
 
-    public function setNext(?string $next): void
+    public function setNext(string $next): void
     {
         $this->next = $next;
     }
@@ -149,5 +150,15 @@ class StrategyResult
     public function isFailed(): bool
     {
         return $this->result === self::STATUSES['FAILED'];
+    }
+    
+    /**
+     * Chech if result is redirect
+     * 
+     * @return bool
+     */
+    public function isRedirect(): bool
+    {
+        return $this->result === self::STATUSES['REDIRECT'];
     }
 }
