@@ -58,7 +58,7 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
         // Return success response
         return new StrategyResult(
             result: StrategyResult::STATUSES['COMPLETED'],
-            details: 'Обрані таблиці й типи даних збережено',
+            details: 'Selected tables and data types are saved.',
             next: config('convert_steps.adjust_datatypes.next'),
         );
     }
@@ -77,7 +77,7 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
 
         // Перевірка чи не додав користувач зайвих таблиць
         if (!empty(array_diff($tables, $sqlTableNames))) {
-            throw ValidationException::withMessages(['tables' => "Ви вручну додали нові таблиці. Їх немає в схемі)))"]);
+            throw ValidationException::withMessages(['tables' => __('It looks like you manually added new tables. They are not in the schema.')]);
         }
 
         // Асоціативний масив для таблиць і стовпців
@@ -99,18 +99,18 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
 
             // Перевіряємо, чи всі ключі з першого масиву присутні у другому масиві
             if (array_diff($firstArrayKeys, $secondArrayNames)) {
-                throw ValidationException::withMessages(['columns' => "Ви вручну додали стовпці)))"]);
+                throw ValidationException::withMessages(['columns' => __('It looks like you added columns manually. They are not in the schema.')]);
             }
 
             foreach ($columns[$table] as $column => $type) {
                 $sqlColumn = $sqlColumns[$column] ?? null;
 
                 if (!$sqlColumn) {
-                    throw ValidationException::withMessages(['columns' => "Стовпець $column не знайдено у таблиці $table."]);
+                    throw ValidationException::withMessages(['columns' =>  __("Column :column is not found in table :table", ['column' => $column, 'table' => $table])]);
                 }
 
                 if (!in_array($type, $sqlColumn->convertable_types)) {
-                    throw ValidationException::withMessages(['columns' => "Ви вручну додали тип даних для стовпця таблиці. Цей тип даних не може бути використаний)))"]);
+                    throw ValidationException::withMessages(['columns' => __('It looks like you manually added a data type for a table column. This data type cannot be used.')]);
                 }
             }
         }
@@ -138,7 +138,7 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
                     // details: 'Вибрані не всі необхідні таблиці',
                     with: [
                         'missingTables' => $missingTables,
-                        'message' => "Вибрані не всі необхідні таблиці",
+                        'message' => __('Not all required tables are selected'),
                     ],
                 );
                 // throw ValidationException::withMessages(["Вибрані не всі необхідні таблиці"]);
