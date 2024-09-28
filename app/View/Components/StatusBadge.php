@@ -40,6 +40,6 @@ class StatusBadge extends Component
             // The same for \App\Models\ConversionProgress
         ];
 
-        return $classes[$this->status] ?? 'text-light bg-gray font-serif';
+        return $classes[$this->status] ?? 'text-light bg-customgray font-serif';
     }
 }
