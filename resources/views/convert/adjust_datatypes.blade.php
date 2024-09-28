@@ -38,46 +38,62 @@
 
     @endphp
 
-
     <section class="space-y-6">
         <x-modal name="select-action" :show="!empty(session('missingTables'))" focusable>
             <div class="p-6">
-                <h2 class="text-2xl font-medium text-info">
-                    {{ session('message', __('Action Required for Missing Tables')) }}
-                </h2>
+                <div class="flex justify-between items-center border-b pb-4 mb-4">
+                    <h2 class="text-2xl font-medium text-info">
+                        {{ session('message', __('Action Required for Missing Tables')) }}
+                    </h2>
+                </div>
 
-                @if (!empty(session('missingTables')))
-                    <p class="mt-6 text-lg text-danger">
-                        {{ __('Обрані вами таблиці мають зв`язки з наступними таблицями, які ви не обрали:') }}
-                    </p>
-                    <div class="mt-2 text-lg text-gray font-bold">
-                        {{ implode(', ', session('missingTables', [])) }}
-                    </div>
-                @endif
+                <p class="mt-6 text-lg text-danger">
+                    {{ __('Selected tables have relationships with the following tables that are not selected:') }}
+                </p>
+                <div id="missing-tables-container" class="mt-2 text-lg text-customgray font-bold">
+                    {{ implode(', ', session('missingTables', [])) }}
+                </div>
 
                 <div class="mt-6">
                     <h3 class="text-2xl font-medium text-info">
                         {{ __('Please select an action:') }}
                     </h3>
 
-                    <div class="flex justify-between">
-                        <div class="mt-4 mx-1">
-                            <x-primary-button onclick="selectMissingTables()" x-on:click="$dispatch('close')">
+                    <div class="flex justify-between mt-4 space-x-2">
+                        <x-primary-button onclick="selectMissingTables()" x-on:click="$dispatch('close')"
+                            class="flex items-center">
+                            <span class="flex-grow">
                                 {{ __('Automatically Select These Tables') }}
-                            </x-primary-button>
-                        </div>
+                            </span>
+                            <x-tooltip iconColor="text-primary" position="top" class="normal-case">
+                                <p class="font-semibold text-info">
+                                    {{ __('Missing tables will be selected automatically.') }}</p>
+                                <p class="text-customgray font-normal mt-2">{{ __('Adjustments can be continued.') }}</p>
+                            </x-tooltip>
+                        </x-primary-button>
 
-                        <div class="mt-4 mx-1">
-                            <x-danger-button onclick="breakRelationsAndSumbit()">
+                        <x-danger-button onclick="breakRelationsAndSumbit()" class="flex items-center">
+                            <span class="flex-grow">
                                 {{ __('Break Relations and Continue') }}
-                            </x-danger-button>
-                        </div>
+                            </span>
+                            <x-tooltip iconColor="text-primary" position="top" class="normal-case">
+                                <p class="font-semibold text-info">
+                                    {{ __('Links to tables that are not selected will be broken.') }}</p>
+                                <p class="text-customgray font-normal  mt-2">
+                                    {{ __('The system will automatically save these settings.') }}
+                                </p>
+                            </x-tooltip>
+                        </x-danger-button>
 
-                        <div class="mt-4 mx-1" x-on:click="$dispatch('close')">
-                            <x-secondary-button>
+                        <x-secondary-button x-on:click="$dispatch('close')" class="flex items-center">
+                            <span class="flex-grow">
                                 {{ __('Leave for Manual Editing') }}
-                            </x-secondary-button>
-                        </div>
+                            </span>
+                            <x-tooltip iconColor="text-primary" position="top" class="normal-case">
+                                <p class="font-semibold text-info">
+                                    {{ __('Required tables can be selected manually.') }}</p>
+                            </x-tooltip>
+                        </x-secondary-button>
                     </div>
                 </div>
             </div>
@@ -86,40 +102,42 @@
 
 
     <div class="container mx-auto p-6">
-
         <x-input-errors-block />
 
-        <div class="mb-4 flex items-center space-x-2">
-            <input type="text" id="search-input" placeholder="Пошук таблиць..."
+        <div class="mt-2 mb-6 flex items-center space-x-2">
+            <input type="text" id="search-input" placeholder="{{ __('Search for tables...') }}"
                 class="border-2 border-accent rounded px-4 py-2 flex-grow">
 
             <button id="select-all" onclick="selectAll()"
                 class="bg-primary text-white rounded px-4 py-2 hover:bg-accent">
-                Відмітити всі
+                {{ __('Select all') }}
             </button>
 
             <button id="deselect-all" onclick="deselectAll()"
                 class="bg-secondary text-white rounded px-4 py-2 hover:bg-accent">
-                Зняти всі
+                {{ __('Deselect all') }}
             </button>
         </div>
 
-        <!-- Загальна форма для вибору таблиць і стовпців -->
+        {{-- Загальна форма для вибору таблиць і стовпців --}}
         <form action="{{ route('convert.step.store', [$convert, 'adjust_datatypes']) }}" method="POST" id="form">
             @csrf
             <input type="hidden" name="break_relations" id="break-relations" value="no-break">
 
-            <h1 class="text-3xl font-bold mb-6">Перелік таблиць</h1>
+            <h1 class="text-3xl font-bold mb-6">{{ __('Select the necessary tables and data types for the columns') }}
+            </h1>
 
+            {{-- Таблиці --}}
             @foreach ($tables as $table)
-                <!-- Таблиці -->
-                <div class="border p-4 rounded mb-4 table-container
+                <div class="border-2 
+                @if (in_array($table->name, session('missingTables', []))) border-danger @endif
+                 hover:border-info p-4 rounded mb-6 table-container
                 @if ($loop->odd) bg-light @endif
                  "
                     data-table-name="{{ $table->name }}">
                     <div class="flex justify-between items-center">
 
-                        <!-- Чекбокс для вибору таблиці -->
+                        {{-- Чекбокс для вибору таблиці --}}
                         <input type="checkbox" name="tables[]" value="{{ $table->name }}"
                             @if (is_array(old('tables')) && in_array($table->name, old('tables'))) checked 
                             @elseif (!is_array(old('tables'))) 
@@ -130,17 +148,16 @@
                         <h2
                             class="text-xl @if ($loop->odd) text-primary @else text-secondary @endif font-semibold">
                             {{ $table->name }}</h2>
-                        <!-- Кнопка розгортання -->
-                        {{-- <button type="button" class="text-secondary"
-                        onclick="toggleTable('table-{{ $table->name }}')">Розгорнути</button> --}}
-                        <x-secondary-button onsubmit="return false;"
+                        <x-secondary-button id="button-table-{{ $table->name }}" onsubmit="return false;"
                             onclick="toggleTable('table-{{ $table->name }}')">
-                            Розгорнути
+                            {{ __('Expand') }}
                         </x-secondary-button>
                     </div>
+                    <div class="hidden font-semibold text-danger" id="errors-{{ $table->name }}">
+                        {{ __('Relations: ') }}
+                    </div>
 
-                    {{-- {{ dd($table->columns) }} --}}
-                    <!-- Підформа для стовпців таблиці -->
+                    {{-- Вибір стовпців таблиці --}}
                     <div id="table-{{ $table->name }}"
                         class="max-h-0 overflow-hidden transition-all duration-300 ease-in-out hidden mt-4 nested-form">
 
@@ -149,13 +166,13 @@
                                 class="border-2 border-accent rounded px-4 py-2 w-full">
                         </div> --}}
 
-                        <table class="min-w-full border">
+                        <table class="min-w-full border overflow-x-auto">
                             <thead>
                                 <tr>
-                                    <th class="px-4 py-2 border">Стовпець</th>
-                                    <th class="px-4 py-2 border">Тип даних</th>
-                                    <th class="px-4 py-2 border">Конвертувати як</th>
-                                    <th class="px-4 py-2 border">Ключ</th>
+                                    <th class="px-4 py-2 border">{{ __('Column') }}</th>
+                                    <th class="px-4 py-2 border">{{ __('Data Type') }}</th>
+                                    <th class="px-4 py-2 border">{{ __('Convert As') }}</th>
+                                    <th class="px-4 py-2 border">{{ __('Key') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -188,17 +205,18 @@
 
 
                         @if ($table->foreignKeys->count() > 0)
-                            <h3 class="min-w-full text-center text-2-xl text-accent font-bold mt-4 mb-2">Зв`язки</h3>
+                            <h3 class="min-w-full text-center text-xl text-accent font-bold mt-4 mb-2">
+                                {{ __('Relations') }}</h3>
 
                             <div id="table-{{ $table->name }}-relations"
                                 class="overflow-hidden transition-all duration-300 ease-in-out mt-4 nested-form">
-                                <table class="min-w-full border border-gray-200">
+                                <table class="min-w-full border">
                                     <thead>
                                         <tr>
-                                            <th class="px-4 py-2 border">Локальні стовпці</th>
-                                            <th class="px-4 py-2 border">Посилальна таблиця</th>
-                                            <th class="px-4 py-2 border">Посилальні стовпці</th>
-                                            <th class="px-4 py-2 border">Тип зв'язку</th>
+                                            <th class="px-4 py-2 border">{{ __('Local Fields') }}</th>
+                                            <th class="px-4 py-2 border">{{ __('Referenced Table') }}</th>
+                                            <th class="px-4 py-2 border">{{ __('Referenced Columns') }}</th>
+                                            <th class="px-4 py-2 border">{{ __('Relation Type') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -219,19 +237,34 @@
                                                         @endforeach
                                                     </ul>
                                                 </td>
-                                                <td class="px-4 py-2 border">{{ $fk->relation_type }}</td>
+                                                <td class="px-4 py-2 border">
+                                                    @php
+                                                        $relationType = $fk->relation_type;
+                                                    @endphp
+                                                    <x-relation-type-badge :relation-type="$relationType" />
+                                                    {{--  $fk->relation_type  --}}
+                                                </td>
                                             <tr>
                                         @endforeach
                                     </tbody>
                                 </table>
                             </div>
                         @endif
+                        <div class="flex mt-4">
+                            <x-secondary-button class="mr-0 ml-auto"
+                                onclick="toggleTable('table-{{ $table->name }}')">
+                                {{ __('Collapse') }}
+                            </x-secondary-button>
+                            {{-- <svg width="48" height="48  " viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 8l-6 6h12l-6-6z" fill="currentColor" />
+                            </svg> --}}
+                        </div>
                     </div>
                 </div>
             @endforeach
-            {{-- {{ s }} --}}
-            <!-- Кнопка для надсилання вибраних таблиць -->
-            <button type="submit" class="mt-4 bg-primary text-white px-4 py-2 rounded">Зберегти</button>
+
+            <x-primary-button id="submit">{{ __('Save') }}</x-primary-button>
         </form>
     </div>
 
@@ -239,8 +272,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             const searchInput = document.getElementById('search-input');
             const tableContainers = document.querySelectorAll('.table-container');
-
-            // console.log(searchInput.value, '\n',tableContainers);
 
             const filterTables = (query) => {
                 tableContainers.forEach(container => {
@@ -261,28 +292,14 @@
     </script>
 
     <script>
-        function selectAll() {
-            const tableCheckboxes = document.querySelectorAll('.table-check');
-            tableCheckboxes.forEach(checkbox => {
-                checkbox.checked = true;
-            });
-        }
-
-        function deselectAll() {
-            const tableCheckboxes = document.querySelectorAll('.table-check');
-            tableCheckboxes.forEach(checkbox => {
-                checkbox.checked = false;
-            });
-        }
-    </script>
-
-    <script>
         // Функція для розгортання/згортання таблиці
         function toggleTable(tableId) {
-            const table = document.getElementById(tableId);
+            let table = document.getElementById(tableId);
+            let button = document.getElementById('button-' + tableId);
             if (table.classList.contains('hidden')) {
                 table.classList.remove('hidden');
                 table.classList.add('max-h-0');
+                button.innerText = '{{ __('Collapse') }}';
                 setTimeout(() => {
                     table.classList.remove('max-h-0');
                     // table.classList.add('max-h-screen');
@@ -290,6 +307,7 @@
             } else {
                 // table.classList.remove('max-h-screen');
                 table.classList.add('max-h-0');
+                button.innerText = '{{ __('Expand') }}';
                 setTimeout(() => {
                     table.classList.add('hidden');
                 }, 300); // Затримка для завершення анімації
@@ -310,55 +328,263 @@
             }
         }
 
-        // Спочатку налаштувати стан вкладених форм на основі чекбоксів
-        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-            const formId = 'table-' + checkbox.value;
-            if (formId) {
+        function toggleAllNestedForms() {
+            // Налаштувати стан вкладених форм на основі чекбоксів
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                const formId = 'table-' + checkbox.value;
+                // if (formId) {
                 toggleNestedForm(checkbox, formId);
-            }
+                // }
+            });
+        }
+
+        toggleAllNestedForms();
+    </script>
+    <script>
+        // $(document).ready(function() {
+        //     // Функція, яка перевіряє зв'язки таблиць
+        //     function checkTableRelations() {
+        //         // Отримуємо всі обрані чекбокси таблиць
+        //         const selectedTables = $('input[name="tables[]"]:checked').map(function() {
+        //             return $(this).val();
+        //         }).get();
+
+        //         // Обходимо всі таблиці
+        //         $('.table-container').each(function() {
+        //             const tableName = $(this).data('table-name'); // Ім'я таблиці
+        //             const isChecked = selectedTables.includes(tableName); // Чи обрана таблиця
+
+        //             // Отримуємо всі зв'язки для поточної таблиці
+        //             const relatedTables = $(`#table-${tableName}-relations tr td:nth-child(2)`).map(
+        //                 function() {
+        //                     return $(this).text().trim(); // Отримуємо назви посилальних таблиць
+        //                 }).get();
+
+        //             // Якщо таблиця вибрана, перевіряємо її зв'язки
+        //             if (isChecked) {
+        //                 relatedTables.forEach(function(relatedTable) {
+        //                     // Якщо зв'язана таблиця не обрана, підсвічуємо її
+        //                     if (!selectedTables.includes(relatedTable)) {
+        //                         $(`.table-container[data-table-name="${relatedTable}"]`).addClass(
+        //                             'border-danger').addClass('border-4');
+        //                     }
+        //                 });
+        //             }
+        //         });
+
+        //         // Тепер видаляємо border-danger з усіх таблиць, які не мають зв'язків з обраними
+        //         $('.table-container').each(function() {
+        //             const tableName = $(this).data('table-name');
+        //             const hasDangerBorder = $(this).hasClass('border-danger');
+        //             const relatedTables = $(`#table-${tableName}-relations tr td:nth-child(2)`).map(
+        //                 function() {
+        //                     return $(this).text().trim(); // Отримуємо назви посилальних таблиць
+        //                 }).get();
+
+        //             // Перевіряємо, чи є невибрані зв'язані таблиці
+        //             const hasUnselectedRelated = relatedTables.some(function(relatedTable) {
+        //                 return !selectedTables.includes(relatedTable);
+        //             });
+
+        //             // Якщо таблиця не вибрана і не має невибраних зв'язаних, видаляємо border-danger
+        //             if (!isChecked && hasDangerBorder && !hasUnselectedRelated) {
+        //                 $(this).removeClass('border-danger').removeClass('border-4');
+        //             }
+        //         });
+        //     }
+
+        //     // Викликаємо функцію при зміні стану чекбокса
+        //     $('input[name="tables[]"]').change(function() {
+        //         // Спочатку прибираємо всі border-danger
+        //         $('.table-container').removeClass('border-danger').removeClass('border-4');
+        //         checkTableRelations();
+        //     });
+
+        //     // Ініціалізуємо перевірку при завантаженні сторінки
+        //     checkTableRelations();
+        // });
+
+
+        // Функція, яка перевіряє зв'язки таблиць
+        function checkTableRelations() {
+            // Отримуємо всі обрані чекбокси таблиць
+            const selectedTables = $('input[name="tables[]"]:checked').map(function() {
+                return $(this).val();
+            }).get();
+
+            // Спочатку видаляємо всі червоні підсвічування
+            $('.table-container').removeClass('border-danger hover:border-danger border-4');
+            $('[id^="errors-"]').html("{{ __('Relations: ') }}").addClass('hidden'); // Очищуємо всі поля помилок
+
+            // var isChecked = false;
+            // Обходимо всі таблиці
+            $('.table-container').each(function() {
+                const tableName = $(this).data('table-name'); // Ім'я таблиці
+                const isChecked = selectedTables.includes(tableName); // Чи обрана таблиця
+
+                // Отримуємо всі зв'язки для поточної таблиці
+                const relatedTables = $(`#table-${tableName}-relations tr td:nth-child(2)`).map(function() {
+                    return $(this).text().trim(); // Отримуємо назви посилальних таблиць
+                }).get();
+
+                // Якщо таблиця вибрана, перевіряємо її зв'язки
+                if (isChecked) {
+                    relatedTables.forEach(function(relatedTable) {
+                        // Якщо зв'язана таблиця не обрана, підсвічуємо її
+                        if (!selectedTables.includes(relatedTable)) {
+                            $(`.table-container[data-table-name="${relatedTable}"]`).addClass(
+                                'border-danger hover:border-danger border-4');
+                            // Відображаємо пов'язані таблиці у полі помилок
+                            const errors = $(`#errors-${relatedTable}`);
+                            errors.append(`${tableName}; `);
+                            if (errors.hasClass('hidden')) {
+                                errors.removeClass('hidden');
+                            }
+                        }
+                    });
+                }
+            });
+
+            toggleAllNestedForms();
+
+            // // Тепер видаляємо border-danger з усіх таблиць, які не мають зв'язків з обраними
+            // $('.table-container').each(function() {
+            //     const tableName = $(this).data('table-name');
+            //     const hasDangerBorder = $(this).hasClass('border-danger');
+            //     // const isChecked = selectedTables.includes(tableName); // Чи обрана таблиця
+
+            //     // Отримуємо всі зв'язки для поточної таблиці
+            //     const relatedTables = $(`#table-${tableName}-relations tr td:nth-child(2)`).map(function() {
+            //         return $(this).text().trim(); // Отримуємо назви посилальних таблиць
+            //     }).get();
+
+            //     // Перевіряємо, чи є невибрані зв'язані таблиці
+            //     const hasUnselectedRelated = relatedTables.some(function(relatedTable) {
+            //         return !selectedTables.includes(relatedTable);
+            //     });
+
+            //     // Якщо таблиця не вибрана і не має зв'язків з обраними, видаляємо border-danger
+            //     if (!isChecked && hasDangerBorder && !hasUnselectedRelated) {
+            //         $(this).removeClass('border-danger hover:border-danger border-4');
+            //         $(`#errors-${tableName}`).html(''); // Очищуємо поле помилок
+            //     }
+            // });
+        }
+
+        function clearInputErrors() {
+            // Спочатку прибираємо всі border-danger
+            $('.table-container').removeClass('border-danger hover:border-danger border-4');
+            // Очищуємо всі поля помилок
+            $('[id^="errors-"]').html('');
+            checkTableRelations();
+        }
+
+        $(document).ready(function() {
+            // Викликаємо функцію при зміні стану чекбокса
+            $('input[name="tables[]"]').change(function() {
+                clearInputErrors();
+            });
+
+            // Ініціалізуємо перевірку при завантаженні сторінки
+            checkTableRelations();
         });
     </script>
 
-    @if (session()->has('missingTables'))
-        <script>
-            function selectMissingTables() {
+    <script>
+        function selectAll() {
+            const tableCheckboxes = document.querySelectorAll('.table-check');
+            tableCheckboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            clearInputErrors();
+        }
+
+        function deselectAll() {
+            const tableCheckboxes = document.querySelectorAll('.table-check');
+            tableCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            clearInputErrors();
+        }
+    </script>
+
+    <script>
+        function showModal() {
+            window.dispatchEvent(new CustomEvent('open-modal', {
+                detail: 'select-action' // name of modal
+            }));
+        }
+
+        function getMissingTables() {
+            // Збираємо всі таблиці, які мають клас 'border-danger'
+            const missingTables = $('.table-container.border-danger').map(function() {
+                return $(this).data(
+                    'table-name'); // Припустимо, ім'я таблиці зберігається в атрибуті data-table-name
+            }).get(); // Використовуємо .get() для перетворення в jQuery об'єкт в масив
+
+            return missingTables;
+        }
+
+        function selectMissingTables() {
+
+            @if (session()->has('missingTables'))
                 const tables = @json(session('missingTables'));
-                // const message = "{{ session('message', '') }}";
+            @else
+                const tables = getMissingTables();
+            @endif
 
-                // console.log(message);
+            if (!Array.isArray(tables)) {
+                tables = [tables];
+            }
 
-                // Викликаємо функцію для автоматичного вибору таблиць
-                // selectMissingTables(missingTables);
-
-                if (!Array.isArray(tables)) {
-                    tables = [tables];
+            tables.forEach(table => {
+                const checkbox = document.querySelector(`input[value="${table}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    // toggleNestedForm(checkbox, 'table-' + table); // Відкриваємо вкладену форму
                 }
-                // console.log(tables)
+            });
 
-                tables.forEach(table => {
-                    const checkbox = document.querySelector(`input[value="${table}"]`);
-                    if (checkbox) {
-                        checkbox.checked = true;
-                        toggleNestedForm(checkbox, 'table-' + table); // Відкриваємо вкладену форму
-                    }
-                });
-            }
+            clearInputErrors();
+        }
 
-            function breakRelationsAndSumbit() {
-                activateBreakRelationsMode()
-                submitForm();
-            }
+        function breakRelationsAndSumbit() {
+            activateBreakRelationsMode();
+            submitForm();
+        }
 
-            function activateBreakRelationsMode() {
-                let input = document.querySelector('#break-relations');
-                input.value = 'break';
-            }
+        function activateBreakRelationsMode() {
+            let input = document.querySelector('#break-relations');
+            input.value = 'break';
+        }
 
-            function submitForm() {
-                let form = document.querySelector('#form');
-                form.submit();
+        function submitForm() {
+            let form = document.querySelector('#form');
+            if (form) {
+                form.requestSubmit();
+            } else {
+                console.error('Error sumbit form');
             }
-        </script>
-    @endif
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            $('#submit').on('click', function(event) {
+
+                @if (session()->has('missingTables'))
+                    const tables = @json(session('missingTables'));
+                @else
+                    const tables = getMissingTables();
+                @endif
+
+                if (tables.length != 0) {
+                    $('#missing-tables-container').html(tables.join('; '));
+                    showModal();
+                    event.preventDefault(); // Відміняємо відправку
+                }
+
+            });
+        });
+    </script>
 
 </x-app-layout>
