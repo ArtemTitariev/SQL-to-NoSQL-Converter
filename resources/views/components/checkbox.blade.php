@@ -7,7 +7,7 @@
         name="{{ $name }}"
         value="{{ $value }}"
         {{ $disabled ? 'disabled' : '' }}
-        {!! $attributes->merge(['class' => 'rounded border-gray-300 text-primary shadow-sm focus:ring-primary']) !!}
+        {!! $attributes->merge(['class' => 'rounded text-primary shadow-sm focus:ring-primary']) !!}
     />
     @if ($label)
         <span class="ms-2 text-sm-2 text-primary">

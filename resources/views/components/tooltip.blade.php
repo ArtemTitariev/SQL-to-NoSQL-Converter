@@ -12,7 +12,7 @@ $positionClasses = [
 <div {{ $attributes->merge(['class' => 'relative flex items-center group']) }} style="padding: 10px;">
     <div class="relative flex items-center">
         <x-icons.help class="ml-2 w-5 h-5 cursor-pointer {{ $iconColor }}" />
-        <div class="absolute invisible group-hover:visible group-hover:opacity-100 opacity-0 transition-opacity duration-200 bg-white text-gray border-2 {{ $border }} text-sm rounded-lg shadow-lg py-2 px-4 z-10 {{ $positionClasses[$position] }}">
+        <div class="absolute invisible group-hover:visible group-hover:opacity-100 opacity-0 transition-opacity duration-200 bg-white text-customgray border-2 {{ $border }} text-sm rounded-lg shadow-lg py-2 px-4 z-10 {{ $positionClasses[$position] }}">
             {{ $slot }}
         </div>
     </div>

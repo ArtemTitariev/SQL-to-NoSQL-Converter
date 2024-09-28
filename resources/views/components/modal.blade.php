@@ -60,7 +60,7 @@ $maxWidth = [
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
     >
-        <div class="absolute inset-0 bg-gray opacity-75"></div>
+        <div class="absolute inset-0 bg-customgray opacity-75"></div>
     </div>
 
     <div
@@ -73,7 +73,7 @@ $maxWidth = [
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
     >
-    <button @click="show = false" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+    <button @click="show = false" class="absolute top-2 right-2">
         <x-icons.close />
     </button>
 

@@ -24,7 +24,7 @@ export default {
                 info: "#2474E3", //blue
                 light: "#F8F9FA",
                 dark: "#272B35",
-                gray: "#374151",
+                customgray: "#374151",
             },
             fontFamily: {
                 // sans: ['Figtree', ...defaultTheme.fontFamily.sans],

@@ -1,3 +1,3 @@
-<thead class="bg-light border-b border-gray">
+<thead class="bg-light border-b border-customgray">
     {{ $slot }}
 </thead>
