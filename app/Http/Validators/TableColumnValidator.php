@@ -21,7 +21,7 @@ class TableColumnValidator
         ], [
             'break_relations' => ['bail', 'required', 'string', function ($attribute, $value, $fail) {
                 if (! in_array($value, AdjustDatatypesStrategy::BREAK_RELATIONS)) {
-                    $fail('Перестаньте все ламати!');
+                    $fail(__('Stop breaking everything!'));
                 }
             }],
             'tables' => 'required|array',
@@ -43,14 +43,14 @@ class TableColumnValidator
                     // Перевіряємо, чи всі таблиці з масиву tables є в масиві columns
                     foreach ($tables as $table) {
                         if (!array_key_exists($table, $value)) {
-                            $fail("Таблиця '{$table}' відсутня у масиві стовпців.");
+                            $fail(__('validation.required_table_in_columns', ['table' => $table]));
                         }
                     }
                 }
             ],
         ], [
-            'tables.required' => 'Виберіть хоча б одну таблицю.',
-            'columns.required' => 'Потрібно вибрати стовпці для таблиць.',
+            'tables.required' => __('validation.required_table'),
+            'columns.required' => __('validation.required_columns'),
         ]);
 
         $validator->stopOnFirstFailure()->validate();

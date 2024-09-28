@@ -77,7 +77,7 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
 
         // Перевірка чи не додав користувач зайвих таблиць
         if (!empty(array_diff($tables, $sqlTableNames))) {
-            throw ValidationException::withMessages(['tables' => __('It looks like you manually added new tables. They are not in the schema.')]);
+            throw ValidationException::withMessages(['tables' => __('validation.superfluous_tables')]);
         }
 
         // Асоціативний масив для таблиць і стовпців
@@ -99,18 +99,18 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
 
             // Перевіряємо, чи всі ключі з першого масиву присутні у другому масиві
             if (array_diff($firstArrayKeys, $secondArrayNames)) {
-                throw ValidationException::withMessages(['columns' => __('It looks like you added columns manually. They are not in the schema.')]);
+                throw ValidationException::withMessages(['columns' => __('validation.superfluous_columns')]);
             }
 
             foreach ($columns[$table] as $column => $type) {
                 $sqlColumn = $sqlColumns[$column] ?? null;
 
                 if (!$sqlColumn) {
-                    throw ValidationException::withMessages(['columns' =>  __("Column :column is not found in table :table", ['column' => $column, 'table' => $table])]);
+                    throw ValidationException::withMessages(['columns' =>  __('validation.superfluous_column', ['column' => $column, 'table' => $table])]);
                 }
 
                 if (!in_array($type, $sqlColumn->convertable_types)) {
-                    throw ValidationException::withMessages(['columns' => __('It looks like you manually added a data type for a table column. This data type cannot be used.')]);
+                    throw ValidationException::withMessages(['columns' => __('validation.superfluous_datatypes')]);
                 }
             }
         }
@@ -138,7 +138,7 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
                     // details: 'Вибрані не всі необхідні таблиці',
                     with: [
                         'missingTables' => $missingTables,
-                        'message' => __('Not all required tables are selected'),
+                        'message' => __('validation.required_tables'),
                     ],
                 );
                 // throw ValidationException::withMessages(["Вибрані не всі необхідні таблиці"]);
