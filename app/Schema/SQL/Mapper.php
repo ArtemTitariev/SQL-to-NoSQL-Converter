@@ -65,6 +65,7 @@ class Mapper
             'sql_database_id' => $sqlDatabase->id,
             'name' => $tableData['name'],
             'primary_key' => $this->reader->getPrimaryKey($tableData['name']),
+            'rows_number' => $this->reader->getRowsNumber($tableData['name']),
         ]);
         $table->save();
 

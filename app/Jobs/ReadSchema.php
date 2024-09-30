@@ -51,7 +51,7 @@ class ReadSchema implements ShouldQueue
         try {
             $connection = ConnectionCreator::create($sqlDatabase);
 
-            $reader = new Reader($connection->getSchemaBuilder());
+            $reader = new Reader($connection);
             $mapper = new Mapper($sqlDatabase, $reader);
 
             $mapper->mapSchema($sqlDatabase);

@@ -2,6 +2,7 @@
 
 namespace App\Schema\SQL;
 
+use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Builder;
 
 /**
@@ -10,6 +11,12 @@ use Illuminate\Database\Schema\Builder;
  */
 class Reader
 {
+
+    /**
+     * @var Illuminate\Database\Connection
+     */
+    protected $connection;
+    
     /**
      * @var Illuminate\Database\Schema\Builder
      */
@@ -29,11 +36,12 @@ class Reader
     private $tableNames;
 
     /**
-     * @var Illuminate\Database\Schema\Builder $builder;
+     * @var Illuminate\Database\Connection $connection;
      */
-    public function __construct(Builder $builder)
+    public function __construct(Connection $connection)
     {
-        $this->builder = $builder;
+        $this->connection = $connection;
+        $this->builder = $connection->getSchemaBuilder();
 
         $this->tableNames = array_flip($this->getTableListing());
     }
@@ -166,6 +174,28 @@ class Reader
         // $tableNames = array_flip($this->tableListing);
 
         return array_filter($foreignKeys, fn ($fK) => isset($this->tableNames[$fK['foreign_table']]));
+    }
+
+    /**
+     * Counting the number of rows in a table. The maximum exact number 
+     * is defined in the configuration constants.MAX_ROWS_LIMIT.
+     * If the number of rows is greater than constants.MAX_ROWS_LIMIT, 
+     * constants.MAX_ROWS_LIMIT_EXCEEDED value is returned.
+     * 
+     * @param string $tableName
+     * 
+     * @return int
+     */
+    public function getRowsNumber(string $tableName): int
+    {
+        $maxCount = config('constants.MAX_ROWS_LIMIT');
+        $exceeded = config('constants.MAX_ROWS_LIMIT_EXCEEDED');
+
+        $count = $this->connection->table($tableName)
+        ->take($maxCount + 1) // Limit
+        ->count();
+    
+        return $count > $maxCount ? $exceeded : $count;
     }
 
     /*

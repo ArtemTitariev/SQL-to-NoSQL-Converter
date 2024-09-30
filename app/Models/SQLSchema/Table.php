@@ -14,11 +14,12 @@ class Table extends Model
     public $timestamps = false;
     
     protected $fillable = [
-        'sql_database_id', 'name', 'primary_key'
+        'sql_database_id', 'name', 'primary_key', 'rows_number',
     ];
 
     protected $casts = [
         'primary_key' => 'array',
+        'rows_number' => 'integer',
     ];
 
     public function columns(): HasMany
