@@ -14,18 +14,18 @@ class PostgreSQLRules implements RdbDataTypeRulesInterface
 
         //integer numbers
         'bigint' => ['long', 'string'],
-        'integer' => ['int', 'string'],
-        'smallint' => ['int', 'string'],
+        'integer' => ['int', 'long', 'string'],
+        'smallint' => ['int', 'long', 'string'],
 
-        'bigserial' => ['int', 'string'],
-        'serial' => ['int', 'string'],
-        'smallserial' => ['int', 'string'],
+        'bigserial' => ['int', 'long', 'string'],
+        'serial' => ['int', 'long', 'string'],
+        'smallserial' => ['int', 'long', 'string'],
 
         // fractional numbers
         'decimal' => ['decimal128', 'string'],
         'numeric' => ['decimal128', 'string'],
-        'real' => ['double', 'string'],
-        'double precision' => ['double', 'string'],
+        'real' => ['double', 'long', 'string'],
+        'double precision' => ['double', 'long', 'string'],
 
         // strings
         'character' => ['string'],
