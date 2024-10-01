@@ -5,24 +5,18 @@ namespace App\View\Components;
 use Closure;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
+use App\Enums\RelationType;
 
 class RelationTypeBadge extends Component
 {
     public $relationType;
 
-    public $badgeClass;
-
-    public $relationDescription;
-
-    private $relationTypes;
     /**
      * Create a new component instance.
      */
-    public function __construct($relationType)
+    public function __construct(RelationType $relationType)
     {
         $this->relationType = $relationType;
-        $this->relationTypes = config('constants.RELATION_TYPES');
-        $this->badgeClass = $this->getBadgeClass();
     }
 
     /**
@@ -35,32 +29,27 @@ class RelationTypeBadge extends Component
 
     public function getBadgeClass()
     {
-        $classes = [
-            $this->relationTypes['ONE-TO-ONE'] => 'text-accent',
-            $this->relationTypes['ONE-TO-MANY'] => 'text-primary',
-            $this->relationTypes['MANY-TO-MANY'] => 'text-secondary',
-            $this->relationTypes['SELF-REF'] => 'text-warning',
-            $this->relationTypes['COMPLEX'] => 'text-danger',
-        ];
-
-        return $classes[$this->relationType] ?? 'text-accent';
+        return match($this->relationType) {
+            RelationType::ONE_TO_ONE => 'text-accent',
+            RelationType::ONE_TO_MANY => 'text-info',
+            RelationType::MANY_TO_ONE => 'text-primary',
+            RelationType::MANY_TO_MANY => 'text-secondary',
+            RelationType::SELF_REF => 'text-warning',
+            RelationType::COMPLEX => 'text-danger',
+            default => 'text-accent',
+        };
     }
 
     public function getRelationDescription()
     {
-        switch ($this->relationType) {
-            case $this->relationTypes['ONE-TO-ONE']:
-                return __('One To One');
-            case $this->relationTypes['ONE-TO-MANY']:
-                return __('Many To One');
-            case $this->relationTypes['MANY-TO-MANY']:
-                return __('Many To Many');
-            case $this->relationTypes['SELF-REF']:
-                return __('Self reference');
-            case $this->relationTypes['COMPLEX']:
-                return __('Part of a complex relationship');
-            default:
-                return $this->relationType;
-        }
+        return match($this->relationType) {
+            RelationType::ONE_TO_ONE => __('One To One'),
+            RelationType::ONE_TO_MANY => __('One To Many'),
+            RelationType::MANY_TO_ONE => __('Many To One'),
+            RelationType::MANY_TO_MANY => __('Many To Many'),
+            RelationType::SELF_REF => __('Self reference'),
+            RelationType::COMPLEX => __('Part of a complex relationship'),
+            default => (string) $this->relationType->value,
+        };
     }
 }

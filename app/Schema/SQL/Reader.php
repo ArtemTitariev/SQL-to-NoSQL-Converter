@@ -4,6 +4,7 @@ namespace App\Schema\SQL;
 
 use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Builder;
+use App\Enums\RelationType;
 
 /**
  * SQL Schema reader
@@ -16,7 +17,7 @@ class Reader
      * @var Illuminate\Database\Connection
      */
     protected $connection;
-    
+
     /**
      * @var Illuminate\Database\Schema\Builder
      */
@@ -65,7 +66,7 @@ class Reader
     // {
     //     return $this->tableListing;
     // }
-    
+
     /**
      * Get the names of the tables that belong to the database.
      * 
@@ -173,7 +174,7 @@ class Reader
         // $tableNames = array_flip($this->getTableListing());
         // $tableNames = array_flip($this->tableListing);
 
-        return array_filter($foreignKeys, fn ($fK) => isset($this->tableNames[$fK['foreign_table']]));
+        return array_filter($foreignKeys, fn($fK) => isset($this->tableNames[$fK['foreign_table']]));
     }
 
     /**
@@ -192,9 +193,9 @@ class Reader
         $exceeded = config('constants.MAX_ROWS_LIMIT_EXCEEDED');
 
         $count = $this->connection->table($tableName)
-        ->take($maxCount + 1) // Limit
-        ->count();
-    
+            ->take($maxCount + 1) // Limit
+            ->count();
+
         return $count > $maxCount ? $exceeded : $count;
     }
 
@@ -239,11 +240,11 @@ class Reader
      */
     public function getForeignKeysWithRelationType(string $tableName): array
     {
-        $relationTypes = config('constants.RELATION_TYPES');
+        // $relationTypes = config('constants.RELATION_TYPES');
 
         $foreignKeys = $this->getFilteredForeignKeys($tableName);
         $indexes = $this->getIndexes($tableName);
-        
+
         // Create an associative array to quickly look up unique indexes
         $uniqueIndexes = [];
         foreach ($indexes as $index) {
@@ -267,14 +268,14 @@ class Reader
             }
             $tableReferenceCount[$foreignTable] += 1;
 
-            $relationType = $relationTypes['ONE-TO-MANY']; // Default to 1-N
+            $relationType = RelationType::MANY_TO_ONE; // Default to N-1
 
             if ($hasUniqueIndex) {
-                $relationType = $relationTypes['ONE-TO-ONE'];
+                $relationType = RelationType::ONE_TO_ONE;
             }
 
             if ($foreignTable === $tableName) { // Self reference
-                $relationType = $relationTypes['SELF-REF'];
+                $relationType = RelationType::SELF_REF;
             }
 
             $foreignKeysWithTypes[] = array_merge($fk, ['relation_type' => $relationType]);
@@ -295,10 +296,10 @@ class Reader
                         foreach ($foreignKeysWithTypes as $fKIndex => $fkWithType) { //use $index, not reference !!
                             if (
                                 in_array($fkWithType['columns'][0], $index['columns'])
-                                && $fkWithType['relation_type'] !== $relationTypes['COMPLEX']
+                                && $fkWithType['relation_type']->value !== RelationType::COMPLEX->value //----------------------------
                             ) {
 
-                                $foreignKeysWithTypes[$fKIndex]['relation_type'] = $relationTypes['MANY-TO-MANY'];
+                                $foreignKeysWithTypes[$fKIndex]['relation_type'] = RelationType::MANY_TO_MANY;
                                 $nNRelationships[] = $fkWithType;
                             }
                         }
@@ -313,7 +314,7 @@ class Reader
         foreach ($foreignKeysWithTypes as $index => $fkWithType) { //use $index, not reference !!
             $foreignTable = $fkWithType['foreign_table'];
             if ($tableReferenceCount[$foreignTable] > 1) {
-                $foreignKeysWithTypes[$index]['relation_type'] = $relationTypes['COMPLEX'];
+                $foreignKeysWithTypes[$index]['relation_type'] = RelationType::COMPLEX;
             }
         }
 
@@ -325,11 +326,13 @@ class Reader
         //     RELATION_TYPES['SELF-REF'] => 0,
         //     RELATION_TYPES['COMPLEX'] => 0
         // ];
-        $relationTypeKeys = array_values($relationTypes);
+        // $relationTypeKeys = array_values($relationTypes);
+        $relationTypeKeys = RelationType::getValues();
+
         $relationTypeCounts = array_fill_keys($relationTypeKeys, 0);
 
         foreach ($foreignKeysWithTypes as $fkWithType) {
-            $relationTypeCounts[$fkWithType['relation_type']] += 1;
+            $relationTypeCounts[$fkWithType['relation_type']->value] += 1;
         }
 
         if (
@@ -343,12 +346,13 @@ class Reader
 
             // якщо є (2 N-N або 2 1-N) та ще якийсь
             array_sum($relationTypeCounts) > 2 &&
-            ($relationTypeCounts[$relationTypes['ONE-TO-MANY']] >= 2 ||
-            $relationTypeCounts[$relationTypes['MANY-TO-MANY']] >= 2 ) 
+            ($relationTypeCounts[RelationType::MANY_TO_ONE->value] >= 2 ||
+                // $relationTypeCounts[RelationType::ONE_TO_MANY->value] >= 2 || // not used
+                $relationTypeCounts[RelationType::MANY_TO_MANY->value] >= 2)
         ) {
             foreach ($foreignKeysWithTypes as $index => $fkWithType) { //use $index, not reference !!
-                if ($fkWithType['relation_type'] !== $relationTypes['COMPLEX']) {
-                    $foreignKeysWithTypes[$index]['relation_type'] = $relationTypes['COMPLEX'];
+                if ($fkWithType['relation_type']->value !== RelationType::COMPLEX->value) {
+                    $foreignKeysWithTypes[$index]['relation_type'] = RelationType::COMPLEX;
                 }
             }
         }

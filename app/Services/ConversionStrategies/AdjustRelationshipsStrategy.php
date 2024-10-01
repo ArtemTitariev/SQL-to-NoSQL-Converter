@@ -11,8 +11,12 @@ class AdjustRelationshipsStrategy implements ConversionStrategyInterface
     {
         // Логіка для кроку збереження зв'язків
 
+
+
+        dd('strategy execute');
+
         // Return success response
-        return new StrategyResult (
+        return new StrategyResult(
             result: StrategyResult::STATUSES['COMPLETED'],
             details: 'Adjust relationships strategy.',
             next: config('convert_steps.adjust_relationships.next'),

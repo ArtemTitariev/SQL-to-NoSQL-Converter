@@ -20,14 +20,14 @@ return [
         ],
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Main relation types in relational databases
-    |--------------------------------------------------------------------------
-    |
-    | Used for schema reader and some models
-    |
-    */
+    // /*
+    // |--------------------------------------------------------------------------
+    // | Main relation types in relational databases
+    // |--------------------------------------------------------------------------
+    // |
+    // | Used for schema reader and some models
+    // |
+    // */
     'RELATION_TYPES' => [
         'ONE-TO-ONE' => '1-1',
         'ONE-TO-MANY' => '1-N',

@@ -43,4 +43,23 @@ class CircularRef extends Model
             // ->havingRaw('JSON_LENGTH(circular_refs) = ?', count($tableNames))
             ->get();
     }
+    
+    /**
+     * Переврити, чи є таблиці в круговій залежності для конкретної бази даних.
+     *
+     * @param int $databaseId
+     * @param array $tableNames
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public static function checkIfExistsByAllTableNames(int $databaseId, array $tableNames)
+    {
+        return self::where('sql_database_id', $databaseId)
+            ->where(function ($query) use ($tableNames) {
+                foreach ($tableNames as $tableName) {
+                    $query->whereJsonContains('circular_refs', $tableName);
+                }
+            })
+            // ->havingRaw('JSON_LENGTH(circular_refs) = ?', count($tableNames))
+            ->exists();
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models\SQLSchema;
 
+use App\Enums\RelationType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,7 @@ class ForeignKey extends Model
     protected $casts = [
         'columns' => 'array',
         'foreign_columns' => 'array',
+        'relation_type'  => RelationType::class,
     ];
 
     public function table(): BelongsTo
@@ -34,9 +36,9 @@ class ForeignKey extends Model
         return $this->belongsTo(Table::class);
     }
 
-    public function isValidRelationType($type)
-    {
-        // return in_array($type, self::RELATION_TYPES);
-        return in_array($type, config('constants.RELATION_TYPES'));
-    }
+    // public function isValidRelationType($type)
+    // {
+    //     // return in_array($type, self::RELATION_TYPES);
+    //     return in_array($type, config('constants.RELATION_TYPES'));
+    // }
 }
