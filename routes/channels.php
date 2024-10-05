@@ -16,14 +16,13 @@ Broadcast::channel('delivery.{id}', function ($user, $id) {
 Broadcast::channel(
     'users.{userId}.converts.{convertId}.ReadSchema',
     function ($user, $userId, $convertId) {
-        $convert = \App\Models\Convert::find($convertId);
+        return \App\Models\Convert::canAccess($user, $userId, $convertId);
+    }
+);
 
-        if (!$convert) {
-            return false;
-        }
-
-        return (int) $user->id === (int) $userId &&
-            (int) $convert->id === (int) $convertId &&
-            (int) $convert->user->id === (int) $userId;
+Broadcast::channel(
+    'users.{userId}.converts.{convertId}.ProcessRelationships',
+    function ($user, $userId, $convertId) {
+        return \App\Models\Convert::canAccess($user, $userId, $convertId);
     }
 );

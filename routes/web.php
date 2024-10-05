@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\MongoManyToManyRelation;
 use App\Enums\RelationType;
 use App\Http\Controllers\ConvertController;
 use App\Http\Controllers\ProfileController;
@@ -8,6 +9,15 @@ use App\Models\SQLSchema\CircularRef;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
+
+use App\Enums\MongoRelationType;
+use App\Models\MongoSchema\Collection;
+use App\Models\MongoSchema\Field;
+use App\Models\MongoSchema\LinkEmbedd;
+use App\Models\MongoSchema\ManyToManyLink;
+use App\Models\SQLSchema\ForeignKey;
+use App\Models\SQLSchema\Table;
+
 
 use Illuminate\Support\Facades\DB;
 
@@ -84,14 +94,15 @@ Route::get('/delete-all', function (Request $request) {
     DB::table('converts')->truncate();
     DB::table('sql_databases')->truncate();
     DB::table('mongo_databases')->truncate();
-    DB::table('links')->truncate();
+    DB::table('links_embedds')->truncate();
+    DB::table('many_to_many_links')->truncate();
     DB::table('foreign_keys')->truncate();
     DB::table('fields')->truncate();
-    DB::table('embeddings')->truncate();
+    // DB::table('embeddings')->truncate();
+    // DB::table('links')->truncate();
     DB::table('conversion_progresses')->truncate();
     DB::table('columns')->truncate();
     DB::table('collections')->truncate();
-    DB::table('circular_refs')->truncate();
     DB::table('circular_refs')->truncate();
 
     return 'all converts deleted';
@@ -107,3 +118,57 @@ Route::get('/delete-all', function (Request $request) {
 
 //     return 'done';
 // });
+
+Route::get('/result-step4', function (Request $request) {
+
+    $id = $request->input('id');
+    $convert = Convert::find($id);
+
+    $mongoDatabase = $convert->mongoDatabase()
+        ->with(['collections'])
+        ->first();
+
+    $collections = $mongoDatabase->collections()->pluck('id');
+
+    // dd(Field::whereIn('collection_id', [17, 18])->get());
+    dd(
+        ManyToManyLink::whereIn('collection1_id', $collections)
+            ->orWhereIn('collection2_id', $collections)
+            ->orWhereIn('pivot_collection_id', $collections)
+            ->get(),
+
+        LinkEmbedd::whereIn('pk_collection_id', $collections)
+            ->orWhereIn('fk_collection_id', $collections)
+            ->get()
+    );
+});
+
+Route::get('/clear-step4', function (Request $request) {
+
+    $id = $request->input('id');
+    $convert = Convert::find($id);
+
+    $mongoDatabase = $convert->mongoDatabase()
+        ->with(['collections'])
+        ->first();
+
+    $collections = $mongoDatabase->collections()->pluck('id');
+
+    // dd($collections);
+    // ->with(['linksEmbeddsFrom', 'linksEmbeddsTo', 'manyToManyPivot'])
+    // ->get();
+
+    DB::table('links_embedds')
+        ->whereIn('pk_collection_id', $collections)
+        ->orWhereIn('fk_collection_id', $collections)
+        ->delete();
+
+    DB::table('many_to_many_links')
+        ->whereIn('collection1_id', $collections)
+        ->orWhereIn('collection2_id', $collections)
+        ->orWhereIn('pivot_collection_id', $collections)
+        ->delete();
+
+    dd(DB::table('links_embedds')->count(), DB::table('many_to_many_links')->count());
+    return 'done';
+});

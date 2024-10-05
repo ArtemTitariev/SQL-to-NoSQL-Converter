@@ -52,4 +52,6 @@ return [
     'MAX_ROWS_LIMIT' => 500,
     'MAX_ROWS_LIMIT_EXCEEDED' => -1,
 
+    'MAX_COLLECTION_EMBEDDED_FIELDS' => 100,
+
 ];
