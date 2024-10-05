@@ -3,10 +3,9 @@
 namespace App\Jobs;
 
 use App\Actions\CompleteSchemaReadingStep;
-use App\Events\PackageSent;
+use App\Enums\EventStatus;
 use App\Events\ReadSchema as ReadSchemaEvent;
 use App\Models\Convert;
-use App\Models\ConversionProgress;
 use App\Models\User;
 use App\Schema\SQL\Mapper;
 use App\Schema\SQL\Reader;
@@ -77,7 +76,7 @@ class ReadSchema implements ShouldQueue
             ReadSchemaEvent::dispatch(
                 $this->user->id,
                 $this->convert->id,
-                ReadSchemaEvent::STATUSES['COMPLETED']
+                EventStatus::COMPLETED
             );
 
             // Log::info("ReadSchema job finished");
@@ -109,7 +108,7 @@ class ReadSchema implements ShouldQueue
         ReadSchemaEvent::dispatch(
             $this->user->id,
             $this->convert->id,
-            ReadSchemaEvent::STATUSES['FAILED']
+            EventStatus::FAILED
         );
     }
 }

@@ -12,15 +12,10 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 // use Illuminate\Support\Facades\Log;
 
-class ReadSchema implements ShouldBroadcast
+class ProcessRelationships implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
-
-    // const STATUSES = [
-    //     'COMPLETED' => 'completed',
-    //     'FAILED' => 'failed',
-    // ];
-
+    
     /**
      * Create a new event instance.
      * @param int $userId
@@ -44,6 +39,6 @@ class ReadSchema implements ShouldBroadcast
     {  
         return new PrivateChannel('users.' . $this->userId .
             '.converts.' . $this->convertId .
-            '.ReadSchema');
+            '.ProcessRelationships');
     }
 }
