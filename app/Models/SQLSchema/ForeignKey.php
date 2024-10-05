@@ -12,7 +12,7 @@ class ForeignKey extends Model
     use HasFactory;
 
     public $timestamps = false;
-    
+
     // public const RELATION_TYPES = [
     //     'ONE-TO-ONE' => '1-1', 
     //     'ONE-TO-MANY' => '1-N', 
@@ -21,8 +21,13 @@ class ForeignKey extends Model
     // ];
 
     protected $fillable = [
-        'table_id', 'name', 'columns', 'foreign_schema', 'foreign_table', 
-        'foreign_columns', 'relation_type'
+        'table_id',
+        'name',
+        'columns',
+        'foreign_schema',
+        'foreign_table',
+        'foreign_columns',
+        'relation_type'
     ];
 
     protected $casts = [
@@ -34,6 +39,24 @@ class ForeignKey extends Model
     public function table(): BelongsTo
     {
         return $this->belongsTo(Table::class);
+    }
+
+    public function relatedTable($databaseId, $loadRelations = false): Table
+    {
+        return Table::with($loadRelations ? ['foreignKeys'] : [])
+            ->where('sql_database_id', $databaseId)
+            ->where('name', $this->foreign_table)
+            ->first();
+    }
+
+    public static function relationToTableExists($databaseId, array $toForeignTables, array $excludeFkIds): bool
+    {
+        return Table::join('foreign_keys', 'foreign_keys.table_id', '=', 'tables.id')
+            ->where('tables.sql_database_id', $databaseId)
+            ->whereIn('foreign_keys.foreign_table', $toForeignTables)
+            // ->where('tables.name', '!=', $table->name)
+            ->whereNotIn('foreign_keys.id', $excludeFkIds)
+            ->exists();
     }
 
     // public function isValidRelationType($type)

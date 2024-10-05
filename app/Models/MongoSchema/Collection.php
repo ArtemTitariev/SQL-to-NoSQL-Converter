@@ -26,14 +26,29 @@ class Collection extends Model
         return $this->hasMany(Field::class);
     }
 
-    public function embeddings(): HasMany
+    // public function embeddings(): HasMany
+    // {
+    //     return $this->hasMany(Embedding::class);
+    // }
+
+    // public function links(): HasMany
+    // {
+    //     return $this->hasMany(Link::class);
+    // }
+
+    public function linksEmbeddsFrom(): HasMany
     {
-        return $this->hasMany(Embedding::class);
+        return $this->hasMany(LinkEmbedd::class, 'fk_collection_id', 'id');
+    }
+    
+    public function linksEmbeddsTo(): HasMany
+    {
+        return $this->hasMany(LinkEmbedd::class, 'pk_collection_id', 'id');
     }
 
-    public function links(): HasMany
+    public function manyToManyPivot(): HasMany
     {
-        return $this->hasMany(Link::class);
+        return $this->hasMany(ManyToManyLink::class, 'pivot_collection_id', 'id');
     }
 
     public function database(): BelongsTo

@@ -14,10 +14,7 @@ return new class extends Migration
     {
         Schema::table('foreign_keys', function (Blueprint $table) {
             $table->dropColumn('relation_type');
-            $table->enum(
-                'relation_type',
-                RelationType::getValues()
-            );
+            $table->enum('relation_type', RelationType::getValues());
         });
     }
 

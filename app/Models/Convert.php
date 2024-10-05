@@ -90,8 +90,24 @@ class Convert extends Model
         $this->save();
     }
 
-    public function isConfiguring(): bool 
+    public function isConfiguring(): bool
     {
         return $this->status == static::STATUSES['CONFIGURING'];
+    }
+
+    /**
+     * For broadcasting channels. Check id user ca access to conversion
+     */
+    public static function canAccess($user, $userId, $convertId): bool
+    {
+        $convert = Convert::find($convertId);
+
+        if (!$convert) {
+            return false;
+        }
+
+        return (int) $user->id === (int) $userId &&
+            // (int) $convert->id === (int) $convertId &&
+            (int) $convert->user->id === (int) $userId;
     }
 }

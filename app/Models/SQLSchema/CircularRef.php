@@ -13,7 +13,8 @@ class CircularRef extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'sql_database_id', 'circular_refs',
+        'sql_database_id',
+        'circular_refs',
     ];
 
     protected $casts = [
@@ -43,7 +44,22 @@ class CircularRef extends Model
             // ->havingRaw('JSON_LENGTH(circular_refs) = ?', count($tableNames))
             ->get();
     }
-    
+
+    /**
+     * Переврити, чи є таблиця в круговій залежності для конкретної бази даних.
+     *
+     * @param int $databaseId
+     * @param array $tableNames
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public static function checkIfExistsByTableName(int $databaseId, string $tableName)
+    {
+        return self::where('sql_database_id', $databaseId)
+            ->whereJsonContains('circular_refs', $tableName)
+            // ->havingRaw('JSON_LENGTH(circular_refs) = ?', count($tableNames))
+            ->exists();
+    }
+
     /**
      * Переврити, чи є таблиці в круговій залежності для конкретної бази даних.
      *
