@@ -11,6 +11,8 @@ enum RelationType: string
     case SELF_REF = 'Self reference';
     case COMPLEX = 'Complex multiple';
 
+    use EnumValuesTrait;
+
     public function isOneToOne(): bool
     {
         return $this === self::ONE_TO_ONE;
@@ -41,7 +43,7 @@ enum RelationType: string
         return $this === self::COMPLEX;
     }
 
-    public static function getValues(): array {
-        return array_map(fn($case) => $case->value, self::cases());
-    }
+    // public static function getValues(): array {
+    //     return array_map(fn($case) => $case->value, self::cases());
+    // }
 }
