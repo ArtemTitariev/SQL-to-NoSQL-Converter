@@ -65,7 +65,8 @@ class ConversionStepExecutor
     {
         if ($result->isProcessing()) {
             ConversionService::updateConversionProgress($convert, $step, ConversionProgress::STATUSES['IN_PROGRESS'], $result->getDetails());
-            return view($result->getView())->with($result->getWith());
+            // return view($result->getView())->with($result->getWith());
+            return redirect()->route($result->getRoute(), ['convert' => $convert->id]);
         }
 
         if ($result->isRedirect()) {
@@ -92,7 +93,7 @@ class ConversionStepExecutor
     private function proceedToNextStep(Convert $convert, string $step, Request $request, array $data)
     {
         $nextStep = $this->steps[$step]['next'] ?? null;
-
+        // dd($nextStep);
         if ($nextStep !== null) {
             if ($this->steps[$nextStep]['is_manual'] ?? false) {
                 ConversionService::createConversionProgress($convert, $nextStep, ConversionProgress::STATUSES['CONFIGURING'], 'Configuring step');

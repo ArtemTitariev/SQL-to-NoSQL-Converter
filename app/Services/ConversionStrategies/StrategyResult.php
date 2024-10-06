@@ -18,6 +18,11 @@ class StrategyResult
      * @var string|null $view The view name to be returned after the strategy execution
      */
     private ?string $view;
+    
+    /**
+     * @var string|null $route The name of route to be redirected after the strategy execution
+     */
+    private ?string $route;
 
     /**
      * @var array $with Data to be passed with the view
@@ -43,6 +48,7 @@ class StrategyResult
      * @param string|null $details
      * @param string|null $next
      * @param string|null $view
+     * @param string|null $route
      * @param array $with
      *
      * @throws \InvalidArgumentException
@@ -52,12 +58,14 @@ class StrategyResult
         string $details = null,
         ?string $next = null,
         ?string $view = null,
+        ?string $route = null,
         array $with = [],
     ) {
         $this->setResult($result);
         $this->details = $details;
         $this->next = $next;
         $this->view = $view;
+        $this->route = $route;
         $this->with = $with;
     }
 
@@ -74,6 +82,11 @@ class StrategyResult
     public function getView(): ?string
     {
         return $this->view;
+    }
+    
+    public function getRoute(): ?string
+    {
+        return $this->route;
     }
 
     public function getWith(): array
@@ -109,6 +122,11 @@ class StrategyResult
     public function setView(string $view): void
     {
         $this->view = $view;
+    }
+    
+    public function setRoute(string $route): void
+    {
+        $this->route = $route;
     }
 
     public function setWith(array $with): void

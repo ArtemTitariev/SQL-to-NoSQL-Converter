@@ -13,8 +13,9 @@ class EtlStrategy implements ConversionStrategyInterface
 
         // Return success response
         return new StrategyResult (
-            result: StrategyResult::STATUSES['COMPLETED'],
+            result: StrategyResult::STATUSES['PROCESSING'],
             details: 'elt strategy.',
+            route: config('convert_steps.etl.route'),
         );
     }
 }

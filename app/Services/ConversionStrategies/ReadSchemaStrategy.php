@@ -20,13 +20,15 @@ class ReadSchemaStrategy implements ConversionStrategyInterface
             Auth::user(),
             $convert,
             config('convert_steps.read_schema.key')
-        )->delay(now()->addSeconds(2)); /////////////////////
+        )->onQueue('read_schema')
+        ->delay(now()->addSeconds(2)); /////////////////////
 
         return new StrategyResult (
             result: StrategyResult::STATUSES['PROCESSING'],
             details: 'Relational database schema analysis continues.',
-            view: 'convert.read_schema-loading',
-            with: ['convert' => $convert],
+            route: config('convert_steps.read_schema.route'),
+            // view: 'convert.read_schema-loading',
+            // with: ['convert' => $convert],
         );
         
 

@@ -17,13 +17,15 @@ class ProcessRelationshipsStrategy implements ConversionStrategyInterface
             Auth::user(),
             $convert,
             config('convert_steps.process_relationships.key')
-        )->delay(now()->addSeconds(2)); /////////////////////
+        )->onQueue('process_relationships')
+            ->delay(now()->addSeconds(2)); /////////////////////
 
-        return new StrategyResult (
+        return new StrategyResult(
             result: StrategyResult::STATUSES['PROCESSING'],
             details: 'Primary processing of relationships is performed.',
-            view: 'convert.process_relationships-loading',
-            with: ['convert' => $convert],
+            route: config('convert_steps.process_relationships.route'),
+            // view: 'convert.process_relationships-loading',
+            // with: ['convert' => $convert],
         );
     }
 }
