@@ -46,11 +46,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
         'update',
     ]);
 
-    Route::get('/converts/{convert}/resume', [ConvertController::class, 'resume'])->name('convert.resume');
-    Route::middleware(['check.step.access'])->group(function () {
-        Route::get('/converts/{convert}/steps/{step}', [ConvertController::class, 'showStep'])->name('convert.step.show');
-        Route::post('/converts/{convert}/steps/{step}', [ConvertController::class, 'storeStep'])->name('convert.step.store');
+    Route::prefix('/converts/{convert}')->group(function () {
+
+        Route::get('/resume', [ConvertController::class, 'resume'])->name('convert.resume');
+
+        Route::middleware(['check.step.access'])->group(function () {
+            Route::get('/steps/{step}', [ConvertController::class, 'showStep'])->name('convert.step.show');
+            Route::post('/steps/{step}', [ConvertController::class, 'storeStep'])->name('convert.step.store');
+        });
+
+        Route::get('/process/read-schema', [ConvertController::class, 'processReadSchema'])->name('convert.process_read_schema');
+        Route::get('/process/relationships', [ConvertController::class, 'processRelationships'])->name('convert.process_relationships');
+        Route::get('/process/etl', [ConvertController::class, 'processEtl'])->name('convert.process_etl');
+
     });
+    
 });
 
 Route::middleware('auth')->group(function () {
@@ -59,11 +69,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::view('/test', 'test');
-
 require __DIR__ . '/auth.php';
 
 // FOR TESTING ONLY------------------
+Route::view('/test', 'test');
 
 Route::get('/delete', function (Request $request) {
     $id = $request->input('id');

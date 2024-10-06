@@ -76,6 +76,40 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Queues
+    |--------------------------------------------------------------------------
+    |
+    | Queues used in the project.
+    | - read_schema: for analyzing (“reading”) the relational database schema;
+    | - process_relationships: for primary processing of relationships;
+    | - etl_operations: for performing ETL operations;
+    | - events_emails: for sending events via websockets and emails.
+    |
+    */
+
+    // 'queues' => [
+    //     'read_schema' => 'read_schema',
+    //     'process_relationships' => 'process_relationships',
+    //     'etl_operations' => 'etl_operations',
+    //     'events_emails' => 'events_emails',
+    // ],
+    'queues' => [
+        'read_schema' => [
+            'key' => 'read_schema',
+        ],
+        'process_relationships' => [
+            'key' => 'process_relationships',
+        ],
+        'etl_operations' => [
+            'key' => 'etl_operations',
+        ],
+        'events_emails' => [
+            'key' => 'events_emails',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Job Batching
     |--------------------------------------------------------------------------
     |
