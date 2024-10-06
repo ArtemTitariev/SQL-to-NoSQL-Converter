@@ -18,10 +18,6 @@
                 console.log(event);
                 window.location.href = "{{ route('convert.resume', [$convert->id]) }}";
             });
-            
-            window.Echo.private("delivery.{{ auth()->user()->id }}").listen("PackageSent", (event) => {
-                console.log(event);
-            });
         });
     </script>
 </x-app-layout>
