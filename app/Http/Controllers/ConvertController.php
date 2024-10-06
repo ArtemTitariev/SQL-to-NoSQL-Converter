@@ -91,10 +91,16 @@ class ConvertController extends Controller
                     break;
                 }
             }
-            
+
             if ($stepKey) {
                 return redirect()->route('convert.step.show', ['convert' => $convert, 'step' => $stepKey]);
             }
+        }
+
+        // dd($lastStep);
+
+        if ($lastStep->isEtl() && ! $lastStep->isCompletedOrError()) {
+            return redirect()->route(config('convert_steps.etl.route'), ['convert' => $convert]);
         }
 
         return redirect()->route('converts.show', ['convert' => $convert])->withErrors(['error' => "Can't resume this step"]);
@@ -116,9 +122,9 @@ class ConvertController extends Controller
     public function storeStep(Request $request, Convert $convert, string $step)
     {
         try {
-        // Валідація та збереження даних для кроку $step
-        return $this->conversionStepExecutor
-            ->executeStep($convert, $request, $step);
+            // Валідація та збереження даних для кроку $step
+            return $this->conversionStepExecutor
+                ->executeStep($convert, $request, $step);
         } catch (\Throwable $e) {
             return redirect()->back()->withInput()->withErrors($e->getMessage());
         }
@@ -132,6 +138,21 @@ class ConvertController extends Controller
         $convert->delete();
 
         return redirect()->route('converts.index');
+    }
+
+    public function processReadSchema(Convert $convert)
+    {
+        return view('convert.process_read_schema', compact('convert'));
+    }
+
+    public function processRelationships(Convert $convert)
+    {
+        return view('convert.process_relationships', compact('convert'));
+    }
+
+    public function processEtl(Convert $convert)
+    {
+        return view('convert.process_etl', compact('convert'));
     }
 
     // /**

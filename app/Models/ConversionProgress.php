@@ -81,4 +81,14 @@ class ConversionProgress extends Model
     {
         return $this->isCompleted() || $this->isError();
     }
+
+    /**
+     * Перевіряє, чи є прогрес - кроком ETL
+     *
+     * @return bool
+     */
+    public function isEtl(): bool
+    {
+        return $this->step === config('convert_steps.etl.number');
+    }
 }

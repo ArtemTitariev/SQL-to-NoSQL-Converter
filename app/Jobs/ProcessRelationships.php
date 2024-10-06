@@ -281,7 +281,7 @@ class ProcessRelationships implements ShouldQueue
             $this->user->id,
             $this->convert->id,
             EventStatus::FAILED
-        );
+        );//->onQueue('events_emails');
     }
 
     private function processManyToManyRelations($sqlDatabase, $tables, $collections)

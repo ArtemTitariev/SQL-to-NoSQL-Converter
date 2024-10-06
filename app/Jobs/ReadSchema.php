@@ -77,7 +77,7 @@ class ReadSchema implements ShouldQueue
                 $this->user->id,
                 $this->convert->id,
                 EventStatus::COMPLETED
-            );
+            );//->onQueue('events_emails');
 
             // Log::info("ReadSchema job finished");
         } catch (\Throwable $e) {

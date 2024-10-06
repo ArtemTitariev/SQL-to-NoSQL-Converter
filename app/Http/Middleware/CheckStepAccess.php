@@ -6,7 +6,6 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\Convert;
-use App\Models\ConversionProgress;
 
 class CheckStepAccess
 {
@@ -20,8 +19,6 @@ class CheckStepAccess
 
         $convert = $request->route('convert');
         $step = $request->route('step');
-
-        // dd($step);
 
         if (! $this->isStepAccessible($convert, $step)) {
             return redirect()->route('converts.show', ['convert' => $convert])->withErrors(['error' => __('You cannot skip steps.')]);
