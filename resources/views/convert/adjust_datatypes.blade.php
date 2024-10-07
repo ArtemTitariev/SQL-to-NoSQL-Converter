@@ -18,7 +18,6 @@
 
             return false;
         }
-
     @endphp
 
     @php
@@ -68,7 +67,8 @@
                             <x-tooltip iconColor="text-primary" position="top" class="normal-case">
                                 <p class="font-semibold text-info">
                                     {{ __('Missing tables will be selected automatically.') }}</p>
-                                <p class="text-customgray font-normal mt-2">{{ __('Adjustments can be continued.') }}</p>
+                                <p class="text-customgray font-normal mt-2">{{ __('Adjustments can be continued.') }}
+                                </p>
                             </x-tooltip>
                         </x-primary-button>
 
@@ -129,7 +129,7 @@
 
             {{-- Таблиці --}}
             @foreach ($tables as $table)
-                <div class="border-2 
+                <div class="border-2
                 @if (in_array($table->name, session('missingTables', []))) border-danger @endif
                  hover:border-info p-4 rounded mb-6 table-container
                 @if ($loop->odd) bg-light @endif
@@ -166,42 +166,39 @@
                                 class="border-2 border-accent rounded px-4 py-2 w-full">
                         </div> --}}
 
-                        <table class="min-w-full border overflow-x-auto">
-                            <thead>
-                                <tr>
-                                    <th class="px-4 py-2 border">{{ __('Column') }}</th>
-                                    <th class="px-4 py-2 border">{{ __('Data Type') }}</th>
-                                    <th class="px-4 py-2 border">{{ __('Convert As') }}</th>
-                                    <th class="px-4 py-2 border">{{ __('Key') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        <x-table class="overflow-x-auto border-gray-300">
+                            <x-table-header>
+                                <x-table-header-cell class="text-normal">{{ __('Column') }}</x-table-header-cell>
+                                <x-table-header-cell class="text-normal">{{ __('Data Type') }}</x-table-header-cell>
+                                <x-table-header-cell class="text-normal">{{ __('Convert As') }}</x-table-header-cell>
+                                <x-table-header-cell class="text-normal">{{ __('Key') }}</x-table-header-cell>
+                            </x-table-header>
+                            <tbody class="bg-white divide-y">
                                 @foreach ($table->columns as $column)
-                                    <tr>
-                                        <td class="px-4 py-2 border">{{ $column->name }}</td>
-                                        <td class="px-4 py-2 border">{{ $column->type_name }} / {{ $column->type }}
-                                        </td>
-                                        <td class="px-4 py-2 border">
+                                    <x-table-row class="border-gray-300">
+                                        <x-table-cell>{{ $column->name }}</x-table-cell>
+                                        <x-table-cell>{{ $column->type_name }} /
+                                            {{ $column->type }}
+                                        </x-table-cell>
+                                        <x-table-cell>
                                             <select name="columns[{{ $table->name }}][{{ $column->name }}]"
                                                 class="border rounded w-full px-2 py-1">
                                                 @foreach ($column->convertable_types as $c_type)
                                                     <option>{{ $c_type }}</option>
                                                 @endforeach
                                             </select>
-                                        </td>
-                                        <td class="px-4 py-2 border">
-
+                                        </x-table-cell>
+                                        <x-table-cell>
                                             @if ($table->primary_key && in_array($column->name, $table->primary_key))
                                                 <span class="font-bold text-secondary">PK</span>
                                             @elseif (findEl($column->name, $table->foreignKeys->toArray()))
                                                 <span class="font-bold text-accent">FK</span>
                                             @endif
-
-                                        </td>
-                                    </tr>
+                                        </x-table-cell>
+                                    </x-table-row>
                                 @endforeach
                             </tbody>
-                        </table>
+                        </x-table>
 
 
                         @if ($table->foreignKeys->count() > 0)
@@ -210,44 +207,41 @@
 
                             <div id="table-{{ $table->name }}-relations"
                                 class="overflow-hidden transition-all duration-300 ease-in-out mt-4 nested-form">
-                                <table class="min-w-full border">
-                                    <thead>
-                                        <tr>
-                                            <th class="px-4 py-2 border">{{ __('Local Fields') }}</th>
-                                            <th class="px-4 py-2 border">{{ __('Referenced Table') }}</th>
-                                            <th class="px-4 py-2 border">{{ __('Referenced Columns') }}</th>
-                                            <th class="px-4 py-2 border">{{ __('Relation Type') }}</th>
-                                        </tr>
-                                    </thead>
+                                <x-table class="border-gray-300">
+                                    <x-table-header>
+                                            <x-table-header-cell>{{ __('Local Fields') }}</x-table-header-cell>
+                                            <x-table-header-cell>{{ __('Referenced Table') }}</x-table-header-cell>
+                                            <x-table-header-cell>{{ __('Referenced Columns') }}</x-table-header-cell>
+                                            <x-table-header-cell>{{ __('Relation Type') }}</x-table-header-cell>
+                                    </x-table-header>
                                     <tbody>
                                         @foreach ($table->foreignKeys as $fk)
-                                            <tr>
-                                                <td class="px-4 py-2 border">
+                                        <x-table-row class="border-gray-300">
+                                                <x-table-cell>
                                                     <ul>
                                                         @foreach ($fk->columns as $col)
                                                             <li>{{ $col }}</li>
                                                         @endforeach
                                                     </ul>
-                                                </td>
-                                                <td class="px-4 py-2 border">{{ $fk->foreign_table }}</td>
-                                                <td class="px-4 py-2 border">
+                                                </x-table-cell>
+                                                <x-table-cell>{{ $fk->foreign_table }}</x-table-cell>
+                                                <x-table-cell>
                                                     <ul>
                                                         @foreach ($fk->foreign_columns as $col)
                                                             <li>{{ $col }}</li>
                                                         @endforeach
                                                     </ul>
-                                                </td>
-                                                <td class="px-4 py-2 border">
+                                                </x-table-cell>
+                                                <x-table-cell>
                                                     @php
                                                         $relationType = $fk->relation_type;
                                                     @endphp
                                                     <x-relation-type-badge :relation-type="$relationType" />
-                                                    {{--  $fk->relation_type  --}}
-                                                </td>
-                                            <tr>
+                                                </x-table-cell>
+                                            </x-table-row>
                                         @endforeach
                                     </tbody>
-                                </table>
+                                </x-table>
                             </div>
                         @endif
                         <div class="flex mt-4">
@@ -255,10 +249,6 @@
                                 onclick="toggleTable('table-{{ $table->name }}')">
                                 {{ __('Collapse') }}
                             </x-secondary-button>
-                            {{-- <svg width="48" height="48  " viewBox="0 0 24 24" fill="none"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 8l-6 6h12l-6-6z" fill="currentColor" />
-                            </svg> --}}
                         </div>
                     </div>
                 </div>
