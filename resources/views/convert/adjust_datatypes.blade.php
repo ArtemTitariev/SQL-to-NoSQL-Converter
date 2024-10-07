@@ -132,7 +132,7 @@
                 <div class="border-2
                 @if (in_array($table->name, session('missingTables', []))) border-danger @endif
                  hover:border-info p-4 rounded mb-6 table-container
-                @if ($loop->odd) bg-light @endif
+                @if ($loop->odd) bg-light @else bg-white @endif shadow-sm
                  "
                     data-table-name="{{ $table->name }}">
                     <div class="flex justify-between items-center">
@@ -166,57 +166,58 @@
                                 class="border-2 border-accent rounded px-4 py-2 w-full">
                         </div> --}}
 
-                        <x-table class="overflow-x-auto border-gray-300">
-                            <x-table-header>
-                                <x-table-header-cell class="text-normal">{{ __('Column') }}</x-table-header-cell>
-                                <x-table-header-cell class="text-normal">{{ __('Data Type') }}</x-table-header-cell>
-                                <x-table-header-cell class="text-normal">{{ __('Convert As') }}</x-table-header-cell>
-                                <x-table-header-cell class="text-normal">{{ __('Key') }}</x-table-header-cell>
-                            </x-table-header>
-                            <tbody class="bg-white divide-y">
-                                @foreach ($table->columns as $column)
-                                    <x-table-row class="border-gray-300">
-                                        <x-table-cell>{{ $column->name }}</x-table-cell>
-                                        <x-table-cell>{{ $column->type_name }} /
-                                            {{ $column->type }}
-                                        </x-table-cell>
-                                        <x-table-cell>
-                                            <select name="columns[{{ $table->name }}][{{ $column->name }}]"
-                                                class="border rounded w-full px-2 py-1">
-                                                @foreach ($column->convertable_types as $c_type)
-                                                    <option>{{ $c_type }}</option>
-                                                @endforeach
-                                            </select>
-                                        </x-table-cell>
-                                        <x-table-cell>
-                                            @if ($table->primary_key && in_array($column->name, $table->primary_key))
-                                                <span class="font-bold text-secondary">PK</span>
-                                            @elseif (findEl($column->name, $table->foreignKeys->toArray()))
-                                                <span class="font-bold text-accent">FK</span>
-                                            @endif
-                                        </x-table-cell>
-                                    </x-table-row>
-                                @endforeach
-                            </tbody>
-                        </x-table>
-
+                        <div class="overflow-x-auto">
+                            <x-table class="border-gray-300">
+                                <x-table-header>
+                                    <x-table-header-cell>{{ __('Column') }}</x-table-header-cell>
+                                    <x-table-header-cell>{{ __('Data Type') }}</x-table-header-cell>
+                                    <x-table-header-cell>{{ __('Convert As') }}</x-table-header-cell>
+                                    <x-table-header-cell>{{ __('Key') }}</x-table-header-cell>
+                                </x-table-header>
+                                <tbody class="bg-white divide-y">
+                                    @foreach ($table->columns as $column)
+                                        <x-table-row class="border-gray-300">
+                                            <x-table-cell>{{ $column->name }}</x-table-cell>
+                                            <x-table-cell>{{ $column->type_name }} /
+                                                {{ $column->type }}
+                                            </x-table-cell>
+                                            <x-table-cell>
+                                                <select name="columns[{{ $table->name }}][{{ $column->name }}]"
+                                                    class="border rounded w-full px-2 py-1">
+                                                    @foreach ($column->convertable_types as $c_type)
+                                                        <option>{{ $c_type }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </x-table-cell>
+                                            <x-table-cell>
+                                                @if ($table->primary_key && in_array($column->name, $table->primary_key))
+                                                    <span class="font-bold text-secondary">PK</span>
+                                                @elseif (findEl($column->name, $table->foreignKeys->toArray()))
+                                                    <span class="font-bold text-accent">FK</span>
+                                                @endif
+                                            </x-table-cell>
+                                        </x-table-row>
+                                    @endforeach
+                                </tbody>
+                            </x-table>
+                        </div>
 
                         @if ($table->foreignKeys->count() > 0)
                             <h3 class="min-w-full text-center text-xl text-accent font-bold mt-4 mb-2">
                                 {{ __('Relations') }}</h3>
 
                             <div id="table-{{ $table->name }}-relations"
-                                class="overflow-hidden transition-all duration-300 ease-in-out mt-4 nested-form">
+                                class="overflow-x-auto transition-all duration-300 ease-in-out mt-4 nested-form">
                                 <x-table class="border-gray-300">
                                     <x-table-header>
-                                            <x-table-header-cell>{{ __('Local Fields') }}</x-table-header-cell>
-                                            <x-table-header-cell>{{ __('Referenced Table') }}</x-table-header-cell>
-                                            <x-table-header-cell>{{ __('Referenced Columns') }}</x-table-header-cell>
-                                            <x-table-header-cell>{{ __('Relation Type') }}</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Local Fields') }}</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Referenced Table') }}</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Referenced Columns') }}</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Relation Type') }}</x-table-header-cell>
                                     </x-table-header>
                                     <tbody>
                                         @foreach ($table->foreignKeys as $fk)
-                                        <x-table-row class="border-gray-300">
+                                            <x-table-row class="border-gray-300">
                                                 <x-table-cell>
                                                     <ul>
                                                         @foreach ($fk->columns as $col)
@@ -233,10 +234,7 @@
                                                     </ul>
                                                 </x-table-cell>
                                                 <x-table-cell>
-                                                    @php
-                                                        $relationType = $fk->relation_type;
-                                                    @endphp
-                                                    <x-relation-type-badge :relation-type="$relationType" />
+                                                    <x-relation-type-badge :relation-type="$fk->relation_type" />
                                                 </x-table-cell>
                                             </x-table-row>
                                         @endforeach

@@ -30,11 +30,11 @@ class RelationTypeBadge extends Component
     public function getBadgeClass()
     {
         return match($this->relationType) {
-            RelationType::ONE_TO_ONE => 'text-accent',
-            RelationType::ONE_TO_MANY => 'text-info',
+            RelationType::ONE_TO_ONE => 'text-info',
+            RelationType::ONE_TO_MANY => 'text-accent',
             RelationType::MANY_TO_ONE => 'text-primary',
             RelationType::MANY_TO_MANY => 'text-secondary',
-            RelationType::SELF_REF => 'text-warning',
+            RelationType::SELF_REF => 'text-amber-700',
             RelationType::COMPLEX => 'text-danger',
             default => 'text-accent',
         };
