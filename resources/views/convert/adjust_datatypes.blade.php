@@ -210,14 +210,19 @@
                                 class="overflow-x-auto transition-all duration-300 ease-in-out mt-4 nested-form">
                                 <x-table class="border-gray-300">
                                     <x-table-header>
-                                        <x-table-header-cell>{{ __('Local Fields') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('Referenced Table') }}</x-table-header-cell>
-                                        <x-table-header-cell>{{ __('Referenced Columns') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('Relation Type') }}</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Local Fields') }}</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Referenced Columns') }}</x-table-header-cell>
                                     </x-table-header>
                                     <tbody>
                                         @foreach ($table->foreignKeys as $fk)
                                             <x-table-row class="border-gray-300">
+                                                <x-table-cell>{{ $fk->foreign_table }}</x-table-cell>
+                                                <x-table-cell>
+                                                    <x-relation-type-badge :relation-type="$fk->relation_type" />
+                                                </x-table-cell>
+                                                
                                                 <x-table-cell>
                                                     <ul>
                                                         @foreach ($fk->columns as $col)
@@ -225,16 +230,12 @@
                                                         @endforeach
                                                     </ul>
                                                 </x-table-cell>
-                                                <x-table-cell>{{ $fk->foreign_table }}</x-table-cell>
                                                 <x-table-cell>
                                                     <ul>
                                                         @foreach ($fk->foreign_columns as $col)
                                                             <li>{{ $col }}</li>
                                                         @endforeach
                                                     </ul>
-                                                </x-table-cell>
-                                                <x-table-cell>
-                                                    <x-relation-type-badge :relation-type="$fk->relation_type" />
                                                 </x-table-cell>
                                             </x-table-row>
                                         @endforeach

@@ -21,29 +21,33 @@
                     <x-table-header>
                         <x-table-row>
                             <x-table-header-cell>{{ __('ID') }}</x-table-header-cell>
+                            <x-table-header-cell>{{ __('Actions') }}</x-table-header-cell>
+                            <x-table-header-cell>{{ __('Status') }}</x-table-header-cell>
+
                             <x-table-header-cell>{{ __('SQL Database Driver') }}</x-table-header-cell>
                             <x-table-header-cell>{{ __('SQL Database') }}</x-table-header-cell>
                             <x-table-header-cell>{{ __('MongoDB Database') }}</x-table-header-cell>
+
                             <x-table-header-cell>{{ __('Description') }}</x-table-header-cell>
-                            <x-table-header-cell>{{ __('Status') }}</x-table-header-cell>
-                            <x-table-header-cell>{{ __('Actions') }}</x-table-header-cell>
+
+
                         </x-table-row>
                     </x-table-header>
                     <tbody>
                         @foreach ($converts as $convert)
                             <x-table-row :class="$loop->even ? 'bg-light' : 'bg-white'">
                                 <x-table-cell>{{ $convert->id }}</x-table-cell>
+                                <x-table-cell>
+                                    <x-icon-link href="{{ route('converts.show', $convert->id) }}" :icon="'icons.view'" />
+                                </x-table-cell>
+                                <x-table-cell><x-status-badge :status="$convert->status" /></x-table-cell>
+
                                 <x-table-cell>{{ $convert->sqlDatabase->driver }}</x-table-cell>
                                 <x-table-cell>{{ $convert->sqlDatabase->database }}</x-table-cell>
                                 <x-table-cell>{{ $convert->mongoDatabase->database }}</x-table-cell>
                                 <x-table-cell>{{ $convert->description ?? __('No description') }}</x-table-cell>
-                                <x-table-cell>
-                                    <x-status-badge :status="$convert->status" />
-                                </x-table-cell>
-                                <x-table-cell>
-                                    <a href="{{ route('converts.show', $convert->id) }}"
-                                        class="text-accent hover:underline">{{ __('View') }}</a>
-                                </x-table-cell>
+
+
                             </x-table-row>
                         @endforeach
                     </tbody>
