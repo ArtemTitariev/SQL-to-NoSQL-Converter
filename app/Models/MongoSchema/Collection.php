@@ -14,7 +14,9 @@ class Collection extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'mongo_database_id', 'name', 'schema_validator'
+        'mongo_database_id',
+        'name',
+        'schema_validator'
     ];
 
     protected $casts = [
@@ -40,7 +42,7 @@ class Collection extends Model
     {
         return $this->hasMany(LinkEmbedd::class, 'fk_collection_id', 'id');
     }
-    
+
     public function linksEmbeddsTo(): HasMany
     {
         return $this->hasMany(LinkEmbedd::class, 'pk_collection_id', 'id');
@@ -54,5 +56,33 @@ class Collection extends Model
     public function database(): BelongsTo
     {
         return $this->belongsTo(MongoDatabase::class, 'mongo_database_id', 'id');
+    }
+
+    public function getFilteredDataForGraph(): object
+    {
+        $data = [
+            'collectionName' => $this->name,
+            'linksEmbeddsFrom' => [],
+            'manyToManyPivot' => [],
+        ];
+
+        foreach ($this->linksEmbeddsFrom as $le) {
+            $data['linksEmbeddsFrom'][] = (object) [
+                'fkCollectionName' => $this->name,
+                'pkCollectionName' => $le->pkCollection->name,
+                'relationType' => __($le->relation_type->value),
+            ];
+        }
+
+        foreach ($this->manyToManyPivot as $nn) {
+            $data['manyToManyPivot'][] = (object) [
+                'pivotCollectionName' => $this->name,
+                'collection1Name' => $nn->collection1->name,
+                'collection2Name' => $nn->collection2->name,
+                'relationType' => __($nn->relation_type->value),
+            ];
+        }
+
+        return (object) $data;
     }
 }
