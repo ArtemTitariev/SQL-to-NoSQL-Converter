@@ -41,8 +41,28 @@ export default {
             borderWidth: {
                 3: "3px",
             },
+            width: {
+                50: "12rem",
+                // 96: "24rem",
+                100: "25rem",
+                120: "35rem",
+            },
             height: {
                 50: "12rem",
+                // 96: "24rem",
+                100: "25rem",
+                120: "35rem",
+            },
+            height: {
+                50: "12rem",
+                // 96: "24rem",
+                100: "25rem",
+                120: "35rem",
+            },
+            spacing: {
+                20: "5rem",
+                22: "5.25rem",
+                25: "6rem",
             },
             opacity: {
                 50: "0.5",
