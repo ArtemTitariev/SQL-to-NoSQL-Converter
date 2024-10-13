@@ -98,7 +98,7 @@
                             </div>
                             <div class="flex justify-center py-2">
                                 <p class="break-all max-w-80 py-2 mx-2"><strong>{{ __('Relation Type:') }}</strong></p>
-                                <select id="modalRelationTypeLinkEmbedd" name="RelationTypeLinkEmbedd"
+                                <select id="modalRelationTypeLinkEmbedd" name="relationTypeLinkEmbedd"
                                     class="border rounded w-auto mx-2">
                                     @foreach (\App\Enums\MongoRelationType::cases() as $relation)
                                         <option value="{{ $relation->value }}">{{ __($relation->value) }}</option>
@@ -128,7 +128,7 @@
                             </div>
                             <div class="flex justify-center py-2">
                                 <p class="break-all max-w-80 py-2 mx-2"><strong>{{ __('Relation Type:') }}</strong></p>
-                                <select id="modalRelationTypeManyToMany" name="RelationTypeManyToMany"
+                                <select id="modalRelationTypeManyToMany" name="relationTypeManyToMany"
                                     class="border rounded w-auto mx-2">
                                     @foreach (\App\Enums\MongoManyToManyRelation::cases() as $relation)
                                         <option value="{{ $relation->value }}">{{ __($relation->value) }}</option>
@@ -184,7 +184,7 @@
                                 url: $(this).attr('action'), // URL з атрибута action форми
                                 method: 'PATCH', // Метод запиту
                                 data: formData, // Дані форми
-                                timeout: 3000
+                                timeout: 5000
                             }).done(function(response) {
                                 // Відображаємо повідомлення про успіх
                                 $('#success-notification').removeClass('hidden');
@@ -192,22 +192,22 @@
                                 console.log(response);
                             }).fail(function(xhr, t, m) {
                                 if (t === "timeout") {
-                                    alert("got timeout");
+                                    $('#error-title').text("{{ __('The server is not responding. Please try again later') }}");
                                 } else {
 
                                     // Обробка помилок
                                     console.log(xhr.responseText);
 
                                     $('#error-title').text(xhr.responseJSON.message);
-
                                     let errors = xhr.responseJSON.errors;
                                     if (errors) {
                                         for (let key in errors) {
                                             $('#error-list').append('<li>' + errors[key][0] + '</li>');
                                         }
-                                        $('#error-block').removeClass('hidden');
                                     }
+                                    $('#error-block').removeClass('hidden');
                                 }
+
                             }).always(function() {
                                 // Ховаємо лоадер та активуємо кнопку
                                 $('#submit-btn').removeAttr('disabled');
