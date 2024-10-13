@@ -4,6 +4,7 @@ use App\Enums\MongoManyToManyRelation;
 use App\Enums\RelationType;
 use App\Http\Controllers\ConvertController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RelationshipController;
 use App\Models\Convert;
 use App\Models\SQLSchema\CircularRef;
 use Illuminate\Http\Request;
@@ -59,8 +60,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/process/relationships', [ConvertController::class, 'processRelationships'])->name('convert.process_relationships');
         Route::get('/process/etl', [ConvertController::class, 'processEtl'])->name('convert.process_etl');
 
+        Route::patch('/relationships', [RelationshipController::class, 'edit'])->name('convert.relationships.edit')->middleware([]);
     });
-    
 });
 
 Route::middleware('auth')->group(function () {
