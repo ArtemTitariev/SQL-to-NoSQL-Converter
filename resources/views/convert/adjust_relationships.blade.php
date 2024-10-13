@@ -192,7 +192,8 @@
                                 console.log(response);
                             }).fail(function(xhr, t, m) {
                                 if (t === "timeout") {
-                                    $('#error-title').text("{{ __('The server is not responding. Please try again later') }}");
+                                    $('#error-title').text(
+                                        "{{ __('Server is not responding. Please try again later.') }}");
                                 } else {
 
                                     // Обробка помилок
@@ -218,24 +219,8 @@
                     });
                 </script>
 
-                {{-- <style>
-                    .loader {
-                        animation: spinner 1.5s linear infinite;
-                    }
-
-                    @keyframes spinner {
-                        0% {
-                            transform: rotate(0deg);
-                        }
-
-                        100% {
-                            transform: rotate(360deg);
-                        }
-                    }
-                </style> --}}
-
                 <div class="mt-6">
-                    <h3 class="text-xl font-medium text-info">{{ __('Preview JSON Structure') }}</h3>
+                    <h3 class="text-xl font-medium text-info">{{ __('Structure Preview') }}</h3>
 
                     <div class="grid grid-cols-2 gap-4">
                         {{-- Current JSON Structure --}}
@@ -270,23 +255,29 @@
                 <input type="text" id="search-input" placeholder="{{ __('Search for collections...') }}"
                     class="border-2 border-accent rounded px-4 py-2 flex-grow">
 
-                <button id="showHideButton" class="bg-light text-customgray px-4 py-2">
-                    Show All
-                </button>
-                <button id="toggleButton" class="bg-customgray text-light px-4 py-2">
-                    Show/Hide
+                {{-- <button id="showHideButton" class="bg-light text-customgray px-4 py-2">
+                    {{ __('Show All') }}
+                </button> --}}
+                <button id="toggleButton" class="bg-secondary text-white rounded px-4 py-2 hover:bg-accent">
+                    {{ __('Show / Hide Graph') }}
                 </button>
             </div>
         </div>
     </div>
 
-
     <div id="container" class="grid grid-cols-1 gap-4 md:grid-cols-1 lg:grid-cols-[59%_38%]">
         <!-- Правий блок -->
         <div id="rightBlock"
-            class="order-1 h-96 w-full lg:h-120 md:order-1 lg:order-2 p-4
-                sticky top-22 justify-center">
-            <div id="cy" style="width: 100%; height: 90%;"></div>
+            class="order-1 h-96 md:h-72 w-full lg:h-120 md:order-1 lg:order-2 p-4
+                sticky top-22 justify-center bg-light">
+            <div id="rightMessageBlock" class="flex justify-center my-6 px-2">
+                <h3 class="font-bold text-2xl text-warning">
+                    {{ __('Select a collection to see the graph.') }}
+                </h3>
+            </div>
+
+            <div id="cy" style="width: 100%; height: 90%;">
+            </div>
         </div>
 
         <div id="leftBlock" class="order-2 md:order-2 lg:order-1 p-4">
@@ -323,11 +314,11 @@
                         class="max-h-0 overflow-hidden transition-all duration-300 ease-in-out hidden mt-4 nested-form">
                         {{-- Links + Embeddings Section --}}
                         @if ($collection->linksEmbeddsFrom->isNotEmpty())
-                            <h3 class="text-lg font-bold text-info mb-2">{{ __('Links + embeddings') }}</h3>
+                            <h3 class="text-lg font-bold text-info mb-2">{{ __('Links and Embeddings') }}</h3>
                             <div class="overflow-x-auto">
                                 <x-table class="border-gray-300">
                                     <x-table-header>
-                                        <x-table-header-cell>Ред</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Edit') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('Dependent Collection') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('Relation Type') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('SQL Relation') }}</x-table-header-cell>
@@ -357,8 +348,9 @@
                                                         </x-icon-link>
                                                     @else
                                                         <x-tooltip iconColor="text-info" position="right">
-                                                            <p class="font-semibold w-100">Не можна редагувати
-                                                                складні зв'язки + посилання на себе</p>
+                                                            <p class="font-semibold w-100">
+                                                                {{ __('It is not allowed to edit complex realtionships and self-referencing links.') }}
+                                                            </p>
                                                             </p>
                                                         </x-tooltip>
                                                     @endif
@@ -395,13 +387,13 @@
 
                         {{-- Many to Many Section --}}
                         @if ($collection->manyToManyPivot->isNotEmpty())
-                            <h3 class="text-lg font-bold text-accent mt-6 mb-2">{{ __('Many to many') }}</h3>
+                            <h3 class="text-lg font-bold text-accent mt-6 mb-2">{{ __('Many To Many Relationships') }}
+                            </h3>
                             <div class="overflow-x-auto">
                                 <x-table class="border-gray-300">
                                     <x-table-header>
-                                        <x-table-header-cell>Ред</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Edit') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('Relation Type') }}</x-table-header-cell>
-                                        <x-table-header-cell>{{ __('Bidirectional') }}</x-table-header-cell>
 
                                         <x-table-header-cell>{{ __('Local Fields 1') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('Local Fields 2') }}</x-table-header-cell>
@@ -427,7 +419,6 @@
                                                 <x-table-cell>
                                                     <x-many-to-many-relation-badge :relation-type="$nnRelation->relation_type" />
                                                 </x-table-cell>
-                                                <x-table-cell>{{ $nnRelation->is_bidirectional ? 'Yes' : 'No' }}</x-table-cell>
 
                                                 <x-table-cell>
                                                     <ul>
@@ -674,13 +665,13 @@
 {
     "_id": "Object_id",
     "${pkCollectionName}_id": "Object_id",
-    // other fields
+    // {{ __('other fields') }}
 },
 
 <-${pkCollectionName}->:
 {
     "_id": "Object_id",
-    // other fields
+    // {{ __('other fields') }}
 }`;
             } else if (relationType === EMBEDDING) {
                 if (sqlRelation === ONE_TO_ONE) {
@@ -690,9 +681,9 @@
     "_id": "Object_id",
     "${pkCollectionName}": {
         "_id": "Object_id",
-        // other embedded fields
+        // {{ __('other embedded fields') }}
     },
-    // other fields
+    // {{ __('other fields') }}
 }`;
                 } else if (sqlRelation === MANY_TO_ONE) {
                     preview =
@@ -702,11 +693,11 @@
     "${pkCollectionName}": [
         {
             "_id": "Object_id",
-            // other embedded fields
+            // {{ __('other embedded fields') }}
         },
-        // more embedded documents
+        // {{ __('other embedded documents') }}
     ],
-    // other fields
+    // {{ __('other fields') }}
 }`;
                 }
             }
@@ -724,19 +715,19 @@
     "_id": "Object_id",
     "${collection1Name}_id": "Object_id",
     "${collection2Name}_id": "Object_id",
-    // other fields
+    // {{ __('other fields') }}
 }
 
 <-${collection1Name}->:
 {
     "_id": "Object_id",
-    // other fields
+    // {{ __('other fields') }}
 }
 
 <-${collection2Name}->:
 {
     "_id": "Object_id",
-    // other fields
+    // {{ __('other fields') }}
 }`;
             } else if (relationType === EMBEDDING) {
                 preview =
@@ -746,11 +737,11 @@
     "${collection2Name}": [
         {
             "_id": "Object_id",
-            // other embedded fields
+            // {{ __('other embedded fields') }}
         },
-        // more embedded documents
+        // {{ __('other embedded documents') }}
     ],
-    // other fields
+    // {{ __('other fields') }}
 }
 
 <-${collection2Name}->:
@@ -759,11 +750,11 @@
     "${collection1Name}": [
         {
             "_id": "Object_id",
-            // other embedded fields
+            // {{ __('other embedded fields') }}
         },
-        // more embedded documents
+        // {{ __('other embedded documents') }}
     ],
-    // other fields
+    // {{ __('other fields') }}
 }`;
             } else if (relationType === HYBRID) {
                 preview =
@@ -773,9 +764,9 @@
     "${collection2Name}_ids": [
         "Object1_id",
         "Object2_id",
-        // other referenced ids
+        // {{ __('other referenced ids') }}
     ],
-    // other fields
+    // {{ __('other fields') }}
 }
 
 <-${collection2Name}->:
@@ -784,9 +775,9 @@
     "${collection1Name}_ids": [
         "Object1_id",
         "Object2_id",
-        // other referenced ids
+        // {{ __('other referenced ids') }}
     ],
-    // other fields
+    // {{ __('other fields') }}
 }`;
             }
 
@@ -883,7 +874,7 @@
         // }
 
         function updateGraph(data) {
-            console.log(data);
+            // console.log(data);
             // Очистити попередні дані
             const nodes = [];
             const edges = [];
@@ -959,6 +950,7 @@
                 });
             }
 
+            document.getElementById('rightMessageBlock').classList.replace('flex', 'hidden');
             // Оновити граф
             const cy = cytoscape({
                 container: document.getElementById('cy'),
@@ -996,8 +988,15 @@
                     }
                 ],
                 layout: {
-                    name: 'cose',
-                    padding: 10
+                    // name: 'cose',
+                    // name: 'grid',
+                    // name: 'preset',
+                    name: 'circle',
+                    // name: 'concentric',
+                    padding: 30,
+                    fit: true,
+                    animate: true,
+                    animationDuration: 500,
                 }
             });
         }
