@@ -54,6 +54,7 @@ return [
     'enum' => 'Вибране значення для :attribute недійсне.',
     'exists' => 'Вибране значення для :attribute недійсне.',
     'extensions' => 'Поле :attribute має мати одне з наступних розширень: :values.',
+    'failed_to_decrypt' => 'Помилка розшифровки даних.',
     'file' => 'Поле :attribute має бути файлом.',
     'filled' => 'Поле :attribute обов’язково для заповнення.',
     'gt' => [
