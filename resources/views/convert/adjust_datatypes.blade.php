@@ -101,25 +101,29 @@
     </section>
 
 
-    <div class="container mx-auto p-6">
-        <x-input-errors-block />
+    <div class="sticky top-0 p-4 mb-4 flex justify-center space-x-2 bg-white z-50 shadow-md">
+        <div class="container mx-auto p-4">
 
-        <div class="mt-2 mb-6 flex items-center space-x-2">
-            <input type="text" id="search-input" placeholder="{{ __('Search for tables...') }}"
-                class="border-2 border-accent rounded px-4 py-2 flex-grow">
+            <div class="flex items-center space-x-2">
+                <input type="text" id="search-input" placeholder="{{ __('Search for tables...') }}"
+                    class="border-2 border-accent rounded px-4 py-2 flex-grow">
 
-            <button id="select-all" onclick="selectAll()"
-                class="bg-primary text-white rounded px-4 py-2 hover:bg-accent">
-                {{ __('Select all') }}
-            </button>
+                <button id="select-all" onclick="selectAll()"
+                    class="bg-primary text-white rounded px-4 py-2 hover:bg-accent">
+                    {{ __('Select all') }}
+                </button>
 
-            <button id="deselect-all" onclick="deselectAll()"
-                class="bg-secondary text-white rounded px-4 py-2 hover:bg-accent">
-                {{ __('Deselect all') }}
-            </button>
+                <button id="deselect-all" onclick="deselectAll()"
+                    class="bg-secondary text-white rounded px-4 py-2 hover:bg-accent">
+                    {{ __('Deselect all') }}
+                </button>
+            </div>
         </div>
+    </div>
 
+    <div class="container mx-auto p-4">
         {{-- Загальна форма для вибору таблиць і стовпців --}}
+        <x-input-errors-block />
         <form action="{{ route('convert.step.store', [$convert, 'adjust_datatypes']) }}" method="POST" id="form">
             @csrf
             <input type="hidden" name="break_relations" id="break-relations" value="no-break">
@@ -129,14 +133,20 @@
 
             {{-- Таблиці --}}
             @foreach ($tables as $table)
-                <div class="border-2
-                @if (in_array($table->name, session('missingTables', []))) border-danger @endif
-                 hover:border-info p-4 rounded mb-6 table-container
-                @if ($loop->odd) bg-light @else bg-white @endif shadow-sm
-                 "
-                    data-table-name="{{ $table->name }}">
-                    <div class="flex justify-between items-center">
+                <div @class([
+                    'table-container', // For searching
+                    'border-2',
+                    'border-danger' => in_array($table->name, session('missingTables', [])),
+                    'hover:border-info',
+                    'rounded-lg',
+                    'p-4',
+                    'mb-6',
+                    'bg-light' => $loop->odd,
+                    'bg-white' => $loop->even,
+                    'shadow-sm',
+                ]) data-table-name="{{ $table->name }}">
 
+                    <div class="flex justify-between items-center">
                         {{-- Чекбокс для вибору таблиці --}}
                         <input type="checkbox" name="tables[]" value="{{ $table->name }}"
                             @if (is_array(old('tables')) && in_array($table->name, old('tables'))) checked 
@@ -145,8 +155,13 @@
                             class="mr-2 text-xl table-check"
                             onchange="toggleNestedForm(this, 'table-{{ $table->name }}')">
 
-                        <h2
-                            class="text-xl @if ($loop->odd) text-primary @else text-secondary @endif font-semibold">
+                        <h2 @class([
+                            'text-xl',
+                            'font-semibold',
+                            // 'mb-4',
+                            'text-primary' => $loop->odd,
+                            'text-secondary' => $loop->even,
+                        ])>
                             {{ $table->name }}</h2>
                         <x-secondary-button id="button-table-{{ $table->name }}" onsubmit="return false;"
                             onclick="toggleTable('table-{{ $table->name }}')">
@@ -222,7 +237,7 @@
                                                 <x-table-cell>
                                                     <x-relation-type-badge :relation-type="$fk->relation_type" />
                                                 </x-table-cell>
-                                                
+
                                                 <x-table-cell>
                                                     <ul>
                                                         @foreach ($fk->columns as $col)
@@ -412,12 +427,13 @@
                 const isChecked = selectedTables.includes(tableName); // Чи обрана таблиця
 
                 // Отримуємо всі зв'язки для поточної таблиці
-                const relatedTables = $(`#table-${tableName}-relations tr td:nth-child(2)`).map(function() {
+                const relatedTables = $(`#table-${tableName}-relations tr td:nth-child(1)`).map(function() {
                     return $(this).text().trim(); // Отримуємо назви посилальних таблиць
                 }).get();
 
                 // Якщо таблиця вибрана, перевіряємо її зв'язки
                 if (isChecked) {
+                    console.log(relatedTables);
                     relatedTables.forEach(function(relatedTable) {
                         // Якщо зв'язана таблиця не обрана, підсвічуємо її
                         if (!selectedTables.includes(relatedTable)) {
