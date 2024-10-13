@@ -6,13 +6,14 @@ use App\Enums\RelationType;
 use App\Enums\MongoRelationType;
 use App\Models\SQLSchema\ForeignKey;
 use App\Models\SQLSchema\Table;
+use App\Services\Support\EncryptsIdentifier;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LinkEmbedd extends Model
 {
-    use HasFactory;
+    use HasFactory, EncryptsIdentifier;
 
     protected $table = 'links_embedds';
 
@@ -78,7 +79,7 @@ class LinkEmbedd extends Model
         ForeignKey $fk,
         $collections,
         MongoRelationType $relationType
-    ): LinkEmbedd {   
+    ): LinkEmbedd {
         $requiredCollections = $collections->whereIn('name', [$table->name, $fk->foreign_table])->keyBy('name');
 
         return LinkEmbedd::create([

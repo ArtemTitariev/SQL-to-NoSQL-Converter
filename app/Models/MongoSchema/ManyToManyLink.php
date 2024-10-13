@@ -5,13 +5,14 @@ namespace App\Models\MongoSchema;
 use App\Enums\MongoManyToManyRelation;
 use App\Models\SQLSchema\ForeignKey;
 use App\Models\SQLSchema\Table;
+use App\Services\Support\EncryptsIdentifier;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ManyToManyLink extends Model
 {
-    use HasFactory;
+    use HasFactory, EncryptsIdentifier;
 
     protected $table = 'many_to_many_links';
 
