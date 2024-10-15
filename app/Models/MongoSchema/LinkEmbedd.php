@@ -28,6 +28,7 @@ class LinkEmbedd extends Model
         // 'new_field',
         // 'removable_locals',
         'foreign_fields',
+        'embed_in_main',
     ];
 
     protected $casts = [
@@ -36,6 +37,7 @@ class LinkEmbedd extends Model
         'local_fields' => 'array',
         // 'removable_locals' => 'array',
         'foreign_fields' => 'array',
+        'embed_in_main' => 'boolean',
     ];
 
     public function fkCollection(): BelongsTo
@@ -57,20 +59,23 @@ class LinkEmbedd extends Model
             $table,
             $fk,
             $collections,
-            MongoRelationType::LINKING
+            MongoRelationType::LINKING,
+            null
         );
     }
 
     public static function createEmbedding(
         Table $table,
         ForeignKey $fk,
-        $collections
+        $collections,
+        bool $embedInMain
     ): LinkEmbedd {
         return static::createFrom(
             $table,
             $fk,
             $collections,
-            MongoRelationType::EMBEDDING
+            MongoRelationType::EMBEDDING,
+            $embedInMain
         );
     }
 
@@ -78,7 +83,8 @@ class LinkEmbedd extends Model
         Table $table,
         ForeignKey $fk,
         $collections,
-        MongoRelationType $relationType
+        MongoRelationType $relationType,
+        ?bool $embedInMain
     ): LinkEmbedd {
         $requiredCollections = $collections->whereIn('name', [$table->name, $fk->foreign_table])->keyBy('name');
 
@@ -89,6 +95,7 @@ class LinkEmbedd extends Model
             'relation_type' => $relationType,
             'local_fields' => $fk->columns,
             'foreign_fields' => $fk->foreign_columns,
+            'embed_in_main' => $embedInMain,
         ]);
     }
 
