@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\MongoManyToManyRelation;
+use App\Enums\MongoRelationType;
 use App\Models\MongoSchema\LinkEmbedd;
 use App\Models\MongoSchema\ManyToManyLink;
 use Illuminate\Foundation\Http\FormRequest;
@@ -49,25 +51,60 @@ class UpdateRelationshipRequest extends FormRequest
             function (Validator $validator) {
                 $relationData = $this->input('relationData');
 
-                if ($relationData) {
-                    try {
-                        $data = json_decode(decrypt($relationData), true);
-                        $this->merge(['decodedRelationData' => $data]);
-                    } catch (DecryptException $e) {
-                        $validator->errors()->add('relationData', __('validation.failed_to_decrypt'));
-                        return;
-                    }
-
-                    if (isset($data['model'])) {
-                        if ($data['model'] === LinkEmbedd::class && !$this->filled('relationTypeLinkEmbedd')) {
-                            $validator->errors()->add('relationTypeLinkEmbedd', __('validation.required', ['attribute' => 'Relation Type Link Embedd']));
-                        } elseif ($data['model'] === ManyToManyLink::class && !$this->filled('relationTypeManyToMany')) {
-                            $validator->errors()->add('relationTypeManyToMany', __('validation.required', ['attribute' => 'Relation Type Many To Many']));
-                        }
-                    }
+                $data = $this->tryDecrypt($relationData, $validator);
+                if (!$data) {
+                    return;
                 }
+
+                $this->merge(['decodedRelationData' => $data]);
+                $this->validateModel($data['model'], $validator);
             }
         ];
+    }
+
+    protected function tryDecrypt($relationData, $validator)
+    {
+        try {
+            return json_decode(decrypt($relationData), true);
+        } catch (DecryptException $e) {
+            $validator->errors()->add('relationData', __('validation.failed_to_decrypt'));
+            return null;
+        }
+    }
+
+    protected function validateModel($model, $validator)
+    {
+        if ($model === LinkEmbedd::class) {
+            $this->validateLinkEmbedd($validator);
+        } elseif ($model === ManyToManyLink::class) {
+            $this->validateManyToMany($validator);
+        }
+    }
+
+    protected function validateLinkEmbedd($validator)
+    {
+        if (
+            !$this->filled('relationTypeLinkEmbedd') ||
+            !MongoRelationType::tryFrom($this->relationTypeLinkEmbedd)
+        ) {
+            $validator->errors()->add(
+                'relationTypeLinkEmbedd',
+                __('validation.required', ['attribute' => 'Relation Type Link Embedd'])
+            );
+        }
+    }
+
+    protected function validateManyToMany($validator)
+    {
+        if (
+            !$this->filled('relationTypeManyToMany') ||
+            !MongoManyToManyRelation::tryFrom($this->relationTypeManyToMany)
+        ) {
+            $validator->errors()->add(
+                'relationTypeManyToMany',
+                __('validation.required', ['attribute' => 'Relation Type Many To Many'])
+            );
+        }
     }
 
     /**
@@ -80,6 +117,7 @@ class UpdateRelationshipRequest extends FormRequest
     public function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
+            'type' => 'validation_error',
             'message' => 'Validation errors',
             'errors' => $validator->errors(),
         ], 422));
