@@ -165,58 +165,58 @@
                         $('#success-notification').addClass('hidden');
                     }
 
-                    $(document).ready(function() {
-                        // Перехоплення відправки форми
-                        $('#relation-form').on('submit', function(e) {
-                            e.preventDefault(); // Запобігаємо стандартній відправці форми
+                    // $(document).ready(function() {
+                    //     // Перехоплення відправки форми
+                    //     $('#relation-form').on('submit', function(e) {
+                    //         e.preventDefault(); // Запобігаємо стандартній відправці форми
 
-                            clearModalMessages();
+                    //         clearModalMessages();
 
-                            // Дезейблимо кнопку та показуємо лоадер
-                            $('#submit-btn').attr('disabled', true);
-                            $('#loader').addClass('flex').removeClass('hidden');
+                    //         // Дезейблимо кнопку та показуємо лоадер
+                    //         $('#submit-btn').attr('disabled', true);
+                    //         $('#loader').addClass('flex').removeClass('hidden');
 
-                            // Збираємо дані з форми
-                            let formData = $(this).serialize();
+                    //         // Збираємо дані з форми
+                    //         let formData = $(this).serialize();
 
-                            // AJAX запит
-                            $.ajax({
-                                url: $(this).attr('action'), // URL з атрибута action форми
-                                method: 'PATCH', // Метод запиту
-                                data: formData, // Дані форми
-                                timeout: 5000
-                            }).done(function(response) {
-                                // Відображаємо повідомлення про успіх
-                                $('#success-notification').removeClass('hidden');
+                    //         // AJAX запит
+                    //         $.ajax({
+                    //             url: $(this).attr('action'), // URL з атрибута action форми
+                    //             method: 'PATCH', // Метод запиту
+                    //             data: formData, // Дані форми
+                    //             timeout: 5000
+                    //         }).done(function(response) {
+                    //             // Відображаємо повідомлення про успіх
+                    //             $('#success-notification').removeClass('hidden');
 
-                                console.log(response);
-                            }).fail(function(xhr, t, m) {
-                                if (t === "timeout") {
-                                    $('#error-title').text(
-                                        "{{ __('Server is not responding. Please try again later.') }}");
-                                } else {
+                    //             console.log(response);
+                    //         }).fail(function(xhr, t, m) {
+                    //             if (t === "timeout") {
+                    //                 $('#error-title').text(
+                    //                     "{{ __('Server is not responding. Please try again later.') }}");
+                    //             } else {
 
-                                    // Обробка помилок
-                                    console.log(xhr.responseText);
+                    //                 // Обробка помилок
+                    //                 console.log(xhr.responseText);
 
-                                    $('#error-title').text(xhr.responseJSON.message);
-                                    let errors = xhr.responseJSON.errors;
-                                    if (errors) {
-                                        for (let key in errors) {
-                                            $('#error-list').append('<li>' + errors[key][0] + '</li>');
-                                        }
-                                    }
-                                    $('#error-block').removeClass('hidden');
-                                }
+                    //                 $('#error-title').text(xhr.responseJSON.message);
+                    //                 let errors = xhr.responseJSON.errors;
+                    //                 if (errors) {
+                    //                     for (let key in errors) {
+                    //                         $('#error-list').append('<li>' + errors[key][0] + '</li>');
+                    //                     }
+                    //                 }
+                    //                 $('#error-block').removeClass('hidden');
+                    //             }
 
-                            }).always(function() {
-                                // Ховаємо лоадер та активуємо кнопку
-                                $('#submit-btn').removeAttr('disabled');
-                                $('#loader').removeClass('flex').addClass('hidden');
-                            });
+                    //         }).always(function() {
+                    //             // Ховаємо лоадер та активуємо кнопку
+                    //             $('#submit-btn').removeAttr('disabled');
+                    //             $('#loader').removeClass('flex').addClass('hidden');
+                    //         });
 
-                        });
-                    });
+                    //     });
+                    // });
                 </script>
 
                 <div class="mt-6">
@@ -569,9 +569,13 @@
                 document.getElementById('modalCollection1Name').textContent = relation.collection1Name;
                 document.getElementById('modalCollection2Name').textContent = relation.collection2Name;
                 document.getElementById('modalPivotCollectionName').textContent = relation.pivotCollectionName;
-                document.getElementById('modalRelationTypeManyToMany').value = relation.relationType;
+                
+                let select = document.getElementById('modalRelationTypeManyToMany');
+                select.value = relation.relationType;
+                processDataAttribute(select);
 
-                document.getElementById('modalRelationTypeManyToMany').addEventListener('change', handleManyToManyChange);
+                select.addEventListener('change', handleManyToManyChange);
+                handleManyToManyChange();
             } else {
                 relation = {
                     encryptedData: element.getAttribute('data-encrypted'),
@@ -587,9 +591,13 @@
                 // Відображення даних для LinkEmbedd
                 document.getElementById('modalPkCollectionName').textContent = relation.pkCollectionName;
                 document.getElementById('modalFkCollectionName').textContent = relation.fkCollectionName;
-                document.getElementById('modalRelationTypeLinkEmbedd').value = relation.relationType;
 
-                document.getElementById('modalRelationTypeLinkEmbedd').addEventListener('change', handleLinkEmbeddChange);
+                let select = document.getElementById('modalRelationTypeLinkEmbedd');
+                select.value = relation.relationType;
+                processDataAttribute(select);
+
+                select.addEventListener('change', handleLinkEmbeddChange);
+                handleLinkEmbeddChange();
             }
 
             document.getElementById('relationData').value = relation.encryptedData;
@@ -604,6 +612,16 @@
             }));
         }
 
+        function processDataAttribute(select) {
+            Array.from(select.options).forEach(option => {
+                if (option.value === select.value) {
+                    option.dataset.default = "true";
+                } else {
+                    delete option.dataset.default;
+                }
+            });
+        }
+
         function handleLinkEmbeddChange() {
             clearModalMessages();
             updatePreviewLinkEmbedd(
@@ -612,6 +630,8 @@
                 this.value,
                 document.getElementById('sqlRelation').value
             );
+
+            toggleSubmitButton(document.getElementById('modalRelationTypeLinkEmbedd'));
         }
 
         function handleManyToManyChange() {
@@ -622,6 +642,21 @@
                 document.getElementById('modalPivotCollectionName').textContent,
                 this.value
             );
+
+            toggleSubmitButton(document.getElementById('modalRelationTypeManyToMany'));
+        }
+
+        function toggleSubmitButton(select) {
+            const defaultOption = select.querySelector('[data-default="true"]');
+            console.log(defaultOption);
+            let submitButton = document.getElementById('submit-btn');
+            if (select.value === defaultOption.value) {
+                submitButton.disabled = true;
+                submitButton.classList.add('disabled');
+            } else {
+                submitButton.disabled = false;
+                submitButton.classList.remove('disabled');
+            }
         }
 
         // Оновлення поточного прев'ю
@@ -995,8 +1030,8 @@
                     // name: 'concentric',
                     padding: 30,
                     fit: true,
-                    animate: true,
-                    animationDuration: 500,
+                    // animate: true,
+                    // animationDuration: 500,
                 }
             });
         }
