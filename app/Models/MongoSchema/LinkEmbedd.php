@@ -91,4 +91,16 @@ class LinkEmbedd extends Model
             'foreign_fields' => $fk->foreign_columns,
         ]);
     }
+
+    public function changeToEmbedding(): bool
+    {
+        $this->relation_type = MongoRelationType::EMBEDDING;
+        return $this->save();
+    }
+
+    public function changeToLinking(): bool
+    {
+        $this->relation_type = MongoRelationType::LINKING;
+        return $this->save();
+    }
 }
