@@ -38,6 +38,7 @@ class UpdateRelationshipRequest extends FormRequest
         return [
             'relationData' => 'required|string',
             'relationTypeLinkEmbedd' => 'nullable|string|required_without:relationTypeManyToMany',
+            'embeddingDirection' => 'nullable|string',
             'relationTypeManyToMany' => 'nullable|string|required_without:relationTypeLinkEmbedd',
         ];
     }
@@ -58,6 +59,21 @@ class UpdateRelationshipRequest extends FormRequest
 
                 $this->merge(['decodedRelationData' => $data]);
                 $this->validateModel($data['model'], $validator);
+            },
+
+            function (Validator $validator) {
+                $relationType = $this->input('relationTypeLinkEmbedd');
+                $embeddingDirection = $this->input('embeddingDirection');
+
+                if (
+                    $relationType === MongoRelationType::EMBEDDING->value &&
+                    ! in_array($embeddingDirection, [LinkEmbedd::MAIN_IN_RELATED, LinkEmbedd::RELATED_IN_MAIN], true)
+                ) {
+                    $validator->errors()->add(
+                        'embeddingDirection',
+                        __('validation.required', ['attribute' => 'Embedding Direction'])
+                    );
+                }
             }
         ];
     }

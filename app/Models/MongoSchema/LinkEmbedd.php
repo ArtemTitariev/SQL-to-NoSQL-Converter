@@ -15,6 +15,9 @@ class LinkEmbedd extends Model
 {
     use HasFactory, EncryptsIdentifier;
 
+    const MAIN_IN_RELATED = 'mainInRelated';
+    const RELATED_IN_MAIN = 'relatedInMain';
+    
     protected $table = 'links_embedds';
 
     public $timestamps = false;
