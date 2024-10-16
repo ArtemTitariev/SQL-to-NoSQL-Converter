@@ -21,6 +21,9 @@
         const LINKING_WITH_PIVOT = mongoManyToManyRelations[0];
         const HYBRID = mongoManyToManyRelations[2];
 
+        const MAIN_IN_RELATED = @json(\App\Models\MongoSchema\LinkEmbedd::MAIN_IN_RELATED);
+        const RELATED_IN_MAIN = @json(\App\Models\MongoSchema\LinkEmbedd::RELATED_IN_MAIN);
+
         // console.log(ONE_TO_ONE, MANY_TO_ONE, LINKING, EMBEDDING, LINKING_WITH_PIVOT, HYBRID);
     </script>
 
@@ -86,7 +89,7 @@
                                 <x-table class="border-gray-300 break-all">
                                     <x-table-header>
                                         <x-table-header-cell>{{ __('Main Collection') }}</x-table-header-cell>
-                                        <x-table-header-cell>{{ __('Dependent Collection') }}</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Related Collection') }}</x-table-header-cell>
                                     </x-table-header>
                                     <tbody class="bg-white divide-y">
                                         <x-table-row class="border-gray-300">
@@ -96,16 +99,38 @@
                                     </tbody>
                                 </x-table>
                             </div>
-                            <div class="flex justify-center py-2">
-                                <p class="break-all max-w-80 py-2 mx-2"><strong>{{ __('Relation Type:') }}</strong></p>
-                                <select id="modalRelationTypeLinkEmbedd" name="relationTypeLinkEmbedd"
-                                    class="border rounded w-auto mx-2">
-                                    @foreach (\App\Enums\MongoRelationType::cases() as $relation)
-                                        <option value="{{ $relation->value }}">{{ __($relation->value) }}</option>
-                                    @endforeach
-                                    {{-- <option value="Linking">{{ __('Linking') }}</option>
+                            <div class="flex justify-around py-2">
+                                <div>
+                                    <p class="break-all max-w-80 py-2 mx-2"><strong>{{ __('Relation Type:') }}</strong>
+                                    </p>
+                                    <select id="modalRelationTypeLinkEmbedd" name="relationTypeLinkEmbedd"
+                                        class="border rounded w-auto mx-2">
+                                        @foreach (\App\Enums\MongoRelationType::cases() as $relation)
+                                            <option value="{{ $relation->value }}">{{ __($relation->value) }}</option>
+                                        @endforeach
+                                        {{-- <option value="Linking">{{ __('Linking') }}</option>
                                 <option value="Embedding">{{ __('Embedding') }}</option> --}}
-                                </select>
+                                    </select>
+                                </div>
+
+                                <div id="modalEmbeddingDirection" class="hidden break-normal">
+                                    <p class="max-w-80 py-2 mx-2">
+                                        <strong>{{ __('Direction of embedding:') }}</strong>
+                                    </p>
+                                    <div><input type="radio" id="mainInRelated" name="embeddingDirection"
+                                            value="{{ \App\Models\MongoSchema\LinkEmbedd::MAIN_IN_RELATED }}"
+                                            checked />
+                                        <label
+                                            for="mainInRelated">{{ __('Embed the main collection in a related one') }}</label>
+                                    </div>
+
+                                    <div class="mt-2">
+                                        <input type="radio" id="relatedInMain" name="embeddingDirection"
+                                            value="{{ \App\Models\MongoSchema\LinkEmbedd::RELATED_IN_MAIN }}" />
+                                        <label
+                                            for="relatedInMain">{{ __('Embed a related collection in the main one') }}</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -319,7 +344,7 @@
                                 <x-table class="border-gray-300">
                                     <x-table-header>
                                         <x-table-header-cell>{{ __('Edit') }}</x-table-header-cell>
-                                        <x-table-header-cell>{{ __('Dependent Collection') }}</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Related Collection') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('Relation Type') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('SQL Relation') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('Local Fields') }}</x-table-header-cell>
@@ -344,6 +369,7 @@
                                                             data-pk-collection-name="{{ $relationFrom->pkCollection->name }}"
                                                             data-relation-type="{{ $relationFrom->relation_type }}"
                                                             data-sql-relation="{{ $relationFrom->sql_relation }}"
+                                                            data-embed-in-main="{{ $relationFrom->embed_in_main ?? 'none' }}"
                                                             onclick="showModal(this)">
                                                         </x-icon-link>
                                                     @else
@@ -500,21 +526,59 @@
     </script>
 
     <script>
-        const toggleButton = document.getElementById('toggleButton');
-        const leftBlock = document.getElementById('leftBlock');
-        const rightBlock = document.getElementById('rightBlock');
-        const container = document.getElementById('container');
+        // show / hide graph
 
-        toggleButton.addEventListener('click', () => {
-            if (rightBlock.classList.contains('hidden')) {
-                rightBlock.classList.remove('hidden');
-                container.classList.remove('grid-cols-1');
-                container.classList.add('lg:grid-cols-[59%_38%]');
-            } else {
-                rightBlock.classList.add('hidden');
-                container.classList.remove('lg:grid-cols-[59%_38%]');
-                container.classList.add('grid-cols-1');
+        function isGraphContainerHidden() {
+            return document.getElementById('rightBlock').classList.contains('hidden');
+        }
+
+        function showGraphContainer() {
+            const rightBlock = document.getElementById('rightBlock');
+            const container = document.getElementById('container');
+
+            rightBlock.classList.remove('hidden');
+            container.classList.remove('grid-cols-1');
+            container.classList.add('lg:grid-cols-[59%_38%]');
+        }
+
+        function hideGraphContainer() {
+            const rightBlock = document.getElementById('rightBlock');
+            const container = document.getElementById('container');
+
+            rightBlock.classList.add('hidden');
+            container.classList.remove('lg:grid-cols-[59%_38%]');
+            container.classList.add('grid-cols-1');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // const leftBlock = document.getElementById('leftBlock');
+            // const rightBlock = document.getElementById('rightBlock');
+            // const container = document.getElementById('container');
+
+            const mediaQuery = window.matchMedia('(max-width: 1023px)');
+
+            function handleMediaQueryChange(event) {
+                if (event.matches) {
+                    // Ширина екрану менше 768px
+                    hideGraphContainer();
+                }
             }
+
+            // Додати слухач змін медіа-запиту
+            mediaQuery.addEventListener('change', handleMediaQueryChange);
+
+            // Перевіримо стан при завантаженні сторінки
+            handleMediaQueryChange(mediaQuery);
+
+            const toggleButton = document.getElementById('toggleButton');
+
+            toggleButton.addEventListener('click', () => {
+                if (isGraphContainerHidden()) {
+                    showGraphContainer();
+                } else {
+                    hideGraphContainer();
+                }
+            });
         });
     </script>
 
@@ -552,6 +616,13 @@
             document.getElementById('modalRelationTypeLinkEmbedd').removeEventListener('change', handleLinkEmbeddChange);
             document.getElementById('modalRelationTypeManyToMany').removeEventListener('change', handleManyToManyChange);
 
+            const embeddingRadios = document.querySelectorAll('input[name="embeddingDirection"]');
+            embeddingRadios.forEach(radio => {
+                radio.removeEventListener('change', handleLinkEmbeddChange);
+            });
+
+            document.getElementById('modalEmbeddingDirection').classList.add('hidden');
+
             if (isManyToMany) {
                 relation = {
                     encryptedData: element.getAttribute('data-encrypted'),
@@ -569,10 +640,10 @@
                 document.getElementById('modalCollection1Name').textContent = relation.collection1Name;
                 document.getElementById('modalCollection2Name').textContent = relation.collection2Name;
                 document.getElementById('modalPivotCollectionName').textContent = relation.pivotCollectionName;
-                
+
                 let select = document.getElementById('modalRelationTypeManyToMany');
                 select.value = relation.relationType;
-                processDataAttribute(select);
+                processDefaultSelectDataAttribute(select);
 
                 select.addEventListener('change', handleManyToManyChange);
                 handleManyToManyChange();
@@ -582,8 +653,11 @@
                     fkCollectionName: element.getAttribute('data-fk-collection-name'),
                     pkCollectionName: element.getAttribute('data-pk-collection-name'),
                     relationType: element.getAttribute('data-relation-type'),
-                    sqlRelation: element.getAttribute('data-sql-relation')
+                    sqlRelation: element.getAttribute('data-sql-relation'),
+                    embedInMain: element.getAttribute('data-embed-in-main')
                 };
+                relation.embedDirection = relation.embedInMain === '1' ? RELATED_IN_MAIN : relation.embedInMain === '0' ?
+                    MAIN_IN_RELATED : null;
 
                 document.getElementById('linkEmbeddBlock').classList.replace('hidden', 'block');
                 document.getElementById('manyToManyBlock').classList.replace('block', 'hidden');
@@ -592,9 +666,20 @@
                 document.getElementById('modalPkCollectionName').textContent = relation.pkCollectionName;
                 document.getElementById('modalFkCollectionName').textContent = relation.fkCollectionName;
 
+                // if (relation.embedDirection !== null) {
+                //     // console.log(relation.embedDirection);
+                //     document.getElementById('modalEmbeddingDirection').classList.remove('hidden');
+                // }
+
+                embeddingRadios.forEach(radio => {
+                    radio.addEventListener('change', handleLinkEmbeddChange);
+                });
+
                 let select = document.getElementById('modalRelationTypeLinkEmbedd');
                 select.value = relation.relationType;
-                processDataAttribute(select);
+
+                processDefaultSelectDataAttribute(select);
+                processDefaultRadiosDataAttribute(embeddingRadios, relation.embedDirection);
 
                 select.addEventListener('change', handleLinkEmbeddChange);
                 handleLinkEmbeddChange();
@@ -602,7 +687,6 @@
 
             document.getElementById('relationData').value = relation.encryptedData;
             document.getElementById('sqlRelation').value = relation.sqlRelation;
-            // console.log(relation);
 
             updateCurrentPreview(relation, isManyToMany);
 
@@ -612,7 +696,7 @@
             }));
         }
 
-        function processDataAttribute(select) {
+        function processDefaultSelectDataAttribute(select, radiobtn = null, isLinkEmbed = false) {
             Array.from(select.options).forEach(option => {
                 if (option.value === select.value) {
                     option.dataset.default = "true";
@@ -622,40 +706,81 @@
             });
         }
 
+        function processDefaultRadiosDataAttribute(radios, embedDirection) {
+            radios.forEach(radio => {
+                delete radio.dataset.default;
+
+                if (embedDirection === radio.value) {
+                    radio.checked = true;
+                    radio.dataset.default = "true";
+                }
+                // if (embedDirection === RELATED_IN_MAIN && radio.value === RELATED_IN_MAIN) {
+                //     radio.checked = true;
+                //     radio.dataset.default = "true";
+                // } else if (embedDirection === MAIN_IN_RELATED && radio.value === MAIN_IN_RELATED) {
+                //     radio.checked = true;
+                //     radio.dataset.default = "true";
+                // }
+            });
+
+        }
+
+        function getSelectedRadioValue() {
+            const selectedRadio = document.querySelector('input[name="embeddingDirection"]:checked');
+            return selectedRadio ? selectedRadio.value : null;
+        }
+
         function handleLinkEmbeddChange() {
             clearModalMessages();
+            const select = document.getElementById('modalRelationTypeLinkEmbedd');
+            const radios = document.querySelectorAll('input[name="embeddingDirection"]');
+
             updatePreviewLinkEmbedd(
                 document.getElementById('modalPkCollectionName').textContent,
                 document.getElementById('modalFkCollectionName').textContent,
-                this.value,
-                document.getElementById('sqlRelation').value
+                select.value,
+                document.getElementById('sqlRelation').value,
+                getSelectedRadioValue()
             );
 
-            toggleSubmitButton(document.getElementById('modalRelationTypeLinkEmbedd'));
+            if (select.value === EMBEDDING) {
+                document.getElementById('modalEmbeddingDirection').classList.remove('hidden');
+            } else if (select.value === LINKING) {
+                document.getElementById('modalEmbeddingDirection').classList.add('hidden');
+            }
+
+            toggleSubmitButton(select, radios);
         }
 
         function handleManyToManyChange() {
+            const select = document.getElementById('modalRelationTypeManyToMany');
             clearModalMessages();
             updatePreviewManyToMany(
                 document.getElementById('modalCollection1Name').textContent,
                 document.getElementById('modalCollection2Name').textContent,
                 document.getElementById('modalPivotCollectionName').textContent,
-                this.value
+                select.value
             );
 
-            toggleSubmitButton(document.getElementById('modalRelationTypeManyToMany'));
+            toggleSubmitButton(select, null);
         }
 
-        function toggleSubmitButton(select) {
-            const defaultOption = select.querySelector('[data-default="true"]');
-            console.log(defaultOption);
+        function toggleSubmitButton(select, radios = null) {
+            const defaultSelectOption = select.querySelector('[data-default="true"]');
+            const defaultRadio = radios === null ? radios : document.querySelector(
+                'input[name="embeddingDirection"][data-default="true"]');
+
+            // console.log(defaultSelectOption, defaultRadio.value, getSelectedRadioValue());
+
             let submitButton = document.getElementById('submit-btn');
-            if (select.value === defaultOption.value) {
-                submitButton.disabled = true;
-                submitButton.classList.add('disabled');
-            } else {
+            if (select.value !== defaultSelectOption.value || (
+                    defaultRadio !== null && defaultRadio.value !== getSelectedRadioValue()
+                )) {
                 submitButton.disabled = false;
                 submitButton.classList.remove('disabled');
+            } else {
+                submitButton.disabled = true;
+                submitButton.classList.add('disabled');
             }
         }
 
@@ -671,7 +796,7 @@
 
             } else {
                 let preview = getPreviewLinkEmbedd(relation.pkCollectionName, relation.fkCollectionName,
-                    relation.relationType, relation.sqlRelation);
+                    relation.relationType, relation.sqlRelation, getSelectedRadioValue());
 
                 // Оновлення поточного та оновленого прев'ю
                 document.getElementById('currentJson').innerHTML = formatJsonWithSyntaxHighlighting(preview);
@@ -680,8 +805,13 @@
         }
 
         // -----------------------------------
-        function updatePreviewLinkEmbedd(pkCollectionName, fkCollectionName, relationType, sqlRelation) {
-            const preview = getPreviewLinkEmbedd(pkCollectionName, fkCollectionName, relationType, sqlRelation);
+        function updatePreviewLinkEmbedd(pkCollectionName, fkCollectionName, relationType, sqlRelation,
+            embeddingDirection) {
+
+            const preview = getPreviewLinkEmbedd(pkCollectionName, fkCollectionName, relationType, sqlRelation,
+                embeddingDirection);
+            // console.log('------------------------\n');
+            // console.log(preview);
             document.getElementById('updatedJson').innerHTML = formatJsonWithSyntaxHighlighting(preview);
         }
 
@@ -691,7 +821,10 @@
             document.getElementById('updatedJson').innerHTML = formatJsonWithSyntaxHighlighting(preview);
         }
 
-        function getPreviewLinkEmbedd(pkCollectionName, fkCollectionName, relationType, sqlRelation) {
+        function getPreviewLinkEmbedd(pkCollectionName, fkCollectionName, relationType, sqlRelation, embeddingDirection) {
+
+            // console.log(embeddingDirection);
+
             let preview = '';
 
             if (relationType === LINKING) {
@@ -709,6 +842,15 @@
     // {{ __('other fields') }}
 }`;
             } else if (relationType === EMBEDDING) {
+
+                if (embeddingDirection === MAIN_IN_RELATED) {
+                    // [fkCollectionName, pkCollectionName] = [pkCollectionName, fkCollectionName];
+                    let temp = fkCollectionName;
+                    fkCollectionName = pkCollectionName;
+                    pkCollectionName = temp;
+                }
+                // if embeddingDirection === 'relatedInMain' => ОК
+
                 if (sqlRelation === ONE_TO_ONE) {
                     preview =
                         `<-${fkCollectionName}->:
