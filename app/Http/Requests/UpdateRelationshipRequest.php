@@ -73,7 +73,10 @@ class UpdateRelationshipRequest extends FormRequest
                         'embeddingDirection',
                         __('validation.required', ['attribute' => 'Embedding Direction'])
                     );
+                    return;
                 }
+
+                $this->merge(['embedInMain' => $embeddingDirection === LinkEmbedd::RELATED_IN_MAIN]);
             }
         ];
     }
