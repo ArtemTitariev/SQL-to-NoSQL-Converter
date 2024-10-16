@@ -93,8 +93,8 @@
                                     </x-table-header>
                                     <tbody class="bg-white divide-y">
                                         <x-table-row class="border-gray-300">
-                                            <x-table-cell><span id="modalPkCollectionName">N/A</span></x-table-cell>
                                             <x-table-cell><span id="modalFkCollectionName">N/A</span></x-table-cell>
+                                            <x-table-cell><span id="modalPkCollectionName">N/A</span></x-table-cell>
                                         </x-table-row>
                                     </tbody>
                                 </x-table>
