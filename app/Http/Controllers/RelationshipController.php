@@ -42,12 +42,17 @@ class RelationshipController extends Controller
             // Обробка LinkEmbedd
             $relationType = MongoRelationType::tryFrom($validated['relationTypeLinkEmbedd']);
 
-            if ($relation->relation_type->value === $validated['relationTypeLinkEmbedd']) {
-                return $this->successResponse($decodedRelation);
-            }
-
             switch ($relationType) {
                 case MongoRelationType::LINKING:  // Зміна Embedding на Linking
+
+                    if ($relation->relation_type === $relationType) {
+                        // return $this->successResponse($decodedRelation);
+                        dd('nothing changed');
+                        return response()->json([
+                            'status' => 'nothing changed',
+                        ], 409);
+                    }
+
                     // Заборонено:
                     // •    при вкладеннях
 
@@ -116,17 +121,491 @@ class RelationshipController extends Controller
                     break;
 
                 case MongoRelationType::EMBEDDING:
-                    // Зміна Link на Embedding
+                    $embedInMain = $request->input('embedInMain'); // from 'after' method
 
-                    // Заборонено:
-                    // •    Якщо є self ref
-                    // •    Якщо це частина complex зв'язку.
-                    // •    Вкладати ту колекцію, яка в круговому з’єднанні. (це включає перевірку наступного пункту, тож можна кругові залежності не перевіряти)
-                    // •    Вкладати ту колекцію, яка пов’язана як linking з іншими (якщо в неї є вкладення - то можна), але й на ту не мають посилатися ще хтось
-                    // (А якщо якась іще вкладає pk_collection, яку я хочу вкласти в fk_collection - не проблема) ----------------------
-                    //  Але й інші не мають бути пов’язані як linking ще з якимись. 
-                    // Тобто, якщо колекція pk_colelction використовує linking, вкладати її не можна.
-                    
+                    if ($relation->relation_type === $relationType) {
+                        if ($relation->embed_in_main === $embedInMain) {
+                            dd('nothing changed');
+                            // nothing changed
+                            return response()->json([
+                                'status' => 'nothing changed',
+                            ], 409);
+                            // break;
+
+                        } else {
+                            // chanche embedding direction
+
+                            if ($embedInMain) {
+                                // Було main in related, стане related in main  +++++++++++
+                                // main => fk_collection
+                                // related => pk_collection
+
+                                // Заробонено:
+                                // •    Якщо в related є self ref
+                                // •    Якщо це частина complex зв'язку (а раптом??) 
+                                // •    Якщо в related є посилання (links)
+                                // •    Якщо є посилання на related
+
+                                $pkCollection = $relation->pkCollection;
+
+                                // check self ref in related
+                                $selfRefExists = LinkEmbedd::where('fk_collection_id', $pkCollection->id)
+                                    ->where('sql_relation', RelationType::SELF_REF->value)
+                                    ->exists();
+
+                                if ($selfRefExists) {
+                                    return response()->json([
+                                        'status' => 'error',
+                                        'type' => 'self_ref',
+                                        'message' => "Колекція {$pkCollection->name} має посилання на себе.",
+                                        'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
+                                    ], 409);
+                                }
+                                // check complex
+                                if ($relation->sql_relation->isComplex()) {
+                                    return response()->json([
+                                        'status' => 'error',
+                                        'type' => 'complex_relation',
+                                        'message' => "Даний зв`язок є частиною складного зв`язку в колекції {$pkCollection->name}.",
+                                        'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
+                                    ], 409);
+                                }
+
+                                // Check links in related
+                                $linksFrom = LinkEmbedd::where('fk_collection_id', $pkCollection->id)
+                                    ->where('relation_type', MongoRelationType::LINKING->value)
+                                    ->get();
+
+                                if ($linksFrom->isNotEmpty()) {
+                                    $linkedWith = $linksFrom->map(fn($link) => [
+                                        'id' => $link->pkCollection->id,
+                                        'name' => $link->pkCollection->name,
+                                    ]);
+
+                                    return response()->json([
+                                        'status' => 'error',
+                                        'type' => 'main_collection_has_links',
+                                        'message' => "Колекція {$pkCollection->name} має посилання (Linking).",
+                                        'linkend_with' => $linkedWith,
+                                        'recommendation' => 'Спочатку змініть зв`язки на вкладення (Embedding).',
+                                    ], 409);
+                                }
+
+
+                                // Check links to related
+                                $linksTo = LinkEmbedd::where('pk_collection_id', $pkCollection->id)
+                                    ->where('relation_type', MongoRelationType::LINKING->value)
+                                    ->get();
+
+                                if ($linksTo->isNotEmpty()) {
+                                    $linkedWith = $linksTo->map(fn($link) => [
+                                        'id' => $link->fkCollection->id,
+                                        'name' => $link->fkCollection->name,
+                                    ]);
+
+                                    return response()->json([
+                                        'status' => 'error',
+                                        'type' => 'links_to_main_collection',
+                                        'message' => "На колекцію {$pkCollection->name} є посилання (Linking).",
+                                        'linked_from' => $linkedWith,
+                                        'recommendation' => "Вкласти колекцію {$pkCollection->name} неможливо при такому зв`язку.",
+                                    ], 409);
+                                }
+
+                                // Check N-N with related
+                                $nn = ManyToManyLink::where('collection1_id', $pkCollection->id)
+                                    ->orWhere('collection2_id', $pkCollection->id)
+                                    ->orWhere('pivot_collection_id', $pkCollection->id)
+                                    ->get();
+
+                                if ($nn->isNotEmpty()) {
+                                    $usedCollections = $nn->map(fn($rel) => [
+                                        'first' => [
+                                            'id' => $rel->collection1->id,
+                                            'name' => $rel->collection1->name,
+                                        ],
+                                        'second' => [
+                                            'id' => $rel->collection2->id,
+                                            'name' => $rel->collection2->name,
+
+                                        ],
+                                        'pivot' => [
+                                            'id' => $rel->pivotCollection->id,
+                                            'name' => $rel->pivotCollection->name,
+                                        ],
+                                    ]);
+
+                                    return response()->json([
+                                        'status' => 'error',
+                                        'type' => 'many_to_many_link',
+                                        'message' => "Колекція {$pkCollection->name} є частиною звязку Багато-до-Багатьох.",
+                                        'collections' => $usedCollections,
+                                        'recommendation' => "Вкласти колекцію {$pkCollection->name} неможливо при такому зв`язку.",
+                                    ], 409);
+                                }
+
+                                // SAVE CHANGES
+                                // $relation->changeEmbeddingDirection();
+                                break;
+                                //--------------------------------------
+
+                            } else {
+                                // Було related in main, стане main in related  ------------
+                                // main => fk_collection
+                                // related => pk_collection
+
+                                // Заробонено:
+                                // •    Якщо в main є self ref
+                                // •    Якщо це частина complex зв'язку (а раптом??) 
+                                // •    Якщо в main є посилання (links)
+                                // •    Якщо є посилання на main
+
+                                // dd($relation);
+                                $fkCollection = $relation->fkCollection;
+
+                                // check self ref in main
+                                $selfRefExists = LinkEmbedd::where('fk_collection_id', $fkCollection->id)
+                                    ->where('sql_relation', RelationType::SELF_REF->value)
+                                    ->exists();
+
+                                if ($selfRefExists) {
+                                    return response()->json([
+                                        'status' => 'error',
+                                        'type' => 'self_ref',
+                                        'message' => "Колекція {$fkCollection->name} має посилання на себе.",
+                                        'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
+                                    ], 409);
+                                }
+                                // check complex
+                                if ($relation->sql_relation->isComplex()) {
+                                    return response()->json([
+                                        'status' => 'error',
+                                        'type' => 'complex_relation',
+                                        'message' => "Даний зв`язок є частиною складного зв`язку в колекції {$fkCollection->name}.",
+                                        'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
+                                    ], 409);
+                                }
+
+                                // Check links in main
+                                $linksFrom = LinkEmbedd::where('fk_collection_id', $fkCollection->id)
+                                    ->where('relation_type', MongoRelationType::LINKING->value)
+                                    ->get();
+
+                                if ($linksFrom->isNotEmpty()) {
+                                    $linkedWith = $linksFrom->map(fn($link) => [
+                                        'id' => $link->pkCollection->id,
+                                        'name' => $link->pkCollection->name,
+                                    ]);
+
+                                    return response()->json([
+                                        'status' => 'error',
+                                        'type' => 'main_collection_has_links',
+                                        'message' => "Колекція {$fkCollection->name} має посилання (Linking).",
+                                        'linkend_with' => $linkedWith,
+                                        'recommendation' => 'Спочатку змініть зв`язки на вкладення (Embedding).',
+                                    ], 409);
+                                }
+
+                                // Check links to main
+                                $linksTo = LinkEmbedd::where('pk_collection_id', $fkCollection->id)
+                                    ->where('relation_type', MongoRelationType::LINKING->value)
+                                    ->get();
+
+                                if ($linksTo->isNotEmpty()) {
+                                    $linkedWith = $linksTo->map(fn($link) => [
+                                        'id' => $link->fkCollection->id,
+                                        'name' => $link->fkCollection->name,
+                                    ]);
+
+                                    return response()->json([
+                                        'status' => 'error',
+                                        'type' => 'links_to_main_collection',
+                                        'message' => "На колекцію {$fkCollection->name} є посилання (Linking).",
+                                        'linked_from' => $linkedWith,
+                                        'recommendation' => "Вкласти колекцію {$fkCollection->name} неможливо при такому зв`язку.",
+                                    ], 409);
+                                }
+
+                                // Check N-N with main
+                                // Check N-N with main
+                                $nn = ManyToManyLink::where('collection1_id', $fkCollection->id)
+                                    ->orWhere('collection2_id', $fkCollection->id)
+                                    ->orWhere('pivot_collection_id', $fkCollection->id)
+                                    ->get();
+
+                                if ($nn->isNotEmpty()) {
+                                    $usedCollections = $nn->map(fn($rel) => [
+                                        'first' => [
+                                            'id' => $rel->collection1->id,
+                                            'name' => $rel->collection1->name,
+                                        ],
+                                        'second' => [
+                                            'id' => $rel->collection2->id,
+                                            'name' => $rel->collection2->name,
+
+                                        ],
+                                        'pivot' => [
+                                            'id' => $rel->pivotCollection->id,
+                                            'name' => $rel->pivotCollection->name,
+                                        ],
+                                    ]);
+
+                                    return response()->json([
+                                        'status' => 'error',
+                                        'type' => 'many_to_many_link',
+                                        'message' => "Колекція {$fkCollection->name} є частиною звязку Багато-до-Багатьох.",
+                                        'collections' => $usedCollections,
+                                        'recommendation' => "Вкласти колекцію {$fkCollection->name} неможливо при такому зв`язку.",
+                                    ], 409);
+                                }
+
+                                // SAVE CHANGES
+                                // $relation->changeEmbeddingDirection();
+                                break;
+                            }
+                            // -----------------------------------------------------------------------------------------------
+                        }
+                    } else {
+                        // Зміна Link на Embedding
+
+                        // у залежності від напрямку
+                        if ($embedInMain) {
+
+                            // Якщо related in main +++++++++++
+                            // main => fk_collection
+                            // related => pk_collection
+
+                            // Заробонено:
+                            // •    Якщо в related є self ref
+                            // •    Якщо це частина complex зв'язку (а раптом??) 
+                            // •    Якщо в related є посилання (links)
+                            // •    Якщо є посилання на related, окрім поточного
+
+                            $pkCollection = $relation->pkCollection;
+
+                            // check self ref in related
+                            $selfRefExists = LinkEmbedd::where('fk_collection_id', $pkCollection->id)
+                                ->where('sql_relation', RelationType::SELF_REF->value)
+                                ->exists();
+
+                            if ($selfRefExists) {
+                                return response()->json([
+                                    'status' => 'error',
+                                    'type' => 'self_ref',
+                                    'message' => "Колекція {$pkCollection->name} має посилання на себе.",
+                                    'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
+                                ], 409);
+                            }
+                            // check complex
+                            if ($relation->sql_relation->isComplex()) {
+                                return response()->json([
+                                    'status' => 'error',
+                                    'type' => 'complex_relation',
+                                    'message' => "Даний зв`язок є частиною складного зв`язку в колекції {$pkCollection->name}.",
+                                    'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
+                                ], 409);
+                            }
+
+                            // Check links in related
+                            $linksFrom = LinkEmbedd::where('fk_collection_id', $pkCollection->id)
+                                ->where('relation_type', MongoRelationType::LINKING->value)
+                                ->get();
+
+                            if ($linksFrom->isNotEmpty()) {
+                                $linkedWith = $linksFrom->map(fn($link) => [
+                                    'id' => $link->pkCollection->id,
+                                    'name' => $link->pkCollection->name,
+                                ]);
+
+                                return response()->json([
+                                    'status' => 'error',
+                                    'type' => 'main_collection_has_links',
+                                    'message' => "Колекція {$pkCollection->name} має посилання (Linking).",
+                                    'linkend_with' => $linkedWith,
+                                    'recommendation' => 'Спочатку змініть зв`язки на вкладення (Embedding).',
+                                ], 409);
+                            }
+
+                            // Check links to related - EXCEPT FOT CURRNT RELATIONSHIP
+                            $linksTo = LinkEmbedd::where('pk_collection_id', $pkCollection->id)
+                                ->where('relation_type', MongoRelationType::LINKING->value)
+                                ->where('id', '<>', $relation->id)
+                                ->get();
+
+                            if ($linksTo->isNotEmpty()) {
+                                $linkedWith = $linksTo->map(fn($link) => [
+                                    'id' => $link->fkCollection->id,
+                                    'name' => $link->fkCollection->name,
+                                ]);
+
+                                return response()->json([
+                                    'status' => 'error',
+                                    'type' => 'links_to_main_collection',
+                                    'message' => "На колекцію {$pkCollection->name} є посилання (Linking).",
+                                    'linked_from' => $linkedWith,
+                                    'recommendation' => "Вкласти колекцію {$pkCollection->name} неможливо при такому зв`язку.",
+                                ], 409);
+                            }
+
+                            // Check N-N with related
+                            $nn = ManyToManyLink::where('collection1_id', $pkCollection->id)
+                                ->orWhere('collection2_id', $pkCollection->id)
+                                ->orWhere('pivot_collection_id', $pkCollection->id)
+                                ->get();
+
+                            if ($nn->isNotEmpty()) {
+                                $usedCollections = $nn->map(fn($rel) => [
+                                    'first' => [
+                                        'id' => $rel->collection1->id,
+                                        'name' => $rel->collection1->name,
+                                    ],
+                                    'second' => [
+                                        'id' => $rel->collection2->id,
+                                        'name' => $rel->collection2->name,
+
+                                    ],
+                                    'pivot' => [
+                                        'id' => $rel->pivotCollection->id,
+                                        'name' => $rel->pivotCollection->name,
+                                    ],
+                                ]);
+
+                                return response()->json([
+                                    'status' => 'error',
+                                    'type' => 'many_to_many_link',
+                                    'message' => "Колекція {$pkCollection->name} є частиною звязку Багато-до-Багатьох.",
+                                    'collections' => $usedCollections,
+                                    'recommendation' => "Вкласти колекцію {$pkCollection->name} неможливо при такому зв`язку.",
+                                ], 409);
+                            }
+
+                            // SAVE CHANGES
+                            // $relation->changeToEmbedding(true);
+                            break;
+                            // ------------------------------------------
+                        } else {
+                            // Якщо main in related ------------
+                            // main => fk_collection
+                            // related => pk_collection
+
+                            // Заробонено:
+                            // •    Якщо в main є self ref
+                            // •    Якщо це частина complex зв'язку (а раптом??) 
+                            // •    Якщо в main є посилання (links), окрім як на related (поточне)
+                            // •    Якщо є посилання на main
+
+                            $fkCollection = $relation->fkCollection;
+
+                            // check self ref in main
+                            $selfRefExists = LinkEmbedd::where('fk_collection_id', $fkCollection->id)
+                                ->where('sql_relation', RelationType::SELF_REF->value)
+                                ->exists();
+
+                            if ($selfRefExists) {
+                                return response()->json([
+                                    'status' => 'error',
+                                    'type' => 'self_ref',
+                                    'message' => "Колекція {$fkCollection->name} має посилання на себе.",
+                                    'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
+                                ], 409);
+                            }
+                            // check complex
+                            if ($relation->sql_relation->isComplex()) {
+                                return response()->json([
+                                    'status' => 'error',
+                                    'type' => 'complex_relation',
+                                    'message' => "Даний зв`язок є частиною складного зв`язку в колекції {$fkCollection->name}.",
+                                    'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
+                                ], 409);
+                            }
+
+                            // Check links in main EXCEPT FOR CURRENT
+                            $linksFrom = LinkEmbedd::where('fk_collection_id', $fkCollection->id)
+                                ->where('relation_type', MongoRelationType::LINKING->value)
+                                ->where('id', '<>', $relation->id)
+                                ->get();
+
+                            if ($linksFrom->isNotEmpty()) {
+                                $linkedWith = $linksFrom->map(fn($link) => [
+                                    'id' => $link->pkCollection->id,
+                                    'name' => $link->pkCollection->name,
+                                ]);
+
+                                return response()->json([
+                                    'status' => 'error',
+                                    'type' => 'main_collection_has_links',
+                                    'message' => "Колекція {$fkCollection->name} має посилання (Linking).",
+                                    'linkend_with' => $linkedWith,
+                                    'recommendation' => 'Спочатку змініть зв`язки на вкладення (Embedding).',
+                                ], 409);
+                            }
+
+                            // Check links to main
+                            $linksTo = LinkEmbedd::where('pk_collection_id', $fkCollection->id)
+                                ->where('relation_type', MongoRelationType::LINKING->value)
+                                ->get();
+
+                            if ($linksTo->isNotEmpty()) {
+                                $linkedWith = $linksTo->map(fn($link) => [
+                                    'id' => $link->fkCollection->id,
+                                    'name' => $link->fkCollection->name,
+                                ]);
+
+                                return response()->json([
+                                    'status' => 'error',
+                                    'type' => 'links_to_main_collection',
+                                    'message' => "На колекцію {$fkCollection->name} є посилання (Linking).",
+                                    'linked_from' => $linkedWith,
+                                    'recommendation' => "Вкласти колекцію {$fkCollection->name} неможливо при такому зв`язку.",
+                                ], 409);
+                            }
+
+                            // Check N-N with main
+                            $nn = ManyToManyLink::where('collection1_id', $fkCollection->id)
+                                ->orWhere('collection2_id', $fkCollection->id)
+                                ->orWhere('pivot_collection_id', $fkCollection->id)
+                                ->get();
+
+                            if ($nn->isNotEmpty()) {
+                                $usedCollections = $nn->map(fn($rel) => [
+                                    'first' => [
+                                        'id' => $rel->collection1->id,
+                                        'name' => $rel->collection1->name,
+                                    ],
+                                    'second' => [
+                                        'id' => $rel->collection2->id,
+                                        'name' => $rel->collection2->name,
+
+                                    ],
+                                    'pivot' => [
+                                        'id' => $rel->pivotCollection->id,
+                                        'name' => $rel->pivotCollection->name,
+                                    ],
+                                ]);
+
+                                return response()->json([
+                                    'status' => 'error',
+                                    'type' => 'many_to_many_link',
+                                    'message' => "Колекція {$fkCollection->name} є частиною звязку Багато-до-Багатьох.",
+                                    'collections' => $usedCollections,
+                                    'recommendation' => "Вкласти колекцію {$fkCollection->name} неможливо при такому зв`язку.",
+                                ], 409);
+                            }
+
+                            // SAVE CHANGES
+                            // $relation->changeToEmbedding(false);
+                            break;
+                        }
+                    }
+
+
+
+
+
+
+
+
+
 
 
                     // check self ref
@@ -153,7 +632,7 @@ class RelationshipController extends Controller
                     // перевірити, чи є link-и на pk_collection
 
 
-                    
+
                     // SAVE CHANGES
                     // $relation->changeToEmbedding();
                     break;
