@@ -17,7 +17,7 @@ class LinkEmbedd extends Model
 
     const MAIN_IN_RELATED = 'mainInRelated';
     const RELATED_IN_MAIN = 'relatedInMain';
-    
+
     protected $table = 'links_embedds';
 
     public $timestamps = false;
@@ -102,15 +102,23 @@ class LinkEmbedd extends Model
         ]);
     }
 
-    public function changeToEmbedding(): bool
-    {
-        $this->relation_type = MongoRelationType::EMBEDDING;
-        return $this->save();
-    }
-
     public function changeToLinking(): bool
     {
         $this->relation_type = MongoRelationType::LINKING;
+        $this->embed_in_main = null;
+        return $this->save();
+    }
+
+    public function changeToEmbedding(bool $embedInMain): bool
+    {
+        $this->relation_type = MongoRelationType::EMBEDDING;
+        $this->embed_in_main = $embedInMain;
+        return $this->save();
+    }
+
+    public function changeEmbeddingDirection(): bool
+    {
+        $this->embed_in_main = ! $this->embed_in_main;
         return $this->save();
     }
 }
