@@ -81,4 +81,22 @@ class ManyToManyLink extends Model
             'foreign2_fields' =>  $second->foreign_columns,
         ]);
     }
+
+    public function changeToLinkingWithPivot(): bool
+    {
+        $this->relation_type = MongoManyToManyRelation::LINKING_WITH_PIVOT;
+        return $this->save();
+    }
+    
+    public function changeToEmbedding(): bool
+    {
+        $this->relation_type = MongoManyToManyRelation::EMBEDDING;
+        return $this->save();
+    }
+    
+    public function changeToHybrid(): bool
+    {
+        $this->relation_type = MongoManyToManyRelation::HYBRID;
+        return $this->save();
+    }
 }
