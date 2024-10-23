@@ -28,6 +28,7 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
 
         $validated = TableColumnValidator::validate($request);
         $sqlDatabase = $convert->sqlDatabase()->with(['tables'])->first();
+        $mongoDatabase = $convert->mongoDatabase;
 
         $validationResult = $this->validate($validated, $sqlDatabase);
 
@@ -71,16 +72,17 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
             }
         }
 
-        DB::transaction(function () use ($convert, $tables, $columns) {
-            $mongoDatabaseId = $convert->mongoDatabase->id;
+        $tablesCollection = $sqlDatabase->tables()->whereIn('name', $tables)->get();
 
-            foreach ($tables as $table) {
+        DB::transaction(function () use ($mongoDatabase, $tablesCollection, $columns) {
+            foreach ($tablesCollection as $table) {
                 $collection = Collection::create([
-                    'mongo_database_id' => $mongoDatabaseId,
-                    'name' => $table,
+                    'mongo_database_id' => $mongoDatabase->id,
+                    'name' => $table->name,
+                    'sql_table_id' => $table->id,
                 ]);
 
-                foreach ($columns[$table] as $column => $type) {
+                foreach ($columns[$table->name] as $column => $type) {
                     Field::create([
                         'collection_id' => $collection->id,
                         'name' => $column,
