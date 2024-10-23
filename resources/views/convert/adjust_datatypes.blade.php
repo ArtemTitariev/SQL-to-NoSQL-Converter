@@ -100,31 +100,36 @@
         </x-modal>
     </section>
 
+    <form action="{{ route('convert.step.store', [$convert, 'adjust_datatypes']) }}" method="POST" id="form">
+        <div class="sticky top-0 p-4 mb-4 flex justify-center space-x-2 bg-white z-50 shadow-md">
+            <div class="container mx-auto p-4">
 
-    <div class="sticky top-0 p-4 mb-4 flex justify-center space-x-2 bg-white z-50 shadow-md">
-        <div class="container mx-auto p-4">
+                <div class="flex flex-col space-y-3">
+                    <input type="text" id="search-input" placeholder="{{ __('Search for tables...') }}"
+                        class="border-2 border-accent rounded px-4 py-2 w-full">
 
-            <div class="flex items-center space-x-2">
-                <input type="text" id="search-input" placeholder="{{ __('Search for tables...') }}"
-                    class="border-2 border-accent rounded px-4 py-2 flex-grow">
+                    <div class="flex justify-between">
+                        <x-primary-button class="form-submit-button">{{ __('Save') }}</x-primary-button>
 
-                <button id="select-all" onclick="selectAll()"
-                    class="bg-primary text-white rounded px-4 py-2 hover:bg-accent">
-                    {{ __('Select all') }}
-                </button>
-
-                <button id="deselect-all" onclick="deselectAll()"
-                    class="bg-secondary text-white rounded px-4 py-2 hover:bg-accent">
-                    {{ __('Deselect all') }}
-                </button>
+                        <div class="flex space-x-2">
+                            <button id="select-all" onclick="selectAll()"
+                                class="bg-primary text-white rounded px-4 py-2 hover:bg-accent">
+                                {{ __('Select all') }}
+                            </button>
+                            <button id="deselect-all" onclick="deselectAll()"
+                                class="bg-info text-white rounded px-4 py-2 hover:bg-accent">
+                                {{ __('Deselect all') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="container mx-auto p-4">
-        {{-- Загальна форма для вибору таблиць і стовпців --}}
-        <x-input-errors-block />
-        <form action="{{ route('convert.step.store', [$convert, 'adjust_datatypes']) }}" method="POST" id="form">
+        <div class="container mx-auto p-4">
+            {{-- Загальна форма для вибору таблиць і стовпців --}}
+            <x-input-errors-block />
+            {{--  --}}
             @csrf
             <input type="hidden" name="break_relations" id="break-relations" value="no-break">
 
@@ -268,10 +273,9 @@
                 </div>
             @endforeach
 
-            <x-primary-button id="submit">{{ __('Save') }}</x-primary-button>
-        </form>
-    </div>
-
+            {{-- <x-primary-button class="form-submit-button">{{ __('Save') }}</x-primary-button> --}}
+        </div>
+    </form>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const searchInput = document.getElementById('search-input');
@@ -573,9 +577,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-
-            $('#submit').on('click', function(event) {
-
+            // $('#submit').on('click', function(event) {
+            $('.form-submit-button').on('click', function(event) {
                 @if (session()->has('missingTables'))
                     const tables = @json(session('missingTables'));
                 @else
@@ -587,7 +590,6 @@
                     showModal();
                     event.preventDefault(); // Відміняємо відправку
                 }
-
             });
         });
     </script>

@@ -225,18 +225,18 @@
                             if (message.type === 'many_to_many_link' && message.related_collections && message
                                 .related_collections.length > 0) {
                                 let relatedCollectionsText = message.related_collections.map(collectionPair => {
-                                    return `(${collectionPair.first.name}, ${collectionPair.second.name}) через ${collectionPair.pivot.name}`;
+                                    return `(${collectionPair.first.name}, ${collectionPair.second.name}) {{ __('through') }} ${collectionPair.pivot.name}`;
                                 }).join('; ');
 
                                 let relatedCollections = $('<div>').addClass('ml-6 text-sm')
-                                    .text(`Пов'язані колекції: ${relatedCollectionsText}`);
+                                    .text('{{ __('Related collections') }}: ' + relatedCollectionsText);
                                 messageItem.append(relatedCollections);
                             }
                             // Обробка для інших типів пов'язаних колекцій
                             else if (message.related_collections && message.related_collections.length > 0) {
                                 let collectionsNames = message.related_collections.map(collection => collection.name).join(
                                     ', ');
-                                let collectionsText = `Пов'язані колекції: ${collectionsNames}`;
+                                let collectionsText = '{{ __('Related collections') }}: ' + collectionsNames;
 
                                 let relatedCollections = $('<div>').addClass('ml-6 text-sm').text(collectionsText);
                                 messageItem.append(relatedCollections);
@@ -246,17 +246,25 @@
                         $(blockSelector).removeClass('hidden');
                     }
 
+                    function somethingWentWrong() {
+                        $('#error-title').text("{{ __('Something went wrong. Please try again later.') }}");
+                        $('#error-block').removeClass('hidden');
+                    }
 
                     function handleResponse(responseContent) {
+                        if (!responseContent.status) {
+                            somethingWentWrong();
+                        }
                         if (responseContent.status === "error" || responseContent.status === "warning") {
                             // Відображення помилок
                             if (responseContent.errors.length > 0) {
-                                renderMessages('#error-list', '#error-title', "Помилки:", responseContent.errors, '#error-block');
+                                renderMessages('#error-list', '#error-title', '{{ __('Errors:') }}', responseContent.errors,
+                                    '#error-block');
                             }
 
                             // Відображення попереджень, якщо вони є і немає помилок
                             if (responseContent.errors.length === 0 && responseContent.warnings.length > 0) {
-                                renderMessages('#warning-list', '#warning-title', "Попередження:", responseContent.warnings,
+                                renderMessages('#warning-list', '#warning-title', '{{ __('Warnings:') }}', responseContent.warnings,
                                     '#warning-block');
                             }
                         } else if (responseContent.status === 'success') {
@@ -265,17 +273,16 @@
                             let mode = $('#mode').val();
 
                             if (mode === DEFAULT_MODE) {
-                                notificationBlock.text(responseContent.message || "Зміни успішно збережено");
+                                notificationBlock.text(responseContent.message || '{{ __('Changes saved successfully!') }}');
                             } else {
-                                notificationBlock.text(responseContent.message || "Валідація пройшла успішно");
+                                notificationBlock.text(responseContent.message || '{{ __('Validation was successful!') }}');
                             }
 
                             notificationBlock.removeClass('hidden');
                         } else if (responseContent.status === 'no_changes') {
                             // Логіка для випадку, якщо змін немає
                         } else {
-                            $('#error-title').text("{{ __('Something went wrong. Please try again later.') }}");
-                            $('#error-block').removeClass('hidden');
+                            somethingWentWrong();
                         }
                     }
 
@@ -414,7 +421,6 @@
         </x-modal>
     </section>
 
-    {{-- ---------------------------------- --}}
     <div class="container mx-auto p-4">
         <x-input-errors-block />
     </div>
@@ -422,17 +428,23 @@
 
     <div class="sticky top-0 p-4 mb-4 flex justify-center space-x-2 bg-white z-10 shadow-md">
         <div class="container mx-auto p-4">
-            <div class="flex items-center space-x-2">
+            <div class="flex flex-col space-y-3">
                 <input type="text" id="search-input" placeholder="{{ __('Search for collections...') }}"
-                    class="border-2 border-accent rounded px-4 py-2 flex-grow">
+                    class="border-2 border-accent rounded px-4 py-2 w-full">
 
-                {{-- <button id="showHideButton" class="bg-light text-customgray px-4 py-2">
-                    {{ __('Show All') }}
-                </button> --}}
-                <button id="toggleButton" class="bg-secondary text-white rounded px-4 py-2 hover:bg-accent">
-                    {{ __('Show / Hide Graph') }}
-                </button>
+                <div class="flex justify-between">
+                    <form action="{{ route('convert.step.store', [$convert, 'adjust_relationships']) }}"
+                        method="POST">
+                        @csrf
+                        <x-primary-button>{{ __('Proceed to Next Step') }}</x-primary-button>
+                    </form>
+
+                    <button id="toggleButton" class="bg-info text-white rounded px-4 py-2 hover:bg-accent">
+                        {{ __('Show / Hide Graph') }}
+                    </button>
+                </div>
             </div>
+
         </div>
     </div>
 
