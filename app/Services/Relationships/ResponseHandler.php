@@ -2,101 +2,133 @@
 
 namespace App\Services\Relationships;
 
-class ResponseHandler {
-    
+class ResponseHandler
+{
+
+    private static function unicodeResponse($data, $code)
+    {
+        return response()->json($data, $code, [], JSON_UNESCAPED_UNICODE);
+    }
     public static function successResponse()
     {
-        return response()->json([
+        return static::unicodeResponse([
             'status' => 'success',
             'message' => __('Changes saved successfully!'),
         ], 200);
     }
-    
+
+    public static function testingSuccessResponse()
+    {
+        return static::unicodeResponse([
+            'status' => 'success',
+            'message' => 'Валідація пройшла успішно!',
+        ], 200);
+    }
+
     public static function errorResponse()
     {
-        return response()->json([
+        return static::unicodeResponse([
             'status' => 'error',
-            'message' => __('Error saving changes!'),
+            'errors' => [__('Error saving changes!')],
         ], 500);
     }
-    
+
+    public static function messageResponse($messages, $code = 200, $status = "success")
+    {
+        return static::unicodeResponse([
+            'status' => $status,
+            'warnings' => $messages['warnings'],
+            'errors' => $messages['errors'],
+        ], $code);
+    }
+
     public static function noChangesResponse()
     {
-        return response()->json([
-            'status' => 'error',
+        return static::unicodeResponse([
+            'status' => 'no_changes',
             'message' => __('No changes detected.'),
         ], 409);
     }
 
-    public static function complexRelationResponse()
+    public static function prepareComplexRelationResponse()
     {
-        return response()->json([
+        return [
             'status' => 'error',
             'type' => 'complex_relation',
             'message' => "Даний зв`язок є частиною складного зв`язку.",
             'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
-        ], 409);
+        ];
     }
 
-    public static function selfRefResponse($collectionName)
+    public static function prepareCircularRefResponse($collectionName)
     {
-        return response()->json([
+        return [
+            'status' => 'error',
+            'type' => 'circular_reference',
+            'message' => "Колекція {$collectionName} є частиною кругової залежності.",
+            'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
+        ];
+    }
+
+    public static function prepareSelfRefResponse($collectionName)
+    {
+        return [
             'status' => 'error',
             'type' => 'self_ref',
             'message' => "Колекція {$collectionName} має посилання на себе.",
             'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
-        ], 409);
+        ];
     }
 
-    public static function embeddedCollectionResponse($embedds, $collectionName)
+    public static function prepareEmbeddedCollectionResponse($embedds, $collectionName)
     {
         $embeddedTo = $embedds->map(fn($embedd) => [
             'id' => $embedd->fkCollection->id,
             'name' => $embedd->fkCollection->name,
         ]);
 
-        return response()->json([
-            'status' => 'error',
+        return [
+            'status' => 'warning',
             'type' => 'collection_is_embedded',
-            'message' => "Колекція {$collectionName} є вкладеною.",
-            'embedded_to' => $embeddedTo,
-            'recommendation' => 'Спочатку змініть зв`язки на посилання (Linking).',
-        ], 409);
+            'message' => "Колекція {$collectionName} є вкладеною. Запити можуть сповільнюватись через складну структуру та необхідність розгортання документів.",
+            'related_collections' => $embeddedTo,
+            'recommendation' => 'Спробуйте змінити зв`язки на посилання для кращої продуктивності та простоти запитів.',
+        ];
     }
 
-    public static function linksToMainCollectionResponse($links, $collectionName)
+    public static function prepareLinksToMainCollectionResponse($links, $collectionName)
     {
         $linkedWith = $links->map(fn($link) => [
             'id' => $link->fkCollection->id,
             'name' => $link->fkCollection->name,
         ]);
 
-        return response()->json([
-            'status' => 'error',
+        return [
+            'status' => 'warning',
             'type' => 'links_to_main_collection',
-            'message' => "На колекцію {$collectionName} є посилання (Linking).",
-            'linked_from' => $linkedWith,
-            'recommendation' => "Вкласти колекцію {$collectionName} неможливо при такому зв`язку.",
-        ], 409);
+            'message' => "На колекцію {$collectionName} є посилання. Зміна на вкладення може ускладнити запити.",
+            'related_collections' => $linkedWith,
+            'recommendation' => "Розгляньте можливість збереження посилань для уникнення складних запитів.",
+        ];
     }
 
-    public static function mainCollectionHasLinksResponse($links, $collectionName)
+    public static function prepareMainCollectionHasLinksResponse($links, $collectionName)
     {
         $linkedWith = $links->map(fn($link) => [
             'id' => $link->pkCollection->id,
             'name' => $link->pkCollection->name,
         ]);
 
-        return response()->json([
-            'status' => 'error',
+        return [
+            'status' => 'warning',
             'type' => 'main_collection_has_links',
-            'message' => "Колекція {$collectionName} має посилання (Linking).",
-            'linkend_with' => $linkedWith,
-            'recommendation' => 'Спочатку змініть зв`язки на вкладення (Embedding).',
-        ], 409);
+            'message' => "Колекція {$collectionName} має посилання. Якщо вона стане вкладеною, запити можуть сповільнюватись через необхідність розгортання документів",
+            'related_collections' => $linkedWith,
+            'recommendation' => 'Розгляньте можливість збереження посилань для уникнення складних запитів. Або змініть наявні посилання на вкладення.',
+        ];
     }
 
-    public static function manyToManyLinkResponse($collections, $collectionName)
+    public static function prepareManyToManyLinkResponse($collections, $collectionName)
     {
         $usedCollections = $collections->map(fn($rel) => [
             'first' => [
@@ -114,12 +146,12 @@ class ResponseHandler {
             ],
         ]);
 
-        return response()->json([
+        return [
             'status' => 'error',
             'type' => 'many_to_many_link',
-            'message' => "Колекція {$collectionName} є частиною звязку Багато-до-Багатьох.",
-            'collections' => $usedCollections,
-            'recommendation' => "Вкласти колекцію {$collectionName} неможливо при такому зв`язку.",
-        ], 409);
+            'message' => "Колекція {$collectionName} є частиною зв`язку Багато-до-Багатьох.",
+            'related_collections' => $usedCollections,
+            'recommendation' => "Вкладення не дозволяється при такому зв`язку.",
+        ];
     }
 }

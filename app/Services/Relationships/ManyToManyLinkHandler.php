@@ -9,7 +9,6 @@ use App\Models\MongoSchema\ManyToManyLink;
 
 class ManyToManyLinkHandler
 {
-
     protected CollectionRelationService $relationService;
 
     public function __construct(CollectionRelationService $relationService)
@@ -17,17 +16,26 @@ class ManyToManyLinkHandler
         $this->relationService = $relationService;
     }
 
-    public function handle(ManyToManyLink $relation, MongoManyToManyRelation $relationType)
+    public function handle(ManyToManyLink $relation, MongoManyToManyRelation $relationType, bool $isTesting)
     {
         $method = self::getMethod($relation->relation_type, $relationType);
 
-        // dd($relation, $relationType, $method);
+        $messages = [
+            'errors' => [],
+            'warnings' => [],
+        ];
 
-        if (method_exists(self::class, $method)) {
-            return self::$method($relation);
+        if (! method_exists(self::class, $method)) {
+            throw new \LogicException('Unknown handling method for ManyToManyLink.');
         }
 
-        throw new \LogicException('Unknown handling method for ManyToManyLink.');
+        $result = self::$method($relation, $messages);
+
+        if ($isTesting) {
+            return ResponseHandler::messageResponse($messages, 422, 'error');
+        }
+
+        return $result;
     }
 
     protected function getMethod($oldRelationType, $newRelationType)
@@ -50,34 +58,40 @@ class ManyToManyLinkHandler
         return $map[$oldRelationType->value][$newRelationType->value] ?? null;
     }
 
-    protected function fromPivotToEmbedding(ManyToManyLink $relation)
+    protected function fromPivotToEmbedding(ManyToManyLink $relation, array &$messages)
     {
         $result = $this->checkPivotLinks($relation->pivotCollection);
         if (! is_null($result)) {
-            return $result;
-        }
-        
-        $result = $this->checkPivotEmbeds($relation->pivotCollection);
-        if (! is_null($result)) {
-            return $result;
+            // return $this->jsonResponse($result, 422);
+            $messages['errors'][] = $result;
         }
 
-        return $relation->changeToEmbedding();
+        $result = $this->checkPivotEmbeds($relation->pivotCollection);
+        if (! is_null($result)) {
+            // return $this->jsonResponse($result, 422);
+            $messages['errors'][] = $result;
+        }
+
+        if (empty($messages['errors'])) {
+            return $relation->changeToEmbedding();
+        }
     }
 
-    protected function fromPivotToHybrid(ManyToManyLink $relation)
+    protected function fromPivotToHybrid(ManyToManyLink $relation, array &$messages)
     {
         $result = $this->checkPivotLinks($relation->pivotCollection);
         if (! is_null($result)) {
-            return $result;
+            $messages['errors'][] = $result;
         }
 
         $result = $this->checkPivotEmbeds($relation->pivotCollection);
         if (! is_null($result)) {
-            return $result;
+            $messages['errors'][] = $result;
         }
 
-        return $relation->changeToHybrid();
+        if (empty($messages['errors'])) {
+            return $relation->changeToHybrid();
+        }
     }
 
     protected function fromEmbeddingToPivot(ManyToManyLink $relation)
@@ -104,7 +118,7 @@ class ManyToManyLinkHandler
     {
         $linksFrom = $this->relationService->checkLinksIn($pivot->id);
         if ($linksFrom->isNotEmpty()) {
-            return ResponseHandler::mainCollectionHasLinksResponse(
+            return ResponseHandler::prepareMainCollectionHasLinksResponse(
                 $linksFrom,
                 $pivot->name
             );
@@ -112,7 +126,7 @@ class ManyToManyLinkHandler
 
         $linksTo = $this->relationService->checkLinksTo($pivot->id);
         if ($linksTo->isNotEmpty()) {
-            return ResponseHandler::linksToMainCollectionResponse(
+            return ResponseHandler::prepareLinksToMainCollectionResponse(
                 $linksTo,
                 $pivot->name
             );
@@ -129,7 +143,7 @@ class ManyToManyLinkHandler
         );
 
         if ($embeddedTo->isNotEmpty()) {
-            return ResponseHandler::embeddedCollectionResponse(
+            return ResponseHandler::prepareEmbeddedCollectionResponse(
                 $embeddedTo,
                 $pivot->name
             );
@@ -141,7 +155,7 @@ class ManyToManyLinkHandler
         );
 
         if ($embeddsTo->isNotEmpty()) {
-            return ResponseHandler::embeddedCollectionResponse(
+            return ResponseHandler::prepareEmbeddedCollectionResponse(
                 $embeddsTo,
                 $pivot->name
             );

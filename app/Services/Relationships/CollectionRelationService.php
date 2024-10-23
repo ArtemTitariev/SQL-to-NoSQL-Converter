@@ -6,6 +6,8 @@ use App\Models\MongoSchema\LinkEmbedd;
 use App\Models\MongoSchema\ManyToManyLink;
 use App\Enums\RelationType;
 use App\Enums\MongoRelationType;
+use App\Models\MongoSchema\Collection;
+use App\Models\SQLSchema\CircularRef;
 
 class CollectionRelationService
 {
@@ -14,6 +16,15 @@ class CollectionRelationService
         return LinkEmbedd::where('fk_collection_id', $collectionId)
             ->where('sql_relation', RelationType::SELF_REF->value)
             ->exists();
+    }
+
+    public function hasCircularRef(Collection $collection): bool
+    {
+        $sqlTable = $collection->sqlTable;
+        return CircularRef::checkIfExistsByTableName(
+            $sqlTable->sql_database_id,
+            $sqlTable->name
+        );
     }
 
     public function hasComplexRelation(LinkEmbedd $relation)
