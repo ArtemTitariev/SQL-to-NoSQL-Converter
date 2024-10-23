@@ -24,7 +24,8 @@
         const MAIN_IN_RELATED = @json(\App\Models\MongoSchema\LinkEmbedd::MAIN_IN_RELATED);
         const RELATED_IN_MAIN = @json(\App\Models\MongoSchema\LinkEmbedd::RELATED_IN_MAIN);
 
-        // console.log(ONE_TO_ONE, MANY_TO_ONE, LINKING, EMBEDDING, LINKING_WITH_PIVOT, HYBRID);
+        const TESTING_MODE = 'testing';
+        const DEFAULT_MODE = 'default';
     </script>
 
     @php
@@ -68,6 +69,7 @@
 
                 <div class="my-2 w-full">
                     <x-modal-errors-block id="error-block" />
+                    <x-modal-warnings-block id="warning-block" />
                 </div>
 
                 <form id="relation-form" method="POST"
@@ -75,6 +77,7 @@
                     @csrf
                     @method('PATCH')
                     <input type="hidden" name="relationData" id="relationData" value="">
+                    <input type="hidden" name="mode" id="mode" value="default">
 
                     {{-- Used for JS only --}}
                     <input type="hidden" id="sqlRelation">
@@ -183,65 +186,208 @@
                 </div>
 
                 <script>
-                    function clearModalMessages() {
+                    function hideAndClearErrors() {
                         $('#error-block').addClass('hidden');
                         $('#error-title').empty();
                         $('#error-list').empty();
+                    }
+
+                    function hideAndClearWarnings() {
+                        $('#warning-block').addClass('hidden');
+                        $('#warning-title').empty();
+                        $('#warning-list').empty();
+                    }
+
+                    function clearModalMessages() {
+                        hideAndClearErrors();
+                        hideAndClearWarnings();
+
                         $('#success-notification').addClass('hidden');
                     }
 
-                    // $(document).ready(function() {
-                    //     // Перехоплення відправки форми
-                    //     $('#relation-form').on('submit', function(e) {
-                    //         e.preventDefault(); // Запобігаємо стандартній відправці форми
+                    function renderMessages(listSelector, titleSelector, titleText, messages, blockSelector) {
+                        $(titleSelector).text(titleText);
+                        $(listSelector).empty();
 
-                    //         clearModalMessages();
+                        messages.forEach(message => {
+                            // Створюємо основний елемент для повідомлення
+                            let messageItem = $('<li>').text(message.message);
+                            $(listSelector).append(messageItem);
 
-                    //         // Дезейблимо кнопку та показуємо лоадер
-                    //         $('#submit-btn').attr('disabled', true);
-                    //         $('#loader').addClass('flex').removeClass('hidden');
+                            // Додаємо рекомендацію, якщо вона є
+                            if (message.recommendation) {
+                                let recommendationItem = $('<div>').addClass('ml-6 text-sm text-customgray')
+                                    .text(message.recommendation);
+                                messageItem.append(recommendationItem);
+                            }
 
-                    //         // Збираємо дані з форми
-                    //         let formData = $(this).serialize();
+                            // Додаємо обробку для типу many_to_many_link
+                            if (message.type === 'many_to_many_link' && message.related_collections && message
+                                .related_collections.length > 0) {
+                                let relatedCollectionsText = message.related_collections.map(collectionPair => {
+                                    return `(${collectionPair.first.name}, ${collectionPair.second.name}) через ${collectionPair.pivot.name}`;
+                                }).join('; ');
 
-                    //         // AJAX запит
-                    //         $.ajax({
-                    //             url: $(this).attr('action'), // URL з атрибута action форми
-                    //             method: 'PATCH', // Метод запиту
-                    //             data: formData, // Дані форми
-                    //             timeout: 5000
-                    //         }).done(function(response) {
-                    //             // Відображаємо повідомлення про успіх
-                    //             $('#success-notification').removeClass('hidden');
+                                let relatedCollections = $('<div>').addClass('ml-6 text-sm')
+                                    .text(`Пов'язані колекції: ${relatedCollectionsText}`);
+                                messageItem.append(relatedCollections);
+                            }
+                            // Обробка для інших типів пов'язаних колекцій
+                            else if (message.related_collections && message.related_collections.length > 0) {
+                                let collectionsNames = message.related_collections.map(collection => collection.name).join(
+                                    ', ');
+                                let collectionsText = `Пов'язані колекції: ${collectionsNames}`;
 
-                    //             console.log(response);
-                    //         }).fail(function(xhr, t, m) {
-                    //             if (t === "timeout") {
-                    //                 $('#error-title').text(
-                    //                     "{{ __('Server is not responding. Please try again later.') }}");
-                    //             } else {
+                                let relatedCollections = $('<div>').addClass('ml-6 text-sm').text(collectionsText);
+                                messageItem.append(relatedCollections);
+                            }
+                        });
 
-                    //                 // Обробка помилок
-                    //                 console.log(xhr.responseText);
+                        $(blockSelector).removeClass('hidden');
+                    }
 
-                    //                 $('#error-title').text(xhr.responseJSON.message);
-                    //                 let errors = xhr.responseJSON.errors;
-                    //                 if (errors) {
-                    //                     for (let key in errors) {
-                    //                         $('#error-list').append('<li>' + errors[key][0] + '</li>');
-                    //                     }
-                    //                 }
-                    //                 $('#error-block').removeClass('hidden');
-                    //             }
 
-                    //         }).always(function() {
-                    //             // Ховаємо лоадер та активуємо кнопку
-                    //             $('#submit-btn').removeAttr('disabled');
-                    //             $('#loader').removeClass('flex').addClass('hidden');
-                    //         });
+                    function handleResponse(responseContent) {
+                        if (responseContent.status === "error" || responseContent.status === "warning") {
+                            // Відображення помилок
+                            if (responseContent.errors.length > 0) {
+                                renderMessages('#error-list', '#error-title', "Помилки:", responseContent.errors, '#error-block');
+                            }
 
-                    //     });
-                    // });
+                            // Відображення попереджень, якщо вони є і немає помилок
+                            if (responseContent.errors.length === 0 && responseContent.warnings.length > 0) {
+                                renderMessages('#warning-list', '#warning-title', "Попередження:", responseContent.warnings,
+                                    '#warning-block');
+                            }
+                        } else if (responseContent.status === 'success') {
+                            // Відображення повідомлення про успіх
+                            let notificationBlock = $('#success-notification');
+                            let mode = $('#mode').val();
+
+                            if (mode === DEFAULT_MODE) {
+                                notificationBlock.text(responseContent.message || "Зміни успішно збережено");
+                            } else {
+                                notificationBlock.text(responseContent.message || "Валідація пройшла успішно");
+                            }
+
+                            notificationBlock.removeClass('hidden');
+                        } else if (responseContent.status === 'no_changes') {
+                            // Логіка для випадку, якщо змін немає
+                        } else {
+                            $('#error-title').text("{{ __('Something went wrong. Please try again later.') }}");
+                            $('#error-block').removeClass('hidden');
+                        }
+                    }
+
+                    function updateLinkEmbeddRelationInTable(updatedData) {
+                        // __('From main')
+                        // __('In main') 
+                        // __('In related')
+                        const row = document.querySelector(`[data-encrypted='${updatedData.id}']`).closest('tr');
+
+                        if (row) {
+                            row.querySelector('[data-current-relation-type]').lastElementChild.innerHTML = updatedData.relationType;
+                            // row.querySelector('[data-current-embedding-direction]').innerText = updatedData.direction;
+                        }
+                    }
+
+                    function updateManyToManyRelationInTable(updatedData) {
+                        const row = document.querySelector(`[data-encrypted='${updatedData.id}']`).closest('tr');
+
+                        if (row) {
+                            row.querySelector('[data-current-relation-type]').lastElementChild.innerText = updatedData.relationType;
+                        }
+                    }
+
+                    function submitForm() {
+                        clearModalMessages();
+
+                        // Дезейблимо кнопку та показуємо лоадер
+                        $('#submit-btn').attr('disabled', true);
+                        $('#loader').addClass('flex').removeClass('hidden');
+
+                        // Збираємо дані з форми
+                        let formData = $('#relation-form').serialize();
+
+                        // AJAX запит
+                        $.ajax({
+                            url: $('#relation-form').attr('action'), // URL з атрибута action форми
+                            method: 'PATCH', // Метод запиту
+                            data: formData, // Дані форми
+                            timeout: 5000
+                        }).done(function(response) {
+                            handleResponse(response); // Виклик функції обробки відповіді
+                            let mode = $('#mode').val();
+                            if (mode !== DEFAULT_MODE) {
+                                return;
+                            }
+
+                            if (!$('#linkEmbeddBlock').hasClass('hidden')) {
+                                const selectElement = document.getElementById('modalRelationTypeLinkEmbedd');
+                                const selectedOption = selectElement.options[selectElement.selectedIndex];
+                                // Отримуємо текст вибраного option
+                                const relationType = selectedOption.innerText;
+
+                                const embeddingDirection = document.querySelector(
+                                        'input[name="embeddingDirection"]:checked')
+                                    .value;
+
+                                const updatedData = {
+                                    id: document.getElementById('relationData').value,
+                                    relationType: relationType,
+                                    direction: embeddingDirection
+                                };
+                                // Оновлюємо рядок у таблиці
+                                updateLinkEmbeddRelationInTable(updatedData);
+                            }
+
+                            if (!$('#manyToManyBlock').hasClass('hidden')) {
+                                const selectElement = document.getElementById('modalRelationTypeManyToMany');
+                                const selectedOption = selectElement.options[selectElement.selectedIndex];
+                                // Отримуємо текст вибраного option
+                                const relationType = selectedOption.innerText;
+
+                                const updatedData = {
+                                    id: document.getElementById('relationData').value,
+                                    relationType: relationType,
+                                };
+
+                                updateManyToManyRelationInTable(updatedData)
+                            }
+                        }).fail(function(xhr, t, m) {
+                            if (t === "timeout") {
+                                $('#error-title').text("{{ __('Server is not responding. Please try again later.') }}");
+                            } else {
+                                // Обробка помилок
+                                handleResponse(xhr.responseJSON);
+                            }
+                        }).always(function() {
+                            // Ховаємо лоадер та активуємо кнопку
+                            $('#submit-btn').removeAttr('disabled');
+                            $('#loader').removeClass('flex').addClass('hidden');
+                        });
+                    }
+
+                    $(document).ready(function() {
+                        // Відправка форми при натисканні кнопки submit
+                        $('#submit-btn').on('click', function(e) {
+                            e.preventDefault(); // Запобігаємо стандартній поведінці
+                            $('#mode').val(DEFAULT_MODE);
+                            submitForm();
+                        });
+
+                        // Змінюємо значення mode при зміні select та відправляємо форму
+                        $('select').on('change', function() {
+                            $('#mode').val(TESTING_MODE);
+                            submitForm();
+                        });
+
+                        // Змінюємо значення mode при натисканні на radio та відправляємо форму
+                        $('input[type="radio"]').on('click', function() {
+                            $('#mode').val(TESTING_MODE);
+                            submitForm();
+                        });
+                    });
                 </script>
 
                 <div class="mt-6">
@@ -346,6 +492,7 @@
                                         <x-table-header-cell>{{ __('Edit') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('Related Collection') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('Relation Type') }}</x-table-header-cell>
+                                        {{-- <x-table-header-cell>{{ __('Direction') }}</x-table-header-cell> --}}
                                         <x-table-header-cell>{{ __('SQL Relation') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('Local Fields') }}</x-table-header-cell>
                                         <x-table-header-cell>{{ __('Foreign Fields') }}</x-table-header-cell>
@@ -382,9 +529,12 @@
                                                     @endif
                                                 </x-table-cell>
                                                 <x-table-cell>{{ $relationFrom->pkCollection->name }}</x-table-cell>
-                                                <x-table-cell>
+                                                <x-table-cell data-current-relation-type="">
                                                     <x-mongo-relation-type-badge :relation-type="$relationFrom->relation_type" />
                                                 </x-table-cell>
+                                                {{-- <x-table-cell data-current-embedding-direction="">
+                                                    {{ is_null($relationFrom->embed_in_main) ? __('From main') : ($relationFrom->embedInMain ? __('In main') : __('In related')) }}
+                                                </x-table-cell> --}}
                                                 <x-table-cell>
                                                     <x-relation-type-badge :relation-type="$relationFrom->sql_relation" />
                                                 </x-table-cell>
@@ -442,7 +592,7 @@
                                                     </x-icon-link>
 
                                                 </x-table-cell>
-                                                <x-table-cell>
+                                                <x-table-cell data-current-relation-type="">
                                                     <x-many-to-many-relation-badge :relation-type="$nnRelation->relation_type" />
                                                 </x-table-cell>
 
@@ -749,7 +899,7 @@
                 document.getElementById('modalEmbeddingDirection').classList.add('hidden');
             }
 
-            toggleSubmitButton(select, radios);
+            // toggleSubmitButton(select, radios);
         }
 
         function handleManyToManyChange() {
@@ -762,15 +912,13 @@
                 select.value
             );
 
-            toggleSubmitButton(select, null);
+            // toggleSubmitButton(select, null);
         }
 
         function toggleSubmitButton(select, radios = null) {
             const defaultSelectOption = select.querySelector('[data-default="true"]');
             const defaultRadio = radios === null ? radios : document.querySelector(
                 'input[name="embeddingDirection"][data-default="true"]');
-
-            // console.log(defaultSelectOption, defaultRadio.value, getSelectedRadioValue());
 
             let submitButton = document.getElementById('submit-btn');
             if (select.value !== defaultSelectOption.value || (
@@ -810,8 +958,6 @@
 
             const preview = getPreviewLinkEmbedd(pkCollectionName, fkCollectionName, relationType, sqlRelation,
                 embeddingDirection);
-            // console.log('------------------------\n');
-            // console.log(preview);
             document.getElementById('updatedJson').innerHTML = formatJsonWithSyntaxHighlighting(preview);
         }
 
@@ -822,9 +968,6 @@
         }
 
         function getPreviewLinkEmbedd(pkCollectionName, fkCollectionName, relationType, sqlRelation, embeddingDirection) {
-
-            // console.log(embeddingDirection);
-
             let preview = '';
 
             if (relationType === LINKING) {
@@ -1051,7 +1194,6 @@
         // }
 
         function updateGraph(data) {
-            // console.log(data);
             // Очистити попередні дані
             const nodes = [];
             const edges = [];
