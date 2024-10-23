@@ -2,10 +2,12 @@
 
 namespace App\Models\MongoSchema;
 
+use App\Models\SQLSchema\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Collection extends Model
 {
@@ -16,6 +18,7 @@ class Collection extends Model
     protected $fillable = [
         'mongo_database_id',
         'name',
+        'sql_table_id',
         'schema_validator'
     ];
 
@@ -56,6 +59,11 @@ class Collection extends Model
     public function database(): BelongsTo
     {
         return $this->belongsTo(MongoDatabase::class, 'mongo_database_id', 'id');
+    }
+
+    public function sqlTable(): HasOne
+    {
+        return $this->hasOne(Table::class, 'id', 'sql_table_id');
     }
 
     public function getFilteredDataForGraph(): object
