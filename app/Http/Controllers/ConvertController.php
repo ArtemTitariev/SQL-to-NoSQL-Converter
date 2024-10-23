@@ -11,8 +11,6 @@ use App\Models\MongoSchema\MongoDatabase;
 use App\Models\SQLSchema\SQLDatabase;
 use App\Services\DatabaseConnections\SQLConnectionParamsProvider;
 use App\Services\ConversionStepExecutor;
-use App\Services\DatabaseConnections\ConnectionCreator;
-use App\Services\DatabaseConnections\ConnectionTester;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 

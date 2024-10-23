@@ -50,9 +50,9 @@ class CircularRef extends Model
      *
      * @param int $databaseId
      * @param array $tableNames
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return bool
      */
-    public static function checkIfExistsByTableName(int $databaseId, string $tableName)
+    public static function checkIfExistsByTableName(int $databaseId, string $tableName): bool
     {
         return self::where('sql_database_id', $databaseId)
             ->whereJsonContains('circular_refs', $tableName)
@@ -65,7 +65,7 @@ class CircularRef extends Model
      *
      * @param int $databaseId
      * @param array $tableNames
-     * @return \Illuminate\Database\Eloquent\Collection
+     * @return bool
      */
     public static function checkIfExistsByAllTableNames(int $databaseId, array $tableNames)
     {

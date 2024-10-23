@@ -274,10 +274,10 @@ class ProcessRelationships implements ShouldQueue
         $hasWithinRowLimit = $relationType === RelationType::MANY_TO_ONE ? isWithinRowNumberLimit($related->rows_number) : true; // Якщо записів небагато
 
         if ($hasNoForeignKeys && $isNotCircular && $noRelationToOthers && $hasWithinRowLimit && !$this->isOtherLinks($related, $mongoDatabase)) {
-            // Embedding
-            LinkEmbedd::createEmbedding($table, $fk, $collections);
+            // Embedding (be default, embedding to main collection)
+            LinkEmbedd::createEmbedding($table, $fk, $collections, true);
         } else {
-            // Та, до якої пов'язуються, не має бути вкладеною
+            // Та, до якої пов'язуються (pk_collection), не має бути вкладеною
             if ($this->isUnexpectedEmbedding($related, $mongoDatabase)) {
                 throw new \UnexpectedValueException("Unexpected embedding ({$relationType}): {$table->name}");
             }
@@ -293,6 +293,7 @@ class ProcessRelationships implements ShouldQueue
             ->where('pk_collections.mongo_database_id', $mongoDatabase->id)
             ->where('pk_collections.name', $table->name)
             ->where('links_embedds.relation_type', MongoRelationType::EMBEDDING)
+            ->where('links_embedds.embed_in_main', true)
             ->exists();
     }
 

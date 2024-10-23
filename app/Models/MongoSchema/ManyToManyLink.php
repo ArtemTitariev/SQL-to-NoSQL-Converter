@@ -5,13 +5,14 @@ namespace App\Models\MongoSchema;
 use App\Enums\MongoManyToManyRelation;
 use App\Models\SQLSchema\ForeignKey;
 use App\Models\SQLSchema\Table;
+use App\Services\Support\EncryptsIdentifier;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ManyToManyLink extends Model
 {
-    use HasFactory;
+    use HasFactory, EncryptsIdentifier;
 
     protected $table = 'many_to_many_links';
 
@@ -79,5 +80,23 @@ class ManyToManyLink extends Model
             'foreign1_fields' => $first->foreign_columns,
             'foreign2_fields' =>  $second->foreign_columns,
         ]);
+    }
+
+    public function changeToLinkingWithPivot(): bool
+    {
+        $this->relation_type = MongoManyToManyRelation::LINKING_WITH_PIVOT;
+        return $this->save();
+    }
+    
+    public function changeToEmbedding(): bool
+    {
+        $this->relation_type = MongoManyToManyRelation::EMBEDDING;
+        return $this->save();
+    }
+    
+    public function changeToHybrid(): bool
+    {
+        $this->relation_type = MongoManyToManyRelation::HYBRID;
+        return $this->save();
     }
 }

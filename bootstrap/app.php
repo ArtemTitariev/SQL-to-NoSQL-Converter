@@ -17,7 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'check.step.access' =>  \App\Http\Middleware\CheckStepAccess::class
+            'check.step.access' =>  \App\Http\Middleware\CheckStepAccess::class,
+            'check.edit.relationship.access' =>  \App\Http\Middleware\CheckEditRelationshipAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

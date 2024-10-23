@@ -54,6 +54,7 @@ return [
     'enum' => 'The selected :attribute is invalid.',
     'exists' => 'The selected :attribute is invalid.',
     'extensions' => 'The :attribute field must have one of the following extensions: :values.',
+    'failed_to_decrypt' => 'Failed to decrypt data.',
     'file' => 'The :attribute field must be a file.',
     'filled' => 'The :attribute field must have a value.',
     'gt' => [

@@ -9,17 +9,15 @@ class AdjustRelationshipsStrategy implements ConversionStrategyInterface
 {
     public function execute(Convert $convert, Request $request, array $extraParams = []): StrategyResult
     {
-        // Логіка для кроку збереження зв'язків
+        // Коригування зв'язків вже виконано
 
-
-
-        dd('strategy execute');
+        $nextStep = config('convert_steps.adjust_relationships.next');
 
         // Return success response
         return new StrategyResult(
             result: StrategyResult::STATUSES['COMPLETED'],
-            details: 'Adjust relationships strategy.',
-            next: config('convert_steps.adjust_relationships.next'),
+            details: 'Adjusting of relationships between collections is complete.',
+            next: $nextStep,
         );
     }
 }

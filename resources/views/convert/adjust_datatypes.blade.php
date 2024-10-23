@@ -100,27 +100,36 @@
         </x-modal>
     </section>
 
+    <form action="{{ route('convert.step.store', [$convert, 'adjust_datatypes']) }}" method="POST" id="form">
+        <div class="sticky top-0 p-4 mb-4 flex justify-center space-x-2 bg-white z-50 shadow-md">
+            <div class="container mx-auto p-4">
 
-    <div class="container mx-auto p-6">
-        <x-input-errors-block />
+                <div class="flex flex-col space-y-3">
+                    <input type="text" id="search-input" placeholder="{{ __('Search for tables...') }}"
+                        class="border-2 border-accent rounded px-4 py-2 w-full">
 
-        <div class="mt-2 mb-6 flex items-center space-x-2">
-            <input type="text" id="search-input" placeholder="{{ __('Search for tables...') }}"
-                class="border-2 border-accent rounded px-4 py-2 flex-grow">
+                    <div class="flex justify-between">
+                        <x-primary-button class="form-submit-button">{{ __('Save') }}</x-primary-button>
 
-            <button id="select-all" onclick="selectAll()"
-                class="bg-primary text-white rounded px-4 py-2 hover:bg-accent">
-                {{ __('Select all') }}
-            </button>
-
-            <button id="deselect-all" onclick="deselectAll()"
-                class="bg-secondary text-white rounded px-4 py-2 hover:bg-accent">
-                {{ __('Deselect all') }}
-            </button>
+                        <div class="flex space-x-2">
+                            <button id="select-all" onclick="selectAll()"
+                                class="bg-primary text-white rounded px-4 py-2 hover:bg-accent">
+                                {{ __('Select all') }}
+                            </button>
+                            <button id="deselect-all" onclick="deselectAll()"
+                                class="bg-info text-white rounded px-4 py-2 hover:bg-accent">
+                                {{ __('Deselect all') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        {{-- Загальна форма для вибору таблиць і стовпців --}}
-        <form action="{{ route('convert.step.store', [$convert, 'adjust_datatypes']) }}" method="POST" id="form">
+        <div class="container mx-auto p-4">
+            {{-- Загальна форма для вибору таблиць і стовпців --}}
+            <x-input-errors-block />
+            {{--  --}}
             @csrf
             <input type="hidden" name="break_relations" id="break-relations" value="no-break">
 
@@ -129,14 +138,20 @@
 
             {{-- Таблиці --}}
             @foreach ($tables as $table)
-                <div class="border-2
-                @if (in_array($table->name, session('missingTables', []))) border-danger @endif
-                 hover:border-info p-4 rounded mb-6 table-container
-                @if ($loop->odd) bg-light @endif
-                 "
-                    data-table-name="{{ $table->name }}">
-                    <div class="flex justify-between items-center">
+                <div @class([
+                    'table-container', // For searching
+                    'border-2',
+                    'border-danger' => in_array($table->name, session('missingTables', [])),
+                    'hover:border-info',
+                    'rounded-lg',
+                    'p-4',
+                    'mb-6',
+                    'bg-light' => $loop->odd,
+                    'bg-white' => $loop->even,
+                    'shadow-sm',
+                ]) data-table-name="{{ $table->name }}">
 
+                    <div class="flex justify-between items-center">
                         {{-- Чекбокс для вибору таблиці --}}
                         <input type="checkbox" name="tables[]" value="{{ $table->name }}"
                             @if (is_array(old('tables')) && in_array($table->name, old('tables'))) checked 
@@ -145,8 +160,13 @@
                             class="mr-2 text-xl table-check"
                             onchange="toggleNestedForm(this, 'table-{{ $table->name }}')">
 
-                        <h2
-                            class="text-xl @if ($loop->odd) text-primary @else text-secondary @endif font-semibold">
+                        <h2 @class([
+                            'text-xl',
+                            'font-semibold',
+                            // 'mb-4',
+                            'text-primary' => $loop->odd,
+                            'text-secondary' => $loop->even,
+                        ])>
                             {{ $table->name }}</h2>
                         <x-secondary-button id="button-table-{{ $table->name }}" onsubmit="return false;"
                             onclick="toggleTable('table-{{ $table->name }}')">
@@ -166,57 +186,63 @@
                                 class="border-2 border-accent rounded px-4 py-2 w-full">
                         </div> --}}
 
-                        <x-table class="overflow-x-auto border-gray-300">
-                            <x-table-header>
-                                <x-table-header-cell class="text-normal">{{ __('Column') }}</x-table-header-cell>
-                                <x-table-header-cell class="text-normal">{{ __('Data Type') }}</x-table-header-cell>
-                                <x-table-header-cell class="text-normal">{{ __('Convert As') }}</x-table-header-cell>
-                                <x-table-header-cell class="text-normal">{{ __('Key') }}</x-table-header-cell>
-                            </x-table-header>
-                            <tbody class="bg-white divide-y">
-                                @foreach ($table->columns as $column)
-                                    <x-table-row class="border-gray-300">
-                                        <x-table-cell>{{ $column->name }}</x-table-cell>
-                                        <x-table-cell>{{ $column->type_name }} /
-                                            {{ $column->type }}
-                                        </x-table-cell>
-                                        <x-table-cell>
-                                            <select name="columns[{{ $table->name }}][{{ $column->name }}]"
-                                                class="border rounded w-full px-2 py-1">
-                                                @foreach ($column->convertable_types as $c_type)
-                                                    <option>{{ $c_type }}</option>
-                                                @endforeach
-                                            </select>
-                                        </x-table-cell>
-                                        <x-table-cell>
-                                            @if ($table->primary_key && in_array($column->name, $table->primary_key))
-                                                <span class="font-bold text-secondary">PK</span>
-                                            @elseif (findEl($column->name, $table->foreignKeys->toArray()))
-                                                <span class="font-bold text-accent">FK</span>
-                                            @endif
-                                        </x-table-cell>
-                                    </x-table-row>
-                                @endforeach
-                            </tbody>
-                        </x-table>
-
+                        <div class="overflow-x-auto">
+                            <x-table class="border-gray-300">
+                                <x-table-header>
+                                    <x-table-header-cell>{{ __('Column') }}</x-table-header-cell>
+                                    <x-table-header-cell>{{ __('Data Type') }}</x-table-header-cell>
+                                    <x-table-header-cell>{{ __('Convert As') }}</x-table-header-cell>
+                                    <x-table-header-cell>{{ __('Key') }}</x-table-header-cell>
+                                </x-table-header>
+                                <tbody class="bg-white divide-y">
+                                    @foreach ($table->columns as $column)
+                                        <x-table-row class="border-gray-300">
+                                            <x-table-cell>{{ $column->name }}</x-table-cell>
+                                            <x-table-cell>{{ $column->type_name }} /
+                                                {{ $column->type }}
+                                            </x-table-cell>
+                                            <x-table-cell>
+                                                <select name="columns[{{ $table->name }}][{{ $column->name }}]"
+                                                    class="border rounded w-full px-2 py-1">
+                                                    @foreach ($column->convertable_types as $c_type)
+                                                        <option>{{ $c_type }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </x-table-cell>
+                                            <x-table-cell>
+                                                @if ($table->primary_key && in_array($column->name, $table->primary_key))
+                                                    <span class="font-bold text-secondary">PK</span>
+                                                @elseif (findEl($column->name, $table->foreignKeys->toArray()))
+                                                    <span class="font-bold text-accent">FK</span>
+                                                @endif
+                                            </x-table-cell>
+                                        </x-table-row>
+                                    @endforeach
+                                </tbody>
+                            </x-table>
+                        </div>
 
                         @if ($table->foreignKeys->count() > 0)
                             <h3 class="min-w-full text-center text-xl text-accent font-bold mt-4 mb-2">
                                 {{ __('Relations') }}</h3>
 
                             <div id="table-{{ $table->name }}-relations"
-                                class="overflow-hidden transition-all duration-300 ease-in-out mt-4 nested-form">
+                                class="overflow-x-auto transition-all duration-300 ease-in-out mt-4 nested-form">
                                 <x-table class="border-gray-300">
                                     <x-table-header>
-                                            <x-table-header-cell>{{ __('Local Fields') }}</x-table-header-cell>
-                                            <x-table-header-cell>{{ __('Referenced Table') }}</x-table-header-cell>
-                                            <x-table-header-cell>{{ __('Referenced Columns') }}</x-table-header-cell>
-                                            <x-table-header-cell>{{ __('Relation Type') }}</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Referenced Table') }}</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Relation Type') }}</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Local Fields') }}</x-table-header-cell>
+                                        <x-table-header-cell>{{ __('Referenced Columns') }}</x-table-header-cell>
                                     </x-table-header>
                                     <tbody>
                                         @foreach ($table->foreignKeys as $fk)
-                                        <x-table-row class="border-gray-300">
+                                            <x-table-row class="border-gray-300">
+                                                <x-table-cell>{{ $fk->foreign_table }}</x-table-cell>
+                                                <x-table-cell>
+                                                    <x-relation-type-badge :relation-type="$fk->relation_type" />
+                                                </x-table-cell>
+
                                                 <x-table-cell>
                                                     <ul>
                                                         @foreach ($fk->columns as $col)
@@ -224,19 +250,12 @@
                                                         @endforeach
                                                     </ul>
                                                 </x-table-cell>
-                                                <x-table-cell>{{ $fk->foreign_table }}</x-table-cell>
                                                 <x-table-cell>
                                                     <ul>
                                                         @foreach ($fk->foreign_columns as $col)
                                                             <li>{{ $col }}</li>
                                                         @endforeach
                                                     </ul>
-                                                </x-table-cell>
-                                                <x-table-cell>
-                                                    @php
-                                                        $relationType = $fk->relation_type;
-                                                    @endphp
-                                                    <x-relation-type-badge :relation-type="$relationType" />
                                                 </x-table-cell>
                                             </x-table-row>
                                         @endforeach
@@ -254,10 +273,9 @@
                 </div>
             @endforeach
 
-            <x-primary-button id="submit">{{ __('Save') }}</x-primary-button>
-        </form>
-    </div>
-
+            {{-- <x-primary-button class="form-submit-button">{{ __('Save') }}</x-primary-button> --}}
+        </div>
+    </form>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const searchInput = document.getElementById('search-input');
@@ -413,12 +431,13 @@
                 const isChecked = selectedTables.includes(tableName); // Чи обрана таблиця
 
                 // Отримуємо всі зв'язки для поточної таблиці
-                const relatedTables = $(`#table-${tableName}-relations tr td:nth-child(2)`).map(function() {
+                const relatedTables = $(`#table-${tableName}-relations tr td:nth-child(1)`).map(function() {
                     return $(this).text().trim(); // Отримуємо назви посилальних таблиць
                 }).get();
 
                 // Якщо таблиця вибрана, перевіряємо її зв'язки
                 if (isChecked) {
+                    console.log(relatedTables);
                     relatedTables.forEach(function(relatedTable) {
                         // Якщо зв'язана таблиця не обрана, підсвічуємо її
                         if (!selectedTables.includes(relatedTable)) {
@@ -558,9 +577,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-
-            $('#submit').on('click', function(event) {
-
+            // $('#submit').on('click', function(event) {
+            $('.form-submit-button').on('click', function(event) {
                 @if (session()->has('missingTables'))
                     const tables = @json(session('missingTables'));
                 @else
@@ -572,7 +590,6 @@
                     showModal();
                     event.preventDefault(); // Відміняємо відправку
                 }
-
             });
         });
     </script>

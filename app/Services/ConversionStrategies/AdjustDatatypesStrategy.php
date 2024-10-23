@@ -2,6 +2,7 @@
 
 namespace App\Services\ConversionStrategies;
 
+use App\Enums\RelationType;
 use App\Http\Validators\TableColumnValidator;
 use App\Models\Convert;
 use App\Models\MongoSchema\Collection;
@@ -9,6 +10,7 @@ use App\Models\MongoSchema\Field;
 use App\Models\SQLSchema\CircularRef;
 use App\Models\SQLSchema\Table;
 use App\Models\SQLSchema\ForeignKey;
+use App\Models\SQLSchema\SQLDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -25,8 +27,10 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
         // Логіка для кроку збереження типів даних
 
         $validated = TableColumnValidator::validate($request);
+        $sqlDatabase = $convert->sqlDatabase()->with(['tables'])->first();
+        $mongoDatabase = $convert->mongoDatabase;
 
-        $validationResult = $this->validate($convert, $validated);
+        $validationResult = $this->validate($validated, $sqlDatabase);
 
         if (! is_null($validationResult)) {
             return $validationResult;
@@ -34,17 +38,51 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
 
         $tables = $validated['tables'];
         $columns = $validated['columns'];
+        $break = $validated['break_relations'] === static::BREAK_RELATIONS['BREAK'];
 
-        DB::transaction(function () use ($convert, $tables, $columns) {
-            $mongoDatabaseId = $convert->mongoDatabase->id;
+        // перевірка на зв'язки
+        $missingTables = $this->getMissingTables($tables, $sqlDatabase);
+        if (!empty($missingTables)) {
 
-            foreach ($tables as $table) {
+            if (! $break) {
+                return new StrategyResult(
+                    result: StrategyResult::STATUSES['REDIRECT'],
+                    // details: 'Вибрані не всі необхідні таблиці',
+                    with: [
+                        'missingTables' => $missingTables,
+                        'message' => __('validation.required_tables'),
+                    ],
+                );
+            }
+
+            $tables = $this->removeUnnecessaryPivotTables($tables, $sqlDatabase);
+
+            // Видалити зв'язки
+            $tablesCollection = $sqlDatabase->tables()->whereIn('name', $tables)->with(['foreignKeys'])->get();
+            ForeignKey::whereIn('table_id', $tablesCollection->pluck('id'))
+                ->whereNotIn('foreign_table', $tables)
+                ->delete();
+
+            // Видалити кругові залежності
+            foreach ($missingTables as $table) {
+                $circularRefs = CircularRef::getByAllTableNames($sqlDatabase->id, [$table]);
+                $circularRefs->each(function ($circularRef) {
+                    $circularRef->delete();
+                });
+            }
+        }
+
+        $tablesCollection = $sqlDatabase->tables()->whereIn('name', $tables)->get();
+
+        DB::transaction(function () use ($mongoDatabase, $tablesCollection, $columns) {
+            foreach ($tablesCollection as $table) {
                 $collection = Collection::create([
-                    'mongo_database_id' => $mongoDatabaseId,
-                    'name' => $table,
+                    'mongo_database_id' => $mongoDatabase->id,
+                    'name' => $table->name,
+                    'sql_table_id' => $table->id,
                 ]);
 
-                foreach ($columns[$table] as $column => $type) {
+                foreach ($columns[$table->name] as $column => $type) {
                     Field::create([
                         'collection_id' => $collection->id,
                         'name' => $column,
@@ -54,7 +92,6 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
             }
         });
 
-        // dd($request, $tables, $columns);
         // Return success response
         return new StrategyResult(
             result: StrategyResult::STATUSES['COMPLETED'],
@@ -63,13 +100,11 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
         );
     }
 
-    private function validate($convert, array &$data)
+    private function validate(array &$data, SQLDatabase $sqlDatabase)
     {
         $tables = $data['tables']; // ['users', 'phones', 'roles', ...]
         $columns = $data['columns']; // ['users' => ['id' => 'int', 'name' => 'string', ...], 'phones' => [...], ...]
-        $break = $data['break_relations'] === static::BREAK_RELATIONS['BREAK']; //bool
 
-        $sqlDatabase = $convert->sqlDatabase()->with(['tables'])->first();
         $sqlTables = $sqlDatabase->tables()->with(['columns'])->get();
 
         // Масив назв таблиць для перевірки
@@ -115,6 +150,11 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
             }
         }
 
+        return null;
+    }
+
+    private function getMissingTables($tables, SQLDatabase $sqlDatabase)
+    {
         // перевірка на зв'язки
         $neededTables = DB::table('foreign_keys')
             ->select('foreign_table')
@@ -128,47 +168,36 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
             ->pluck('foreign_table')
             ->toArray();
 
-        $missingTables = array_values(array_diff($neededTables, $tables));
+        return array_values(array_diff($neededTables, $tables));
+    }
 
-        if (!empty($missingTables)) {
+    private function removeUnnecessaryPivotTables(array $tables, SQLDatabase $sqlDatabase): array
+    {
+        // Якщо при зв'язку N-N користувач не обирає якусь із "основних" таблиць,
+        // то pivot таблиця також видаляється (разом зі зв'язками).
+        // Наприклад, для posts, tags, post_tag. Користувач не обрав posts. Залишається тільки tags.
+        // Користувач не обрав posts і tags. Всі три видаляються.
+        $pivotTables = DB::table('tables')
+            ->join('foreign_keys', 'foreign_keys.table_id', '=', 'tables.id')
+            ->where('foreign_keys.relation_type', RelationType::MANY_TO_MANY)
+            ->whereIn('tables.name', $tables)
+            ->where('tables.sql_database_id', $sqlDatabase->id)
+            ->select(['tables.name', 'foreign_keys.foreign_table'])
+            ->get()
+            ->toArray();
 
-            if (! $break) {
-                return new StrategyResult(
-                    result: StrategyResult::STATUSES['REDIRECT'],
-                    // details: 'Вибрані не всі необхідні таблиці',
-                    with: [
-                        'missingTables' => $missingTables,
-                        'message' => __('validation.required_tables'),
-                    ],
-                );
-                // throw ValidationException::withMessages(["Вибрані не всі необхідні таблиці"]);
-            } else {
-                // Видалити зв'язки
-                $tablesCollection = $sqlDatabase->tables()->whereIn('name', $tables)->with(['foreignKeys'])->get();
-                ForeignKey::whereIn('table_id', $tablesCollection->pluck('id'))
-                    ->whereNotIn('foreign_table', $tables)
-                    ->delete();
-
-                // Видалити кругові залежності
-                foreach ($missingTables as $table) {
-                    $circularRefs = CircularRef::getByAllTableNames($sqlDatabase->id, [$table]);
-                    $circularRefs->each(function ($circularRef) {
-                        $circularRef->delete();
-                    });
+        // Перевіряємо кожен елемент у pivotTables
+        foreach ($pivotTables as $pivot) {
+            // Якщо foreign_table відсутній у $tables
+            if (!in_array($pivot->foreign_table, $tables)) {
+                // Видаляємо таблицю з $tables за ключем name
+                $key = array_search($pivot->name, $tables);
+                if ($key !== false) {
+                    unset($tables[$key]);
                 }
-
-                // foreach ($tablesCollection as $table) {
-                //     $keys = $table->foreignKeys;
-                //     foreach ($keys as $key) {
-                //         if (! in_array($key->foreign_table, $tables)) {
-                //             $key->delete();
-                //         }
-                //     }
-                // }
             }
         }
-        // dd('ОК');
 
-        return null;
+        return array_values($tables);
     }
 }

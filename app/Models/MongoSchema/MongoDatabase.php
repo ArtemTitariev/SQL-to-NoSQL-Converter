@@ -56,6 +56,6 @@ class MongoDatabase extends Model
     }
 
     public function convert(): BelongsTo {
-        return $this->belongsTo(Convert::class);
+        return $this->belongsTo(Convert::class, 'id', 'mongo_database_id');
     }
 }
