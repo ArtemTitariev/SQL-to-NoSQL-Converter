@@ -29,19 +29,21 @@ class RelationshipController extends Controller
 
         $relation = $decodedRelation['model']::findOrFail($decodedRelation['id']);
 
+        $isTesting = $validated['mode'] === 'testing'; // only validate or validate and save
+
         if ($relation instanceof LinkEmbedd) {
             $relationType = MongoRelationType::tryFrom($validated['relationTypeLinkEmbedd']);
             $handler = new LinkEmbedHandler($this->relationService);
 
             return $this->handleResult(
-                $handler->handle($relation, $relationType, $request->input('embedInMain'))
+                $handler->handle($relation, $relationType, $request->input('embedInMain'), $isTesting)
             );
         } elseif ($relation instanceof ManyToManyLink) {
             $relationType = MongoManyToManyRelation::tryFrom($validated['relationTypeManyToMany']);
             $handler = new ManyToManyLinkHandler($this->relationService);
 
             return $this->handleResult(
-                $handler->handle($relation, $relationType)
+                $handler->handle($relation, $relationType, $isTesting)
             );
         }
 

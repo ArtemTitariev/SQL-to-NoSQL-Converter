@@ -40,6 +40,7 @@ class UpdateRelationshipRequest extends FormRequest
             'relationTypeLinkEmbedd' => 'nullable|string|required_without:relationTypeManyToMany',
             'embeddingDirection' => 'nullable|string',
             'relationTypeManyToMany' => 'nullable|string|required_without:relationTypeLinkEmbedd',
+            'mode' => 'required|string',
         ];
     }
 
