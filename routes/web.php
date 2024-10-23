@@ -60,7 +60,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/process/relationships', [ConvertController::class, 'processRelationships'])->name('convert.process_relationships');
         Route::get('/process/etl', [ConvertController::class, 'processEtl'])->name('convert.process_etl');
 
-        Route::patch('/relationships', [RelationshipController::class, 'edit'])->name('convert.relationships.edit')->middleware([]);
+        Route::patch('/relationships', [RelationshipController::class, 'edit'])->name('convert.relationships.edit')->middleware(['check.edit.relationship.access']);
     });
 });
 
