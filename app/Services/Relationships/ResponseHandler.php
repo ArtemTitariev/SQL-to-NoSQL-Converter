@@ -21,7 +21,7 @@ class ResponseHandler
     {
         return static::unicodeResponse([
             'status' => 'success',
-            'message' => 'Валідація пройшла успішно!',
+            'message' => __('Validation was successful! You can now save your changes.'),
         ], 200);
     }
 
@@ -55,8 +55,8 @@ class ResponseHandler
         return [
             'status' => 'error',
             'type' => 'complex_relation',
-            'message' => "Даний зв`язок є частиною складного зв`язку.",
-            'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
+            'message' => __('This relationship is part of a complex relationship.'),
+            'recommendation' => __('Embeddings are not supported with this relationships.'),
         ];
     }
 
@@ -65,8 +65,8 @@ class ResponseHandler
         return [
             'status' => 'error',
             'type' => 'circular_reference',
-            'message' => "Колекція {$collectionName} є частиною кругової залежності.",
-            'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
+            'message' => __('The :collectionName collection is part of a circular dependency.', ['collectionName' => $collectionName]),
+            'recommendation' => __('Embeddings are not supported with this relationships.'),
         ];
     }
 
@@ -75,8 +75,8 @@ class ResponseHandler
         return [
             'status' => 'error',
             'type' => 'self_ref',
-            'message' => "Колекція {$collectionName} має посилання на себе.",
-            'recommendation' => 'Вкладення при такому зв`язку не підтримуються.',
+            'message' => __('The :collectionName collection has a self-reference.', ['collectionName' => $collectionName]),
+            'recommendation' => __('Embeddings are not supported with this relationships.'),
         ];
     }
 
@@ -90,9 +90,9 @@ class ResponseHandler
         return [
             'status' => 'warning',
             'type' => 'collection_is_embedded',
-            'message' => "Колекція {$collectionName} є вкладеною. Запити можуть сповільнюватись через складну структуру та необхідність розгортання документів.",
+            'message' => __('The :collectionName collection is emdedded. Queries may be slowed down by the complex structure and the need to expand documents.', ['collectionName' => $collectionName]),
             'related_collections' => $embeddedTo,
-            'recommendation' => 'Спробуйте змінити зв`язки на посилання для кращої продуктивності та простоти запитів.',
+            'recommendation' => __('Consider changing relationships to references for better performance and easier queries.'),
         ];
     }
 
@@ -106,9 +106,9 @@ class ResponseHandler
         return [
             'status' => 'warning',
             'type' => 'links_to_main_collection',
-            'message' => "На колекцію {$collectionName} є посилання. Зміна на вкладення може ускладнити запити.",
+            'message' => __('The :collectionName collection is linked. Changing to an embedding can complicate queries.', ['collectionName' => $collectionName]),
             'related_collections' => $linkedWith,
-            'recommendation' => "Розгляньте можливість збереження посилань для уникнення складних запитів.",
+            'recommendation' => __('Consider saving links to avoid complex queries.'),
         ];
     }
 
@@ -122,9 +122,9 @@ class ResponseHandler
         return [
             'status' => 'warning',
             'type' => 'main_collection_has_links',
-            'message' => "Колекція {$collectionName} має посилання. Якщо вона стане вкладеною, запити можуть сповільнюватись через необхідність розгортання документів",
+            'message' => __('The :collectionName collection has link(s). If it becomes embedded, queries may be slowed down by the need to expand documents.', ['collectionName' => $collectionName]),
             'related_collections' => $linkedWith,
-            'recommendation' => 'Розгляньте можливість збереження посилань для уникнення складних запитів. Або змініть наявні посилання на вкладення.',
+            'recommendation' => __('Consider saving links to avoid complex queries.'),
         ];
     }
 
@@ -149,9 +149,9 @@ class ResponseHandler
         return [
             'status' => 'error',
             'type' => 'many_to_many_link',
-            'message' => "Колекція {$collectionName} є частиною зв`язку Багато-до-Багатьох.",
+            'message' => __('The :collectionName collection is part of a Many-to-Many relationship.', ['collectionName' => $collectionName]),
             'related_collections' => $usedCollections,
-            'recommendation' => "Вкладення не дозволяється при такому зв`язку.",
+            'recommendation' => __('Embeddings are not allowed with this relationship.'),
         ];
     }
 }
