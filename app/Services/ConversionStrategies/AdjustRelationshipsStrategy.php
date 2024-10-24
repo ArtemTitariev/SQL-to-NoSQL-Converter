@@ -11,6 +11,8 @@ class AdjustRelationshipsStrategy implements ConversionStrategyInterface
     {
         // Коригування зв'язків вже виконано
 
+        $convert->updateStatus(Convert::STATUSES['IN_PROGRESS']);
+
         $nextStep = config('convert_steps.adjust_relationships.next');
 
         // Return success response

@@ -110,4 +110,19 @@ class Convert extends Model
             // (int) $convert->id === (int) $convertId &&
             (int) $convert->user->id === (int) $userId;
     }
+
+    /**
+     * Update convert status
+     * 
+     * @throws InvalidArgumentException
+     */
+    public function updateStatus(string $status): bool
+    {
+        if (! in_array($status, self::STATUSES, true)) {
+            throw new \InvalidArgumentException('Invalid convert status.');
+        }
+
+        $this->status = $status;
+        return $this->save();
+    }
 }
