@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 
 use App\Enums\MongoRelationType;
+use App\Models\ConversionProgress;
 use App\Models\MongoSchema\Collection;
 use App\Models\MongoSchema\Field;
 use App\Models\MongoSchema\LinkEmbedd;
@@ -180,5 +181,20 @@ Route::get('/clear-step4', function (Request $request) {
         ->delete();
 
     dd(DB::table('links_embedds')->count(), DB::table('many_to_many_links')->count());
+    return 'done';
+});
+
+Route::get('/reset', function (Request $request) {
+    $id = $request->input('id');
+    $convert = Convert::find($id);
+
+    $convert->updateStatus(Convert::STATUSES['CONFIGURING']);
+
+    $convert->lastProgress()->delete(); //delete etl
+
+    $progress = $convert->lastProgress(); // set previous as configuring
+    $progress->status = ConversionProgress::STATUSES['CONFIGURING'];
+    $progress->save();
+
     return 'done';
 });
