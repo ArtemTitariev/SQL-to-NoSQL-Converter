@@ -2,17 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\CreateConnectionName;
 use App\Http\Handlers\StepResultHandler;
 use App\Http\Requests\StoreConvertRequest;
-use App\Models\ConversionProgress;
 use App\Models\Convert;
-use App\Models\MongoSchema\MongoDatabase;
-use App\Models\SQLSchema\SQLDatabase;
 use App\Services\DatabaseConnections\SQLConnectionParamsProvider;
 use App\Services\ConversionStepExecutor;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class ConvertController extends Controller
 {
@@ -140,17 +135,17 @@ class ConvertController extends Controller
 
     public function processReadSchema(Convert $convert)
     {
-        return view('convert.process_read_schema', compact('convert'));
+        return view('convert.progress.process_read_schema', compact('convert'));
     }
 
     public function processRelationships(Convert $convert)
     {
-        return view('convert.process_relationships', compact('convert'));
+        return view('convert.progress.process_relationships', compact('convert'));
     }
 
     public function processEtl(Convert $convert)
     {
-        return view('convert.process_etl', compact('convert'));
+        return view('convert.progress.process_etl', compact('convert'));
     }
 
     // /**
