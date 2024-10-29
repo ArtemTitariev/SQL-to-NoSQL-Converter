@@ -2,6 +2,7 @@
 
 namespace App\Models\MongoSchema;
 
+use App\Models\IdMapping;
 use App\Models\SQLSchema\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -55,6 +56,16 @@ class Collection extends Model
     {
         return $this->hasMany(ManyToManyLink::class, 'pivot_collection_id', 'id');
     }
+    
+    public function manyToManyFirst(): HasMany
+    {
+        return $this->hasMany(ManyToManyLink::class, 'collection1_id', 'id');
+    }
+    
+    public function manyToManySecond(): HasMany
+    {
+        return $this->hasMany(ManyToManyLink::class, 'collection2_id', 'id');
+    }
 
     public function database(): BelongsTo
     {
@@ -64,6 +75,11 @@ class Collection extends Model
     public function sqlTable(): HasOne
     {
         return $this->hasOne(Table::class, 'id', 'sql_table_id');
+    }
+
+    public function idMappings(): HasMany
+    {
+        return $this->hasMany(IdMapping::class, 'collection_id');
     }
 
     public function getFilteredDataForGraph(): object
