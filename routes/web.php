@@ -1,26 +1,17 @@
 <?php
 
-use App\Enums\MongoManyToManyRelation;
-use App\Enums\RelationType;
 use App\Http\Controllers\ConvertController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RelationshipController;
 use App\Models\Convert;
-use App\Models\SQLSchema\CircularRef;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 
-use App\Enums\MongoRelationType;
+use App\Http\Controllers\TestEtlController;
 use App\Models\ConversionProgress;
-use App\Models\MongoSchema\Collection;
-use App\Models\MongoSchema\Field;
 use App\Models\MongoSchema\LinkEmbedd;
 use App\Models\MongoSchema\ManyToManyLink;
-use App\Models\SQLSchema\ForeignKey;
-use App\Models\SQLSchema\Table;
-
-
 use Illuminate\Support\Facades\DB;
 
 Route::get('language/{locale}', function ($locale) {
@@ -105,6 +96,7 @@ Route::get('/delete-all', function (Request $request) {
     DB::table('converts')->truncate();
     DB::table('sql_databases')->truncate();
     DB::table('mongo_databases')->truncate();
+    DB::table('id_mappings')->truncate();
     DB::table('links_embedds')->truncate();
     DB::table('many_to_many_links')->truncate();
     DB::table('foreign_keys')->truncate();
@@ -196,5 +188,27 @@ Route::get('/reset', function (Request $request) {
     $progress->status = ConversionProgress::STATUSES['CONFIGURING'];
     $progress->save();
 
+    return 'done';
+});
+
+Route::get('/etl', [TestEtlController::class, 'test']);
+
+
+Route::get('/id-map', function () {
+    dd(DB::table('id_mappings')->get());
+});
+
+Route::get('/id-map-find', function () {
+    $map = DB::table('id_mappings')
+        ->where('table_id', 17)
+        ->where('collection_id', 17)
+        ->whereJsonContains('source_data', ["id" => 1])
+        ->first();
+    
+    dd($map);
+});
+
+Route::get('/id-map-del', function () {
+    DB::table('id_mappings')->truncate();
     return 'done';
 });

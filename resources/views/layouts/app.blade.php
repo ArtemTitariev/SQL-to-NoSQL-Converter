@@ -32,8 +32,8 @@
                 </header>
             @endisset
 
-            <!-- Page Content -->
-            <main class="flex-grow">
+            <!-- Page Content class="flex-grow"-->
+            <main>
                 {{ $slot }}
             </main>
         </div>
