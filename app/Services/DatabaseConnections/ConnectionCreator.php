@@ -21,9 +21,13 @@ class ConnectionCreator
     public static function create(
         array | MongoDatabase | SQLDatabase $params
     ) {
+        if ($params instanceof MongoDatabase) {
+            $params->driver = 'mongodb';
+        }
         if (is_object($params)) {
             $params = $params->toArray();
         }
+        // dd($params);
         $name = $params['connection_name'];
         unset($params['id']);
         unset($params['connection_name']);
