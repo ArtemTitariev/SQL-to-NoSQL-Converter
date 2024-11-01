@@ -8,17 +8,13 @@ use App\Enums\RelationType;
 use App\Models\Convert;
 use App\Models\IdMapping;
 use App\Models\MongoSchema\Collection;
-use App\Models\MongoSchema\Field;
-use App\Models\MongoSchema\LinkEmbedd;
-use App\Models\MongoSchema\ManyToManyLink;
-use App\Models\SQLSchema\ForeignKey;
-use App\Models\SQLSchema\Table;
 
 use App\Services\DatabaseConnections\ConnectionCreator;
 use App\Services\DataTypes\Converter;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TestEtlController extends Controller
 {
@@ -47,13 +43,17 @@ class TestEtlController extends Controller
 
         $mongoConnection = ConnectionCreator::create($mongoDatabase);
 
-        $mongoConnection->dropCollection('posts'); //------------------------------------------------------------------------------
+        $mongoConnection->dropCollection('tags2'); //------------------------------------------------------------------------------
+
+        // $collections = $mongoDatabase->collections()->with(['fields', 'linksEmbeddsFrom', 'manyToManyPivot'])
+        //     ->whereHas('manyToManyPivot')
+        //     ->whereDoesntHave('linksEmbeddsTo')
+        //     ->whereDoesntHave('manyToManyFirst')
+        //     ->whereDoesntHave('manyToManySecond')
+        //     ->get();
 
         $collections = $mongoDatabase->collections()->with(['fields', 'linksEmbeddsFrom', 'manyToManyPivot'])
-            ->whereHas('manyToManyPivot')
-            ->whereDoesntHave('linksEmbeddsTo')
-            ->whereDoesntHave('manyToManyFirst')
-            ->whereDoesntHave('manyToManySecond')
+            ->where('name', 'post_tag2')
             ->get();
 
         foreach ($collections as $collection) {
@@ -88,14 +88,14 @@ class TestEtlController extends Controller
 
                     // 1. First
                     $rel = $collection->manyToManyPivot()->first();
-                    $first = $rel->collection1()->with(['fields'])->first();
+                    $first = $rel->collection2()->with(['fields'])->first(); //----- collection1()
 
                     $start_time = microtime(true);
 
                     $this->processCollection(
+                        $first,
                         $sqlConnection,
                         $mongoConnection,
-                        $first,
                         $rel->foreign1_fields
                     );
                     $end_time = microtime(true);
@@ -124,15 +124,15 @@ class TestEtlController extends Controller
     }
 
     private function processCollection(
+        Collection $collection,
         $sqlConnection,
         $mongoConnection,
-        Collection $collection,
         array $identificationСolumns = null
     ) {
         // 1. Load and transform fields
         // 2. Process links
         // 3. Process embedds (recursively)
-        // 4. Return result
+        // 4. Save result
 
         $table = $collection->sqlTable;
 
@@ -141,43 +141,42 @@ class TestEtlController extends Controller
             ->lazy()
             ->each(function (object $recordObj) use (
                 $collection,
-                $table,
                 $sqlConnection,
                 $mongoConnection,
                 &$identificationСolumns,
             ) {
-                $record = $this->processRecord($recordObj, $collection, $sqlConnection);
 
-                $this->createIdMapping(
-                    $table,
-                    $collection,
-                    $recordObj,
-                    $record,
-                    $identificationСolumns
-                );
+                // 1. Запис головного (батьківського) документа
+                $record = $this->processDocument($recordObj, $collection);
+                $mainDocumentId = $this->writeToMongo($mongoConnection, $collection, $record);
 
-                // ----------------------------------------------------------------------
-                // потенційно здоровенний масив ...
-                $this->writeToMongo($mongoConnection, $collection, $record);
+                // $parentDoc = $mongoConnection
+                //     ->collection($collection->name)
+                //     ->where('_id', $mainDocumentId)
+                //     ->first();
+
+                // 2. Обробка вкладень
+                $this->processEmbeds($mainDocumentId, $recordObj, $collection, $sqlConnection, $mongoConnection);
+
+                // dd('FIRST PROCESSED');
+                // $record = $this->processDocument($recordObj, $collection, $sqlConnection);
+
+                // $this->createIdMapping(
+                //     $table,
+                //     $collection,
+                //     $recordObj,
+                //     $record,
+                //     $identificationСolumns
+                // );
             });
     }
 
-    public function processRecord(
+    public function processDocument(
         object $recordObj,
         $collection,
-        $sqlConnection,
-        $isEmbedding = false,
-        $currentDepth = 0,
     ) {
-        $sqlTable = $collection->sqlTable;
         $linksEmbeddsFrom = $collection->linksEmbeddsFrom;
         $fields = $collection->fields;
-
-        // Перевірка на досягнення максимальної глибини
-        if ($currentDepth > $this->maxEmbeddingDepth) {
-            // Якщо максимальна глибина досягнута, повертаємо запис без подальшої обробки вкладень
-            return (array) $recordObj;
-        }
 
         $record = (array) $recordObj;
 
@@ -202,63 +201,171 @@ class TestEtlController extends Controller
             }
         }
 
-        // Обробка зв'язків типу "embedding"
-        foreach ($linksEmbeddsFrom->where('relation_type', MongoRelationType::EMBEDDING) as $embed) {
-            $relatedCollection = $embed->pkCollection()->with(['sqlTable', 'fields', 'linksEmbeddsFrom'])->first();
-            $relatedTable = $relatedCollection->sqlTable;
+        // $embedds = $linksEmbeddsFrom->where('relation_type', MongoRelationType::EMBEDDING)->where('embed_in_main', true);
+        // $embedds = $embedds->merge($collection->linksEmbeddsTo->where('relation_type', MongoRelationType::EMBEDDING)->where('embed_in_main', false));
+        // // Обробка зв'язків типу "embedding"
+        // foreach ($embedds as $embed) {
 
-            $relatedFields = $relatedCollection->fields;
-            $relatedLinksEmbedds = $relatedCollection->linksEmbeddsFrom;
 
-            // Завантаження пов'язаних записів і обробка кожного з них
-            $embeddedRecords = [];
+        //     $relatedCollection = $embed->embed_in_main ?
+        //         $embed->pkCollection()->with(['sqlTable', 'fields', 'linksEmbeddsFrom'])->first() :
+        //         $embed->fkCollection()->with(['sqlTable', 'fields', 'linksEmbeddsFrom'])->first();
 
-            $query = $sqlConnection->table($relatedTable->name);
-            foreach ($embed->local_fields as $key => $localFk) {
-                $query->whereColumn($localFk, $embed->foreign_fields[$key]);
-            }
+        //     $localFields = $embed->embed_in_main ?
+        //         $embed->local_fields :
+        //         $embed->foreign_fields;
 
-            $query->lazy()
-                ->each(function (object $relatedRecordObj) use (
-                    &$embeddedRecords,
-                    $relatedCollection,
-                    $relatedFields,
-                    $relatedLinksEmbedds,
-                    $sqlConnection,
-                    $currentDepth
-                ) {
-                    // Рекурсивний виклик для обробки вкладених записів
-                    $embeddedRecord = $this->processRecord(
-                        $relatedRecordObj,
-                        $relatedCollection,
-                        $relatedFields,
-                        $relatedLinksEmbedds,
-                        $sqlConnection,
-                        true, // Вказуємо, що це вкладення
-                        $currentDepth + 1 // Збільшуємо поточну глибину
-                    );
 
-                    // Додаємо оброблений запис до масиву вкладень
-                    $embeddedRecords[] = $embeddedRecord;
-                });
+        //     $foreignFields = $embed->embed_in_main ?
+        //         $embed->foreign_fields :
+        //         $embed->local_fields;
 
-            // Додаємо вкладення до поточного запису
-            $record[$relatedCollection->name . '_embed'] = $embeddedRecords;
-        }
+        //     $relatedTable = $relatedCollection->sqlTable;
+
+        //     // $relatedFields = $relatedCollection->fields;
+        //     // $relatedLinksEmbedds = $relatedCollection->linksEmbeddsFrom;
+
+        //     // Завантаження пов'язаних записів і обробка кожного з них
+        //     $embeddedRecords = [];
+
+        //     $query = $sqlConnection->table($relatedTable->name);
+        //     foreach ($localFields as $key => $localFk) {
+        //         $query->where($foreignFields[$key], $recordObj->$localFk);
+        //     }
+
+        //     $query->orderBy($relatedTable->getOrderingColumnName())
+        //         ->lazy()
+        //         ->each(function (object $relatedRecordObj) use (
+        //             &$embeddedRecords,
+        //             $relatedCollection,
+        //             // $relatedFields,
+        //             // $relatedLinksEmbedds,
+        //             $sqlConnection,
+        //             $currentDepth
+        //         ) {
+        //             // Рекурсивний виклик для обробки вкладених записів
+        //             $embeddedRecord = $this->processDocument(
+        //                 $relatedRecordObj,
+        //                 $relatedCollection,
+        //                 // $relatedFields,
+        //                 // $relatedLinksEmbedds,
+        //                 $sqlConnection,
+        //                 true, // Вказуємо, що це вкладення
+        //                 $currentDepth + 1 // Збільшуємо поточну глибину
+        //             );
+
+        //             // Додаємо оброблений запис до масиву вкладень
+        //             $embeddedRecords[] = $embeddedRecord;
+        //         });
+
+        //     // Додаємо вкладення до поточного запису
+        //     $record[$relatedCollection->name . '_embed'] = $embeddedRecords;
+        // }
 
         return $record;
-
-        // // Якщо це головний запис, зберігаємо його в MongoDB, інакше повертаємо результат
-        // if (!$isEmbedding) {
-        //     // Зберегти в MongoDB
-        //     dd('write', $record);
-
-        //     // writeToMongoDB($collection->mongoCollectionName, $record);
-        // } else {
-        //     // Повернути оброблений запис для вкладення
-        //     return $record;
-        // }
     }
+
+    private function processEmbeds(
+        $mainDocumentId,
+        object $recordObj,
+        Collection $mainCollection,
+        $sqlConnection,
+        $mongoConnection,
+    ) {
+        // Перший рівень вкладень починається з основного запису
+        $currentLevel = collect([['record' => $recordObj, 'path' => '', 'parentCollection' => $mainCollection]]);
+        $currentDepth = 0;
+
+        // Поки є дані на поточному рівні, продовжуємо обробку
+        while ($currentLevel->isNotEmpty() && $currentDepth < $this->maxEmbeddingDepth) {
+            $nextLevel = collect();
+
+            foreach ($currentLevel as $item) {
+                $record = $item['record'];
+                $path = $item['path'];
+                $parentCollection = $item['parentCollection'];
+
+                // Отримуємо зв'язки для вкладень для поточного рівня
+                $embedds = $parentCollection->linksEmbeddsFrom
+                    ->where('relation_type', MongoRelationType::EMBEDDING)
+                    ->where('embed_in_main', true)
+                    ->merge(
+                        $parentCollection->linksEmbeddsTo
+                            ->where('relation_type', MongoRelationType::EMBEDDING)
+                            ->where('embed_in_main', false)
+                    );
+
+                foreach ($embedds as $embed) {
+                    $relatedCollection = $embed->embed_in_main
+                        ? $embed->pkCollection()->with(['sqlTable', 'fields', 'linksEmbeddsFrom'])->first()
+                        : $embed->fkCollection()->with(['sqlTable', 'fields', 'linksEmbeddsFrom'])->first();
+
+                    $localFields = $embed->embed_in_main ? $embed->local_fields : $embed->foreign_fields;
+                    $foreignFields = $embed->embed_in_main ? $embed->foreign_fields : $embed->local_fields;
+                    $relatedTable = $relatedCollection->sqlTable;
+
+                    // Завантажуємо пов'язані записи для поточного рівня
+                    $query = $sqlConnection->table($relatedTable->name);
+                    foreach ($localFields as $index => $localFk) {
+                        $query->where($foreignFields[$index], $record->$localFk);
+                    }
+
+                    $query->orderBy($relatedTable->getOrderingColumnName())
+                        ->lazy()
+                        ->each(function (object $relatedRecordObj) use (
+                            $mainDocumentId,
+                            $mainCollection,
+                            $relatedCollection,
+                            $sqlConnection,
+                            &$nextLevel,
+                            $mongoConnection,
+                            $path,
+                        ) {
+                            // Отримуємо батьківський документ і перевіряємо існування шляху
+                            $parentDoc = $mongoConnection
+                                ->collection($mainCollection->name)
+                                ->where('_id', $mainDocumentId)
+                                ->first();
+
+                            if ($path === '') {
+                                $path .= $relatedCollection->name;
+                            } else {
+                                $path .= ".{$relatedCollection->name}";
+                            }
+
+                            // Якщо це перший рівень вкладення, створюємо новий масив
+                            $nestedArray = data_get($parentDoc, $path) ?? [];
+
+                            $embeddedRecord = $this->processDocument(
+                                $relatedRecordObj,
+                                $relatedCollection,
+                            );
+
+                            // Додаємо новий кодумент у вкладення
+                            $mongoConnection
+                                ->collection($mainCollection->name)
+                                ->where('_id', $mainDocumentId)
+                                ->push($path, $embeddedRecord);
+
+                            // Знаходимо індекс доданого
+                            $newIndex = count($nestedArray);
+
+                            // Оновлюємо шлях для наступного рівня ітерації
+                            $nextLevel->push([
+                                'record' => $relatedRecordObj,
+                                'path' => "{$path}.{$newIndex}",
+                                'parentCollection' => $relatedCollection,
+                            ]);
+                        });
+                }
+            }
+
+            // Перехід до наступного рівня
+            $currentLevel = $nextLevel;
+            $currentDepth++;
+        }
+    }
+
 
     private function addObjectId(array $record): array
     {
@@ -289,6 +396,6 @@ class TestEtlController extends Controller
     {
         return $mongoConnection
             ->collection($collection->name)
-            ->insert($record);
+            ->insertGetId($record);
     }
 }
