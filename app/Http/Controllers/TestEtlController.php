@@ -8,11 +8,15 @@ use App\Enums\RelationType;
 use App\Models\Convert;
 use App\Models\IdMapping;
 use App\Models\MongoSchema\Collection;
-
+use App\Models\MongoSchema\ManyToManyLink;
+use App\Models\SQLSchema\Table;
 use App\Services\DatabaseConnections\ConnectionCreator;
 use App\Services\DataTypes\Converter;
 
+use MongoDB\BSON\ObjectId;
+
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -22,10 +26,6 @@ class TestEtlController extends Controller
 
     public function test(Request $request)
     {
-
-        DB::table('id_mappings')->truncate();
-        // -------------------------------------------
-
         // $id = $request->input('id');
         $id = 1;
         $convert = Convert::find($id);
@@ -43,16 +43,22 @@ class TestEtlController extends Controller
 
         $mongoConnection = ConnectionCreator::create($mongoDatabase);
 
-        $mongoConnection->dropCollection('tags2'); //------------------------------------------------------------------------------
+        // // -----------------------------------------------------------------------------
+        // DB::table('id_mappings')->truncate();
+        // $mongoConnection->dropCollection('posts2');
+        // $mongoConnection->dropCollection('tags2');
+        // // ------------------------------------------------------------------------------
 
-        // $collections = $mongoDatabase->collections()->with(['fields', 'linksEmbeddsFrom', 'manyToManyPivot'])
+        // $collections = $mongoDatabase->collections()
+        //     ->with(['fields', 'linksEmbeddsFrom', 'linksEmbeddsTo', 'manyToManyPivot'])
         //     ->whereHas('manyToManyPivot')
         //     ->whereDoesntHave('linksEmbeddsTo')
         //     ->whereDoesntHave('manyToManyFirst')
         //     ->whereDoesntHave('manyToManySecond')
         //     ->get();
 
-        $collections = $mongoDatabase->collections()->with(['fields', 'linksEmbeddsFrom', 'manyToManyPivot'])
+        $collections = $mongoDatabase->collections()
+            ->with(['fields', 'linksEmbeddsFrom', 'linksEmbeddsTo', 'manyToManyPivot'])
             ->where('name', 'post_tag2')
             ->get();
 
@@ -87,33 +93,47 @@ class TestEtlController extends Controller
                     // ------------------------
 
                     // 1. First
-                    $rel = $collection->manyToManyPivot()->first();
-                    $first = $rel->collection2()->with(['fields'])->first(); //----- collection1()
+                    $relation = $collection->manyToManyPivot()->first();
+                    $first = $relation->collection1()->with(['fields', 'linksEmbeddsFrom', 'linksEmbeddsTo'])->first();
 
+
+
+                    // $this->processCollection(
+                    //     $first,
+                    //     $sqlConnection,
+                    //     $mongoConnection,
+                    //     $relation->foreign1_fields
+                    // );
+
+                    // 2. Second
+                    $second = $relation->collection2()->with(['fields', 'linksEmbeddsFrom', 'linksEmbeddsTo'])->first();
+                    // $this->processCollection(
+                    //     $second,
+                    //     $sqlConnection,
+                    //     $mongoConnection,
+                    //     $relation->foreign2_fields
+                    // );
+
+
+
+                    $mongoConnection->dropCollection('post_tag2'); // ----------------------------
                     $start_time = microtime(true);
 
-                    $this->processCollection(
+                    // Pivot
+                    $this->processPivotCollection(
+                        $collection,
                         $first,
+                        $second,
+                        $relation,
                         $sqlConnection,
                         $mongoConnection,
-                        $rel->foreign1_fields
                     );
-                    $end_time = microtime(true);
 
+                    $end_time = microtime(true);
                     // Calculate the Script Execution Time
                     $execution_time = ($end_time - $start_time);
 
-                    dd('processCollection finished', $execution_time);
-
-                    // 2. Second
-                    // $second = $rel->collection2;
-                    // $this->processCollection($sqlConnection, $second, $rel->foreign2_fields);
-
-
-
-
-                    dd($record);
-
+                    dd('process Pivot Collection finished', $execution_time);
 
                     // return false; // stop
                 });
@@ -122,6 +142,143 @@ class TestEtlController extends Controller
         dd('done');
         // return 'done';
     }
+
+    private function processPivotCollection(
+        Collection $pivot,
+        Collection $first,
+        Collection $second,
+        ManyToManyLink $relation,
+        $sqlConnection,
+        $mongoConnection,
+    ) {
+
+        // LINK WITH PIVOT
+        // 1. Process pivot like ordinary collection
+        // using IdMapping
+
+        $this->processCollection(
+            $pivot,
+            $sqlConnection,
+            $mongoConnection
+        );
+
+        // load all ids from the first table using in pivot
+        $firstIds = $sqlConnection->table($pivot->sqlTable->name . ' as pivot')
+            ->select(array_map(fn($field) => "left.{$field}", $relation->foreign1_fields))
+            ->distinct()
+            ->leftJoin($first->sqlTable->name . ' as left', function ($join) use ($relation) {
+                foreach ($relation->foreign1_fields as $key => $foreignField) {
+                    $join->on("left.{$foreignField}", '=', "pivot.{$relation->local1_fields[$key]}");
+                }
+            })->get();
+
+
+        foreach ($firstIds as $id) {
+            $id = (array)$id;
+            $firstMapping = IdMapping::where('table_id', $first->sql_table_id)
+                ->where('collection_id', $first->id)
+                ->where('source_data_hash', IdMapping::makeHash($id))
+                ->first();
+
+            if (!$firstMapping) {
+                continue;
+            }
+
+            // Оновлення зв'язків у MongoDB
+            $mongoConnection->collection($pivot->name)
+                ->where(function ($query) use ($relation, $id) {
+                    foreach ($relation->foreign1_fields as $key => $field) {
+                        $query->where($relation->local1_fields[$key], $id[$field]);
+                    }
+                })->update([
+                    Str::singular($first->name) . '_id' => new ObjectId($firstMapping->mapped_id),
+                ]);
+        }
+
+        $secondIds = $sqlConnection->table($pivot->sqlTable->name . ' as pivot')
+            ->select(array_map(fn($field) => "left.{$field}", $relation->foreign2_fields))
+            ->distinct()
+            ->leftJoin($second->sqlTable->name . ' as left', function ($join) use ($relation) {
+                foreach ($relation->foreign2_fields as $key => $foreignField) {
+                    $join->on("left.{$foreignField}", '=', "pivot.{$relation->local2_fields[$key]}");
+                }
+            })->get();
+
+        foreach ($secondIds as $secondId) {
+            $secondId = (array)$secondId;
+            // Шукаємо відповідне співставлення для другого набору ідентифікаторів
+            $secondMapping = IdMapping::where('table_id', $second->sql_table_id)
+                ->where('collection_id', $second->id)
+                ->where('source_data_hash', IdMapping::makeHash($secondId))
+                ->first();
+
+            if (!$secondMapping) {
+                continue; // Якщо відповідності не знайдено, переходимо до наступного
+            }
+
+            // Оновлення зв'язків у MongoDB для другого набору
+            $mongoConnection->collection($pivot->name)
+                ->where(function ($query) use ($relation, $secondId) {
+                    foreach ($relation->foreign2_fields as $key => $field) {
+                        $query->where($relation->local2_fields[$key], $secondId[$field]);
+                    }
+                })
+                ->update([
+                    Str::singular($second->name) . '_id' => new ObjectId($secondMapping->mapped_id),
+                ]);
+        }
+
+
+
+        dd('finish');
+
+
+
+
+
+
+
+
+        // EMBEDDING
+        // 1. For each document
+        //  1.1 Get mapped sql id
+        //  1.2 Load all related ids from sql
+        //  1.3 Find all related documents in MongoDB
+
+        // 2. Analyze columns in pivot. 
+        // Are there any fields except for id and foreign keys (or there are no id at all)?
+        //  2.1 Yes. 
+        //      2.1.1 Add array (named as related collection)
+        //      2.1.2 Add fields from pivot
+        //      2.1.3 Push array of related docs to main array
+        //  2.1 No. 
+        //      2.1.1 Add array (named as related collection)
+        //      2.1.3 Add all related docs to this array
+        //      2.1.4 Push array
+
+
+        // HYBRID
+        // 1. For each document
+        //  1.1 Get mapper sql id
+        //  1.2 Load all related ids from sql
+        //  1.3 Find all related _ids in MongoDB
+
+        // 2. Analyze columns in pivot. 
+        // Are there any fields except for id and foreign keys (or there are no id at all)?
+        //  2.1 Yes. 
+        //      2.1.1 Add array (named as related collection)
+        //      2.1.2 For each related record
+        //          2.1.2.1 Make an array
+        //          2.1.2.2 Add fields from pivot to this small array
+        //          2.1.2.3 Add related _id to this small array
+        //      2.1.4 Push thism small array to main array
+        //  2.1 No. 
+        //      2.1.1 Add array (named as related collection)
+        //      2.1.3 Add all _ids to this array
+        //      2.1.4 Push array
+
+    }
+
 
     private function processCollection(
         Collection $collection,
@@ -141,6 +298,7 @@ class TestEtlController extends Controller
             ->lazy()
             ->each(function (object $recordObj) use (
                 $collection,
+                $table,
                 $sqlConnection,
                 $mongoConnection,
                 &$identificationСolumns,
@@ -150,24 +308,16 @@ class TestEtlController extends Controller
                 $record = $this->processDocument($recordObj, $collection);
                 $mainDocumentId = $this->writeToMongo($mongoConnection, $collection, $record);
 
-                // $parentDoc = $mongoConnection
-                //     ->collection($collection->name)
-                //     ->where('_id', $mainDocumentId)
-                //     ->first();
-
                 // 2. Обробка вкладень
                 $this->processEmbeds($mainDocumentId, $recordObj, $collection, $sqlConnection, $mongoConnection);
 
-                // dd('FIRST PROCESSED');
-                // $record = $this->processDocument($recordObj, $collection, $sqlConnection);
-
-                // $this->createIdMapping(
-                //     $table,
-                //     $collection,
-                //     $recordObj,
-                //     $record,
-                //     $identificationСolumns
-                // );
+                $this->createIdMapping(
+                    $table,
+                    $collection,
+                    $mainDocumentId,
+                    $recordObj,
+                    $identificationСolumns
+                );
             });
     }
 
@@ -373,11 +523,11 @@ class TestEtlController extends Controller
     }
 
     private function createIdMapping(
-        $table,
-        $collection,
+        Table $table,
+        Collection $collection,
+        ObjectId $documentId,
         $recordObj,
-        array &$record,
-        array &$identificationСolumns
+        ?array &$identificationСolumns
     ) {
         if (! is_null($identificationСolumns) && ! empty($identificationСolumns)) {
             return IdMapping::create([
@@ -387,7 +537,7 @@ class TestEtlController extends Controller
                     (array)$recordObj,
                     array_flip($identificationСolumns)
                 ),
-                'mapped_id' => $record['_id']->__toString(),
+                'mapped_id' => $documentId->__toString(),
             ]);
         }
     }
