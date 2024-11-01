@@ -153,82 +153,14 @@ class TestEtlController extends Controller
     ) {
 
         // LINK WITH PIVOT
-        // 1. Process pivot like ordinary collection
-        // using IdMapping
-
-        $this->processCollection(
+        $this->saveAsLinkWithPivot(
             $pivot,
+            $first,
+            $second,
+            $relation,
             $sqlConnection,
             $mongoConnection
         );
-
-        // load all ids from the first table using in pivot
-        $firstIds = $sqlConnection->table($pivot->sqlTable->name . ' as pivot')
-            ->select(array_map(fn($field) => "left.{$field}", $relation->foreign1_fields))
-            ->distinct()
-            ->leftJoin($first->sqlTable->name . ' as left', function ($join) use ($relation) {
-                foreach ($relation->foreign1_fields as $key => $foreignField) {
-                    $join->on("left.{$foreignField}", '=', "pivot.{$relation->local1_fields[$key]}");
-                }
-            })->get();
-
-
-        foreach ($firstIds as $id) {
-            $id = (array)$id;
-            $firstMapping = IdMapping::where('table_id', $first->sql_table_id)
-                ->where('collection_id', $first->id)
-                ->where('source_data_hash', IdMapping::makeHash($id))
-                ->first();
-
-            if (!$firstMapping) {
-                continue;
-            }
-
-            // Оновлення зв'язків у MongoDB
-            $mongoConnection->collection($pivot->name)
-                ->where(function ($query) use ($relation, $id) {
-                    foreach ($relation->foreign1_fields as $key => $field) {
-                        $query->where($relation->local1_fields[$key], $id[$field]);
-                    }
-                })->update([
-                    Str::singular($first->name) . '_id' => new ObjectId($firstMapping->mapped_id),
-                ]);
-        }
-
-        $secondIds = $sqlConnection->table($pivot->sqlTable->name . ' as pivot')
-            ->select(array_map(fn($field) => "left.{$field}", $relation->foreign2_fields))
-            ->distinct()
-            ->leftJoin($second->sqlTable->name . ' as left', function ($join) use ($relation) {
-                foreach ($relation->foreign2_fields as $key => $foreignField) {
-                    $join->on("left.{$foreignField}", '=', "pivot.{$relation->local2_fields[$key]}");
-                }
-            })->get();
-
-        foreach ($secondIds as $secondId) {
-            $secondId = (array)$secondId;
-            // Шукаємо відповідне співставлення для другого набору ідентифікаторів
-            $secondMapping = IdMapping::where('table_id', $second->sql_table_id)
-                ->where('collection_id', $second->id)
-                ->where('source_data_hash', IdMapping::makeHash($secondId))
-                ->first();
-
-            if (!$secondMapping) {
-                continue; // Якщо відповідності не знайдено, переходимо до наступного
-            }
-
-            // Оновлення зв'язків у MongoDB для другого набору
-            $mongoConnection->collection($pivot->name)
-                ->where(function ($query) use ($relation, $secondId) {
-                    foreach ($relation->foreign2_fields as $key => $field) {
-                        $query->where($relation->local2_fields[$key], $secondId[$field]);
-                    }
-                })
-                ->update([
-                    Str::singular($second->name) . '_id' => new ObjectId($secondMapping->mapped_id),
-                ]);
-        }
-
-
 
         dd('finish');
 
@@ -277,6 +209,90 @@ class TestEtlController extends Controller
         //      2.1.3 Add all _ids to this array
         //      2.1.4 Push array
 
+    }
+
+    private function saveAsLinkWithPivot(
+        Collection $pivot,
+        Collection $first,
+        Collection $second,
+        ManyToManyLink $relation,
+        $sqlConnection,
+        $mongoConnection,
+    ) {
+        // LINK WITH PIVOT
+        // 1. Process pivot like ordinary collection
+        // using IdMapping
+
+        $this->processCollection(
+            $pivot,
+            $sqlConnection,
+            $mongoConnection
+        );
+
+        $this->syncMainIdsWithMapping(
+            $pivot,
+            $first,
+            $relation->foreign1_fields,
+            $relation->local1_fields,
+            $sqlConnection,
+            $mongoConnection,
+        );
+        
+        $this->syncMainIdsWithMapping(
+            $pivot,
+            $second,
+            $relation->foreign2_fields,
+            $relation->local2_fields,
+            $sqlConnection,
+            $mongoConnection,
+        );
+    }
+
+    private function syncMainIdsWithMapping(
+        Collection $pivotCollection,
+        Collection $mainCollection,
+        // ManyToManyLink $relation,
+        $foreignFields,
+        $localFields,
+        $sqlConnection,
+        $mongoConnection,
+        ) {
+
+            $pivotTable = $pivotCollection->sqlTable;
+            $mainTable = $mainCollection->sqlTable;
+
+        // load all ids from the first table using in pivot
+        $firstIds = $sqlConnection->table($pivotTable->name . ' as pivot')
+            ->select(array_map(fn($field) => "left.{$field}", $foreignFields))
+            ->distinct()
+            ->leftJoin($mainTable->name . ' as left', function ($join) use ($foreignFields, $localFields) {
+                foreach ($foreignFields as $key => $foreignField) {
+                    $join->on("left.{$foreignField}", '=', "pivot.{$localFields[$key]}");
+                }
+            })->get();
+
+
+        foreach ($firstIds as $id) {
+            $id = (array)$id;
+            $firstMapping = IdMapping::where('table_id', $mainTable->id)
+                ->where('collection_id', $mainCollection->id)
+                ->where('source_data_hash', IdMapping::makeHash($id))
+                ->first();
+
+            if (!$firstMapping) {
+                continue;
+            }
+
+            // Оновлення зв'язків у MongoDB
+            $mongoConnection->collection($pivotCollection->name)
+                ->where(function ($query) use ($foreignFields, $localFields, $id) {
+                    foreach ($foreignFields as $key => $field) {
+                        $query->where($localFields[$key], $id[$field]);
+                    }
+                })->update([
+                    Str::singular($mainTable->name) . '_id' => new ObjectId($firstMapping->mapped_id),
+                ]);
+        }
     }
 
 
