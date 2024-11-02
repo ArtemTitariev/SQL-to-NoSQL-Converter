@@ -4,6 +4,7 @@ namespace App\Models\MongoSchema;
 
 use App\Models\IdMapping;
 use App\Models\SQLSchema\Table;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -56,12 +57,12 @@ class Collection extends Model
     {
         return $this->hasMany(ManyToManyLink::class, 'pivot_collection_id', 'id');
     }
-    
+
     public function manyToManyFirst(): HasMany
     {
         return $this->hasMany(ManyToManyLink::class, 'collection1_id', 'id');
     }
-    
+
     public function manyToManySecond(): HasMany
     {
         return $this->hasMany(ManyToManyLink::class, 'collection2_id', 'id');
@@ -108,5 +109,35 @@ class Collection extends Model
         }
 
         return (object) $data;
+    }
+
+    /**
+     * Get a collection of metadata fields in a pivot collection (Many-to-Many relationship)
+     * The following are not metadata: 
+     *  - _id field;
+     *  - fields that formed the primary key in a relational database;
+     *  - fields involved in relationships.
+     * 
+     * @return EloquentCollection<Field>
+     */
+    public function getMetaFieldsOnPivot(): EloquentCollection
+    {
+        $pk = $this->sqlTable()->first(['primary_key'])->primary_key;
+
+        if (is_null($pk)) {
+            $pk = [];
+        }
+        $pk[] = "_id";
+
+        $links = $this->manyToManyPivot;
+
+        return $this->fields()
+            ->whereNotIn('name', $pk)
+            ->where(function ($query) use ($links) {
+                foreach ($links as $link) {
+                    $query->whereNotIn('name', $link->local1_fields)
+                        ->whereNotIn('name', $link->local2_fields);
+                }
+            })->get();
     }
 }
