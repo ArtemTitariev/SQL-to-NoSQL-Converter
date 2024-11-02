@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MongoManyToManyRelation;
 use App\Enums\MongoRelationType;
 use App\Models\Convert;
 use App\Models\IdMapping;
@@ -42,10 +43,10 @@ class TestEtlController extends Controller
         $mongoConnection = ConnectionCreator::create($mongoDatabase);
 
         // // -----------------------------------------------------------------------------
-        // DB::table('id_mappings')->truncate();
-        // $mongoConnection->dropCollection('posts2');
-        // $mongoConnection->dropCollection('tags2');
-        // $mongoConnection->dropCollection('post_tag2');
+        DB::table('id_mappings')->truncate();
+        $mongoConnection->dropCollection('posts2');
+        $mongoConnection->dropCollection('tags2');
+        $mongoConnection->dropCollection('post_tag2');
         // // ------------------------------------------------------------------------------
 
         // $collections = $mongoDatabase->collections()
@@ -129,36 +130,40 @@ class TestEtlController extends Controller
         $mongoConnection,
     ) {
 
-        // // LINK WITH PIVOT
-        // $this->saveAsLinkWithPivot(
-        //     $pivot,
-        //     $first,
-        //     $second,
-        //     $relation,
-        //     $sqlConnection,
-        //     $mongoConnection
-        // );
-
-        // // EMBEDDING
-        // $this->saveAsEmbedding(
-        //     $pivot,
-        //     $first,
-        //     $second,
-        //     $relation,
-        //     $sqlConnection,
-        //     $mongoConnection
-        // );
-
-
-        // HYBRID
-        $this->saveAsHybrid(
-            $pivot,
-            $first,
-            $second,
-            $relation,
-            $sqlConnection,
-            $mongoConnection
-        );
+        switch ($relation->relation_type) {
+            case MongoManyToManyRelation::LINKING_WITH_PIVOT:
+                $this->saveAsLinkWithPivot(
+                    $pivot,
+                    $first,
+                    $second,
+                    $relation,
+                    $sqlConnection,
+                    $mongoConnection
+                );
+                break;
+            case MongoManyToManyRelation::EMBEDDING:
+                $this->saveAsEmbedding(
+                    $pivot,
+                    $first,
+                    $second,
+                    $relation,
+                    $sqlConnection,
+                    $mongoConnection
+                );
+                break;
+            case MongoManyToManyRelation::HYBRID:
+                $this->saveAsHybrid(
+                    $pivot,
+                    $first,
+                    $second,
+                    $relation,
+                    $sqlConnection,
+                    $mongoConnection
+                );
+                break;
+            default:
+                break;
+        }
     }
 
     private function saveAsLinkWithPivot(
