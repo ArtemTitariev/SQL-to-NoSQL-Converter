@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\MongoManyToManyRelation;
 use App\Enums\MongoRelationType;
-use App\Enums\RelationType;
 use App\Models\Convert;
 use App\Models\IdMapping;
 use App\Models\MongoSchema\Collection;
@@ -19,8 +17,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
-use function PHPSTORM_META\map;
 
 class TestEtlController extends Controller
 {
@@ -49,6 +45,7 @@ class TestEtlController extends Controller
         // DB::table('id_mappings')->truncate();
         // $mongoConnection->dropCollection('posts2');
         // $mongoConnection->dropCollection('tags2');
+        // $mongoConnection->dropCollection('post_tag2');
         // // ------------------------------------------------------------------------------
 
         // $collections = $mongoDatabase->collections()
@@ -79,8 +76,10 @@ class TestEtlController extends Controller
                 ) {
                     $record = (array) $record;
 
-                    // 1. First
+                    $start_time = microtime(true); //--------
+
                     $relation = $collection->manyToManyPivot()->first();
+                    // 1. First
                     $first = $relation->collection1()->with(['fields', 'linksEmbeddsFrom', 'linksEmbeddsTo'])->first();
                     // $this->processCollection(
                     //     $first,
@@ -98,9 +97,6 @@ class TestEtlController extends Controller
                     //     $relation->foreign2_fields
                     // );
 
-                    $mongoConnection->dropCollection('post_tag2'); // ----------------------------
-                    $start_time = microtime(true);
-
                     // Pivot
                     $this->processPivotCollection(
                         $collection,
@@ -112,7 +108,6 @@ class TestEtlController extends Controller
                     );
 
                     $end_time = microtime(true);
-                    // Calculate the Script Execution Time
                     $execution_time = ($end_time - $start_time);
 
                     dd('process Pivot Collection finished', $execution_time);
@@ -134,7 +129,7 @@ class TestEtlController extends Controller
         $mongoConnection,
     ) {
 
-        // LINK WITH PIVOT
+        // // LINK WITH PIVOT
         // $this->saveAsLinkWithPivot(
         //     $pivot,
         //     $first,
@@ -144,8 +139,19 @@ class TestEtlController extends Controller
         //     $mongoConnection
         // );
 
-        // EMBEDDING
-        $this->saveAsEmbedding(
+        // // EMBEDDING
+        // $this->saveAsEmbedding(
+        //     $pivot,
+        //     $first,
+        //     $second,
+        //     $relation,
+        //     $sqlConnection,
+        //     $mongoConnection
+        // );
+
+
+        // HYBRID
+        $this->saveAsHybrid(
             $pivot,
             $first,
             $second,
@@ -153,42 +159,6 @@ class TestEtlController extends Controller
             $sqlConnection,
             $mongoConnection
         );
-
-        // dd('finish');
-
-
-        // 2. Analyze columns in pivot. --------------
-        // Are there any fields except for id and foreign keys (or there are no id at all)?
-        //  2.1 Yes. 
-        //      2.1.1 Add array (named as related collection)
-        //      2.1.2 Add fields from pivot
-        //      2.1.3 Push array of related docs to main array
-        //  2.1 No. 
-        //      2.1.1 Add array (named as related collection)
-        //      2.1.3 Add all related docs to this array
-        //      2.1.4 Push array
-
-
-        // HYBRID
-        // 1. For each document
-        //  1.1 Get mapper sql id
-        //  1.2 Load all related ids from sql
-        //  1.3 Find all related _ids in MongoDB
-
-        // 2. Analyze columns in pivot. 
-        // Are there any fields except for id and foreign keys (or there are no id at all)?
-        //  2.1 Yes. 
-        //      2.1.1 Add array (named as related collection)
-        //      2.1.2 For each related record
-        //          2.1.2.1 Make an array
-        //          2.1.2.2 Add fields from pivot to this small array
-        //          2.1.2.3 Add related _id to this small array
-        //      2.1.4 Push thism small array to main array
-        //  2.1 No. 
-        //      2.1.1 Add array (named as related collection)
-        //      2.1.3 Add all _ids to this array
-        //      2.1.4 Push array
-
     }
 
     private function saveAsLinkWithPivot(
@@ -231,7 +201,6 @@ class TestEtlController extends Controller
     private function syncMainIdsWithMapping(
         Collection $pivotCollection,
         Collection $mainCollection,
-        // ManyToManyLink $relation,
         $foreignFields,
         $localFields,
         $sqlConnection,
@@ -335,66 +304,23 @@ class TestEtlController extends Controller
                 $sqlConnection,
                 $mongoConnection,
             ) {
-                $pivotTable = $pivot->sqlTable;
 
-                // 2. Get mapped sql id from first table
-                $sqlIdArray = IdMapping::where('collection_id', $first->id)
-                    ->where('table_id', $first->sql_table_id)
-                    ->where('mapped_id', $mainRecord["_id"])
-                    ->first(['source_data'])?->source_data;
+                $data = $this->getMappedData(
+                    $pivot,
+                    $first,
+                    $second,
+                    $local1Fields,
+                    $local2Fields,
+                    $foreign2Fields,
+                    $mainRecord["_id"],
+                    $sqlConnection,
+                );
 
-                $sqlIdArray = array_values($sqlIdArray);
+                $mappedSecondIds = $data['mappedSecondIds'];
+                $metaArray = $data['metaArray'];
+                unset($data);
 
-                // 3. Select second_ids (or more fields) from sql pivot 
-                $query = $sqlConnection
-                    ->table($pivotTable->name)
-                    ->where(function ($query) use ($local1Fields, $sqlIdArray) {
-                        foreach ($local1Fields as $index => $field) {
-                            $query->where($field, $sqlIdArray[$index]);
-                        }
-                    });
-
-                // Отримуємо мета-поля
-                $metaFields = $pivot->getMetaFieldsOnPivot();
-                $fieldsToSelect = array_merge($local2Fields, $metaFields->pluck('name')->toArray());
-
-                // Отримання SQL ID і мета-даних (якщо вони є)
-                $relatedSqlIdsWithMeta = $query->get($fieldsToSelect);
-
-                // Формування хешованих ID та додавання мета-даних (якщо вони є)
-                $relatedHashedSqlIds = $relatedSqlIdsWithMeta->map(function ($record) use ($foreign2Fields, $metaFields) {
-                    // Перетворюємо результат на масив для зручності доступу
-                    $recordArray = (array) $record;
-                    $id = array_values(array_slice($recordArray, 0, count($foreign2Fields)));
-
-                    // Створюємо хешований ID
-                    $hashedId = IdMapping::makeHash(
-                        array_combine($foreign2Fields, $id)
-                    );
-
-                    // Додаємо мета-дані, якщо вони існують
-                    $metaData = [];
-                    if ($metaFields->isNotEmpty()) {
-                        $metaData = $metaFields->pluck('name')->mapWithKeys(function ($field) use ($recordArray) {
-                            return [$field => $recordArray[$field] ?? null];
-                        })->toArray();
-                    }
-
-                    return [
-                        'hashed_id' => $hashedId,
-                        'meta_data' => $metaData
-                    ];
-                })->toArray();
-
-                //  4. Get mapped Mongo ids from second main collection
-                $mappedSecondIds = IdMapping::where('collection_id', $second->id)
-                    ->where('table_id', $second->sql_table_id)
-                    ->whereIn('source_data_hash', array_column($relatedHashedSqlIds, 'hashed_id'))
-                    ->pluck('mapped_id');
-
-                $metaArray = array_column($relatedHashedSqlIds, 'meta_data');
-
-                // 5. Get related docoment from second colection, push to first
+                // 5. Get related document from second colection, push to first
                 $mongoConnection->collection($second->name)
                     ->whereIn('_id', $mappedSecondIds)
                     ->orderBy("_id")
@@ -407,7 +333,10 @@ class TestEtlController extends Controller
                         &$metaArray,
                     ) {
                         $metaData = array_shift($metaArray) ?? [];
-                        $embeddedRecordWithMeta = $metaData ? array_merge($embeddedRecord, ['meta' => $metaData]) : $embeddedRecord;
+                        $embeddedRecordWithMeta = $metaData ? array_merge(
+                            $embeddedRecord,
+                            ['meta' => $metaData]
+                        ) : $embeddedRecord;
 
                         $mongoConnection
                             ->collection($first->name)
@@ -415,6 +344,177 @@ class TestEtlController extends Controller
                             ->push($second->name, $embeddedRecordWithMeta);
                     });
             });
+    }
+
+    private function saveAsHybrid(
+        Collection $pivot,
+        Collection $first,
+        Collection $second,
+        ManyToManyLink $relation,
+        $sqlConnection,
+        $mongoConnection,
+    ) {
+        // HYBRID
+
+        // First
+        $this->linkDocumentsForCollection(
+            $pivot,
+            $first,
+            $second,
+            $relation->local1_fields,
+            $relation->local2_fields,
+            $relation->foreign2_fields,
+            $sqlConnection,
+            $mongoConnection
+        );
+
+        // Second
+        $this->linkDocumentsForCollection(
+            $pivot,
+            $second,
+            $first,
+            $relation->local2_fields,
+            $relation->local1_fields,
+            $relation->foreign1_fields,
+            $sqlConnection,
+            $mongoConnection
+        );
+    }
+
+    private function linkDocumentsForCollection(
+        Collection $pivot,
+        Collection $first,
+        Collection $second,
+        $local1Fields,
+        $local2Fields,
+        $foreign2Fields,
+        $sqlConnection,
+        $mongoConnection,
+    ) {
+        // 1. For each document from first main collection
+        $mongoConnection->collection($first->name)
+            ->orderBy("_id")
+            ->project(['_id' => 1])
+            ->lazy()
+            ->each(function (array $mainRecord) use (
+                $pivot,
+                $first,
+                $second,
+                $local1Fields,
+                $local2Fields,
+                $foreign2Fields,
+                $sqlConnection,
+                $mongoConnection,
+            ) {
+                $data = $this->getMappedData(
+                    $pivot,
+                    $first,
+                    $second,
+                    $local1Fields,
+                    $local2Fields,
+                    $foreign2Fields,
+                    $mainRecord["_id"],
+                    $sqlConnection,
+                );
+
+                $mappedSecondIds = $data['mappedSecondIds'];
+                $metaArray = $data['metaArray'];
+                unset($data);
+
+                $query = $mongoConnection
+                    ->collection($first->name)
+                    ->where('_id', $mainRecord['_id']);
+
+                // 5. Push Mongo ids (from second) to first
+                if (!empty($metaArray) && count($metaArray)) {
+                    $result = array_map(function ($id, $meta) {
+                        return [
+                            "_id" => $id,
+                            "meta" => $meta,
+                        ];
+                    }, $mappedSecondIds, $metaArray);
+
+                    $query->push($second->name . '_links', $result);
+                } else {
+                    // Якщо метаданих немає, просто вставляємо запис
+                    $query->push($second->name . '_links', $mappedSecondIds);
+                }
+            });
+    }
+
+    protected function getMappedData(
+        Collection $pivot,
+        Collection $first,
+        Collection $second,
+        $local1Fields,
+        $local2Fields,
+        $foreign2Fields,
+        $mainRecordId,
+        $sqlConnection,
+    ) {
+        $pivotTable = $pivot->sqlTable;
+
+        // 2. Get mapped sql id from first table
+        $sqlIdArray = IdMapping::where('collection_id', $first->id)
+            ->where('table_id', $first->sql_table_id)
+            ->where('mapped_id', $mainRecordId)
+            ->first(['source_data'])?->source_data;
+
+        $sqlIdArray = array_values($sqlIdArray);
+
+        // 3. Select second_ids (or more fields) from sql pivot 
+        $query = $sqlConnection
+            ->table($pivotTable->name)
+            ->where(function ($query) use ($local1Fields, $sqlIdArray) {
+                foreach ($local1Fields as $index => $field) {
+                    $query->where($field, $sqlIdArray[$index]);
+                }
+            });
+
+        // Отримуємо мета-поля
+        $metaFields = $pivot->getMetaFieldsOnPivot();
+        $fieldsToSelect = array_merge($local2Fields, $metaFields->pluck('name')->toArray());
+
+        // Отримання SQL ID і мета-даних (якщо вони є)
+        $relatedSqlIdsWithMeta = $query->get($fieldsToSelect);
+
+        // Формування хешованих ID та додавання мета-даних (якщо вони є)
+        $relatedHashedSqlIds = $relatedSqlIdsWithMeta->map(function ($record) use ($foreign2Fields, $metaFields) {
+            // Перетворюємо результат на масив для зручності доступу
+            $recordArray = (array) $record;
+            $id = array_values(array_slice($recordArray, 0, count($foreign2Fields)));
+
+            // Створюємо хешований ID
+            $hashedId = IdMapping::makeHash(
+                array_combine($foreign2Fields, $id)
+            );
+
+            // Додаємо мета-дані, якщо вони існують
+            $metaData = [];
+            if ($metaFields->isNotEmpty()) {
+                $metaData = $metaFields->pluck('name')->mapWithKeys(function ($field) use ($recordArray) {
+                    return [$field => $recordArray[$field] ?? null];
+                })->toArray();
+            }
+
+            return [
+                'hashed_id' => $hashedId,
+                'meta_data' => $metaData
+            ];
+        })->toArray();
+
+        //  4. Get mapped Mongo ids from second main collection
+        $mappedSecondIds = IdMapping::where('collection_id', $second->id)
+            ->where('table_id', $second->sql_table_id)
+            ->whereIn('source_data_hash', array_column($relatedHashedSqlIds, 'hashed_id'))
+            ->pluck('mapped_id')->toArray();
+
+        $metaArray = array_filter(array_column($relatedHashedSqlIds, 'meta_data'));
+
+        return [
+            'mappedSecondIds' => $mappedSecondIds,
+            'metaArray' => $metaArray,
+        ];
     }
 
     private function processCollection(
