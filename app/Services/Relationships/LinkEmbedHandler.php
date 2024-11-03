@@ -64,12 +64,10 @@ class LinkEmbedHandler
             );
         }
 
-        $response = $this->checkAndRespond($isTesting, $messages);
-        if ($response) {
-            return $response;
-        }
-
-        return $relation->changeToLinking();
+        $response = ResponseHandler::checkAndRespond($isTesting, $messages);
+        
+        return $response ??
+            $relation->changeToLinking();
     }
 
     protected function handleEmbedding(LinkEmbedd $relation, bool $embedInMain, bool $isTesting, array &$messages)
@@ -136,12 +134,10 @@ class LinkEmbedHandler
             $messages['errors'][] = $responseContent;
         }
 
-        $response = $this->checkAndRespond($isTesting, $messages);
-        if ($response) {
-            return $response;
-        }
-
-        return $relation->changeEmbeddingDirection();
+        $response = ResponseHandler::checkAndRespond($isTesting, $messages);
+        
+        return $response ??
+            $relation->changeEmbeddingDirection();
     }
 
     protected function changeToEmbedding(LinkEmbedd $relation, bool $embedInMain, bool $isTesting, array &$messages)
@@ -183,28 +179,9 @@ class LinkEmbedHandler
             $messages['errors'][] = $responseContent;
         }
 
-        $response = $this->checkAndRespond($isTesting, $messages);
-        if ($response) {
-            return $response;
-        }
-
-        return $relation->changeToEmbedding($embedInMain);
-    }
-
-    protected function checkAndRespond(bool $isTesting, array &$messages)
-    {
-        if (!empty($messages['errors'])) {
-            return ResponseHandler::messageResponse($messages, 422, 'error');
-        }
-
-        if ($isTesting) {
-            if (!empty($messages['warnings'])) {
-                return ResponseHandler::messageResponse($messages, 422, 'warning');
-            }
-
-            return ResponseHandler::testingSuccessResponse();
-        }
-
-        return null;
+        $response = ResponseHandler::checkAndRespond($isTesting, $messages);
+        
+        return $response ??
+            $relation->changeToEmbedding($embedInMain);
     }
 }
