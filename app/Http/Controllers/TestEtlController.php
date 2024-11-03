@@ -82,31 +82,31 @@ class TestEtlController extends Controller
                     $relation = $collection->manyToManyPivot()->first();
                     // 1. First
                     $first = $relation->collection1()->with(['fields', 'linksEmbeddsFrom', 'linksEmbeddsTo'])->first();
-                    // $this->processCollection(
-                    //     $first,
-                    //     $sqlConnection,
-                    //     $mongoConnection,
-                    //     $relation->foreign1_fields
-                    // );
+                    $this->processCollection(
+                        $first,
+                        $sqlConnection,
+                        $mongoConnection,
+                        $relation->foreign1_fields
+                    );
 
                     // 2. Second
                     $second = $relation->collection2()->with(['fields', 'linksEmbeddsFrom', 'linksEmbeddsTo'])->first();
-                    // $this->processCollection(
-                    //     $second,
-                    //     $sqlConnection,
-                    //     $mongoConnection,
-                    //     $relation->foreign2_fields
-                    // );
-
-                    // Pivot
-                    $this->processPivotCollection(
-                        $collection,
-                        $first,
+                    $this->processCollection(
                         $second,
-                        $relation,
                         $sqlConnection,
                         $mongoConnection,
+                        $relation->foreign2_fields
                     );
+
+                    // Pivot
+                    // $this->processPivotCollection(
+                    //     $collection,
+                    //     $first,
+                    //     $second,
+                    //     $relation,
+                    //     $sqlConnection,
+                    //     $mongoConnection,
+                    // );
 
                     $end_time = microtime(true);
                     $execution_time = ($end_time - $start_time);
@@ -431,7 +431,7 @@ class TestEtlController extends Controller
                     ->where('_id', $mainRecord['_id']);
 
                 // 5. Push Mongo ids (from second) to first
-                if (!empty($metaArray) && count($metaArray)) {
+                if (!empty($metaArray)) { // && count($metaArray)
                     $result = array_map(function ($id, $meta) {
                         return [
                             "_id" => $id,
@@ -497,14 +497,18 @@ class TestEtlController extends Controller
             // Додаємо мета-дані, якщо вони існують
             $metaData = [];
             if ($metaFields->isNotEmpty()) {
-                $metaData = $metaFields->pluck('name')->mapWithKeys(function ($field) use ($recordArray) {
-                    return [$field => $recordArray[$field] ?? null];
+                $metaData = $metaFields->mapWithKeys(function ($field) use ($recordArray) {
+                    $value = $recordArray[$field->name] ?? null;
+                    return [
+                        $field->name => is_null($value) ? null :
+                            Converter::convert($value, $field->type)
+                    ];
                 })->toArray();
             }
 
             return [
                 'hashed_id' => $hashedId,
-                'meta_data' => $metaData
+                'meta_data' => $metaData,
             ];
         })->toArray();
 
