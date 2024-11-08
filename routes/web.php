@@ -67,6 +67,10 @@ Route::middleware('auth')->group(function () {
 require __DIR__ . '/auth.php';
 
 // FOR TESTING ONLY------------------
+
+Route::get('/etl', [TestEtlController::class, 'test']);
+Route::get('/etlo', [TestEtlController::class, 'testOrdinary']);
+
 Route::view('/test', 'test');
 
 Route::get('/delete', function (Request $request) {
@@ -192,9 +196,6 @@ Route::get('/reset', function (Request $request) {
 
     return 'done';
 });
-
-Route::get('/etl', [TestEtlController::class, 'test']);
-
 
 Route::get('/insert', function () {
     $id = 1;

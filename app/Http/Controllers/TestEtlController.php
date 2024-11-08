@@ -23,6 +23,46 @@ class TestEtlController extends Controller
 {
     public $maxEmbeddingDepth = 5;
 
+    public function testOrdinary(Request $request)
+    {
+        $id = 1;
+        $convert = Convert::find($id);
+
+        $sqlDatabase = $convert->sqlDatabase;
+        $mongoDatabase = $convert->mongoDatabase;
+
+        $collections = $mongoDatabase->collections()->with(['fields', 'linksEmbeddsFrom', 'manyToManyPivot'])
+            ->whereDoesntHave('manyToManyPivot')
+            ->whereDoesntHave('manyToManyFirst')
+            ->whereDoesntHave('manyToManySecond')
+            ->whereDoesntHave('linksEmbeddsTo', function ($subquery) {
+                $subquery->where('relation_type', MongoRelationType::EMBEDDING)
+                    ->where('embed_in_main', true);
+            })->whereDoesntHave('linksEmbeddsFrom', function ($subquery) {
+                $subquery->where('relation_type', MongoRelationType::EMBEDDING)
+                    ->where('embed_in_main', false);
+            })
+            // ->orderBy('name')
+            ->get();
+
+        $sqlConnection = ConnectionCreator::create($sqlDatabase);
+        $mongoConnection = ConnectionCreator::create($mongoDatabase);
+
+        foreach ($collections as $collection) {
+
+            $mongoConnection->dropCollection($collection->name);
+
+            $this->processCollection(
+                $collection,
+                $sqlConnection,
+                $mongoConnection,
+            );
+        }
+
+        dd('done');
+        // return 'done';
+    }
+
     public function test(Request $request)
     {
         // $id = $request->input('id');
@@ -32,29 +72,23 @@ class TestEtlController extends Controller
         $sqlDatabase = $convert->sqlDatabase;
         $mongoDatabase = $convert->mongoDatabase;
 
-        // $collections = $mongoDatabase->collections()->with(['fields', 'linksEmbeddsFrom', 'manyToManyPivot'])
-        //     ->whereDoesntHave('linksEmbeddsTo')
-        //     ->whereDoesntHave('manyToManyFirst')
-        //     ->whereDoesntHave('manyToManySecond')
-        //     ->get();
-
         $sqlConnection = ConnectionCreator::create($sqlDatabase);
-
         $mongoConnection = ConnectionCreator::create($mongoDatabase);
 
         // // -----------------------------------------------------------------------------
-        DB::table('id_mappings')->truncate();
-        $mongoConnection->dropCollection('posts2');
-        $mongoConnection->dropCollection('tags2');
-        $mongoConnection->dropCollection('post_tag2');
+        // DB::table('id_mappings')->truncate();
+        // $mongoConnection->dropCollection('posts2');
+        // $mongoConnection->dropCollection('tags2');
+        // $mongoConnection->dropCollection('post_tag2');
         // // ------------------------------------------------------------------------------
 
         // $collections = $mongoDatabase->collections()
         //     ->with(['fields', 'linksEmbeddsFrom', 'linksEmbeddsTo', 'manyToManyPivot'])
         //     ->whereHas('manyToManyPivot')
-        //     ->whereDoesntHave('linksEmbeddsTo')
+        //     // ->whereDoesntHave('linksEmbeddsTo')
         //     ->whereDoesntHave('manyToManyFirst')
         //     ->whereDoesntHave('manyToManySecond')
+        //     // ->orderBy('name')
         //     ->get();
 
         $collections = $mongoDatabase->collections()
@@ -63,9 +97,7 @@ class TestEtlController extends Controller
             ->get();
 
         foreach ($collections as $collection) {
-            // $fieldNames = $collection->fields()->pluck('name')->toArray();
             $table = $collection->sqlTable;
-            // $linksEmbeddsFrom = $collection->linksEmbeddsFrom;
 
             $sqlConnection->table($table->name)
                 ->orderBy($table->getOrderingColumnName())
