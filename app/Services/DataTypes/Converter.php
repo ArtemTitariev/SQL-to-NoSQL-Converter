@@ -115,11 +115,12 @@ final class Converter
     }
 
     /**
-     * object 
+     * JSON string
      * casts to Document
      */
-    private static function toDocumentFromJSON(string &$value): Document
+    private static function toDocumentFromJSON(string &$value): Document | null
     {
-        return Document::fromJSON(json_decode($value));
+        // return Document::fromJSON(json_decode($value));
+        return  isJsonString($value) ?  Document::fromJSON($value) : null;
     }
 }
