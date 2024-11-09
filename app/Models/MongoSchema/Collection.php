@@ -2,6 +2,7 @@
 
 namespace App\Models\MongoSchema;
 
+use App\Enums\MongoRelationType;
 use App\Models\IdMapping;
 use App\Models\SQLSchema\Table;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -139,5 +140,20 @@ class Collection extends Model
                         ->whereNotIn('name', $link->local2_fields);
                 }
             })->get();
+    }
+
+    public function hasEmbedds(): bool
+    {
+        $hasOwnFrom = $this->linksEmbeddsFrom()
+            ->where('relation_type', MongoRelationType::EMBEDDING)
+            ->where('embed_in_main', true)
+            ->exists();
+
+        $hasOtherEmbedds = $this->linksEmbeddsTo()
+            ->where('relation_type', MongoRelationType::EMBEDDING)
+            ->where('embed_in_main', false)
+            ->exists();
+
+        return $hasOwnFrom || $hasOtherEmbedds;
     }
 }
