@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\MongoManyToManyRelation;
 use App\Enums\MongoRelationType;
+use App\Jobs\Etl\ClearJob;
+use App\Jobs\Etl\ProcessCollectionJob;
 use App\Models\Convert;
 use App\Models\IdMapping;
 use App\Models\MongoSchema\Collection;
@@ -13,9 +15,10 @@ use App\Services\DatabaseConnections\ConnectionCreator;
 use App\Services\DataTypes\Converter;
 
 use MongoDB\BSON\ObjectId;
-
+use Illuminate\Bus\Batch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -31,6 +34,12 @@ class TestEtlController extends Controller
         $sqlDatabase = $convert->sqlDatabase;
         $mongoDatabase = $convert->mongoDatabase;
 
+        // Bus::batch([
+        //     new ClearJob($convert),
+        // ])->onQueue('etl_operations')->dispatch();
+
+        // return 'finish';
+
         $collections = $mongoDatabase->collections()->with(['fields', 'linksEmbeddsFrom', 'manyToManyPivot'])
             ->whereDoesntHave('manyToManyPivot')
             ->whereDoesntHave('manyToManyFirst')
@@ -43,25 +52,97 @@ class TestEtlController extends Controller
                     ->where('embed_in_main', false);
             })
             // ->orderBy('name')
+            // ->limit(5) // ------------------------
+            // ->where('name', 'tests')
             ->get();
 
-        $sqlConnection = ConnectionCreator::create($sqlDatabase);
-        $mongoConnection = ConnectionCreator::create($mongoDatabase);
+        // $sqlConnection = ConnectionCreator::create($sqlDatabase);
+        // $mongoConnection = ConnectionCreator::create($mongoDatabase);
 
-        foreach ($collections as $collection) {
+        $this->processCollectionsInBatch($collections, $sqlDatabase, $mongoDatabase, $convert);
 
-            $mongoConnection->dropCollection($collection->name);
-
-            $this->processCollection(
-                $collection,
-                $sqlConnection,
-                $mongoConnection,
-            );
-        }
-
-        dd('done');
+        dd('Processing started.');
         // return 'done';
     }
+
+    protected function processCollectionsInBatch($collections, $sqlDatabase, $mongoDatabase, Convert $convert)
+    {
+        $this->processCollectionJob($collections, $sqlDatabase, $mongoDatabase, $convert, 0);
+    }
+
+    protected function processCollectionJob($collections, $sqlDatabase, $mongoDatabase, Convert $convert, $index)
+    {
+        if ($index >= $collections->count()) {
+            return; // Завершення обробки всіх колекцій 
+        }
+
+        $collection = $collections[$index];
+
+        $hasOwnFrom = $collection->linksEmbeddsFrom()
+            ->where('relation_type', MongoRelationType::EMBEDDING)
+            ->where('embed_in_main', true)
+            ->exists();
+
+        $hasOtherEmbedds = $collection->linksEmbeddsTo()
+            ->where('relation_type', MongoRelationType::EMBEDDING)
+            ->where('embed_in_main', false)
+            ->exists();
+
+        $hasEmbedds = $hasOwnFrom || $hasOtherEmbedds;
+
+        Bus::batch([new ProcessCollectionJob($collection, $sqlDatabase, $mongoDatabase, $hasEmbedds),])
+            ->then(function (Batch $batch) use ($collections, $sqlDatabase, $mongoDatabase, $convert, $index) {
+                // Виконання batch-у ProcessCollectionJob завершено 
+                $this->processCollectionJob($collections, $sqlDatabase, $mongoDatabase, $convert, $index + 1);
+            })->catch(function (Batch $batch, \Throwable $e) use ($convert, $collection, $index) {
+                // Обробка помилки 
+                ClearJob::dispatch($convert);
+                Log::error("--Batch failed for collection {$collection->name} (index {$index}): " . $e->getMessage());
+            })->finally(function (Batch $batch) use ($convert) {
+                // The batch has finished executing
+            })->onQueue('etl_operations')->dispatch();
+    }
+
+
+    // public function testOrdinary(Request $request)
+    // {
+    //     $id = 1;
+    //     $convert = Convert::find($id);
+
+    //     $sqlDatabase = $convert->sqlDatabase;
+    //     $mongoDatabase = $convert->mongoDatabase;
+
+    //     $collections = $mongoDatabase->collections()->with(['fields', 'linksEmbeddsFrom', 'manyToManyPivot'])
+    //         ->whereDoesntHave('manyToManyPivot')
+    //         ->whereDoesntHave('manyToManyFirst')
+    //         ->whereDoesntHave('manyToManySecond')
+    //         ->whereDoesntHave('linksEmbeddsTo', function ($subquery) {
+    //             $subquery->where('relation_type', MongoRelationType::EMBEDDING)
+    //                 ->where('embed_in_main', true);
+    //         })->whereDoesntHave('linksEmbeddsFrom', function ($subquery) {
+    //             $subquery->where('relation_type', MongoRelationType::EMBEDDING)
+    //                 ->where('embed_in_main', false);
+    //         })
+    //         // ->orderBy('name')
+    //         ->get();
+
+    //     $sqlConnection = ConnectionCreator::create($sqlDatabase);
+    //     $mongoConnection = ConnectionCreator::create($mongoDatabase);
+
+    //     foreach ($collections as $collection) {
+
+    //         $mongoConnection->dropCollection($collection->name);
+
+    //         $this->processCollection(
+    //             $collection,
+    //             $sqlConnection,
+    //             $mongoConnection,
+    //         );
+    //     }
+
+    //     dd('done');
+    //     // return 'done';
+    // }
 
     public function test(Request $request)
     {
@@ -621,7 +702,7 @@ class TestEtlController extends Controller
             $pkCollection = $link->pkCollection()->with(['fields'])->first();
             $foreignFields = $pkCollection->fields->filter(function ($field) use ($link) {
                 return in_array($field->name, $link->foreign_fields);
-            });
+            })->values();
 
             foreach ($foreignFields as $key => $foreignField) {
                 $localField = $link->local_fields[$key];
