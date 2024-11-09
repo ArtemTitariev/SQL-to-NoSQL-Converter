@@ -2,11 +2,10 @@
 
 namespace App\Jobs\Etl;
 
+use App\Jobs\Etl\Handlers\BatchFailureHandler;
 use App\Models\MongoSchema\Collection;
 use App\Services\DatabaseConnections\ConnectionCreator;
 use App\Services\Etl\EtlService;
-use Closure;
-use Illuminate\Bus\Batch;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -15,7 +14,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
-use Laravel\SerializableClosure\SerializableClosure;
 
 class ProcessCollectionJob implements ShouldQueue
 {
@@ -33,9 +31,9 @@ class ProcessCollectionJob implements ShouldQueue
         public $sqlDatabase,
         public $mongoDatabase,
         public bool $hasEmbedds,
+        public ?array $identificationСolumns = null,
     ) {
-        // $this->sqlConnection = ConnectionCreator::create($sqlDatabase);
-        // $this->mongoConnection = ConnectionCreator::create($mongoDatabase);
+        // 
     }
 
     public function handle(): void
@@ -47,7 +45,7 @@ class ProcessCollectionJob implements ShouldQueue
 
         $table = $this->collection->sqlTable;
 
-        // Створюємо батч для завдань ProcessEmbedsJob, які є частиною поточного ProcessCollectionJob
+        // Батч для завдань ProcessEmbedsJob, які є частиною поточного ProcessCollectionJob
         $embedJobs = [];
 
         $sqlConnection->table($table->name)
@@ -71,29 +69,13 @@ class ProcessCollectionJob implements ShouldQueue
                     $this->collection,
                     $mainDocumentId,
                     $recordObj,
-                    $identificationСolumns,
+                    $this->identificationСolumns,
                 );
             });
-
-        // $thenClosure = new SerializableClosure(function (Batch $batch) {
-        //     // Успішне завершення всіх ProcessEmbedsJob, можна продовжити обробку наступної колекції
-        // });
-
-        // $catchClosure = new SerializableClosure(function (Batch $batch, \Throwable $e) {
-        //     // Якщо сталася помилка, логуємо її і зупиняємо обробку
-        //     Log::error("Batch failed for embeds in collection {$this->collection->name}: " . $e->getMessage());
-        //     throw $e; // Зупиняємо обробку
-        // });
 
         Bus::batch($embedJobs)
             ->catch(new BatchFailureHandler($this->collection))
             ->onQueue('etl_operations')
             ->dispatch();
-
-        // Bus::batch($embedJobs)
-        // ->then($thenClosure)
-        // ->catch($catchClosure)
-        // ->onQueue('etl_operations')
-        // ->dispatch();
     }
 }

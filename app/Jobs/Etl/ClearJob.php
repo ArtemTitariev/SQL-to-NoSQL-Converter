@@ -38,8 +38,6 @@ class ClearJob implements ShouldQueue
      */
     public function handle(): void
     {
-        EtlService::test($this->convert);
-
         DB::table('id_mappings')
             ->leftJoin('tables', 'id_mappings.table_id', '=', 'tables.id')
             ->leftJoin('collections', 'id_mappings.collection_id', '=', 'collections.id')

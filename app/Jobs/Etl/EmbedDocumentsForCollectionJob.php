@@ -3,8 +3,8 @@
 namespace App\Jobs\Etl;
 
 use App\Models\MongoSchema\Collection;
-use App\Services\DatabaseConnections\ConnectionCreator;
 use App\Services\Etl\EtlService;
+use App\Services\DatabaseConnections\ConnectionCreator;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -13,7 +13,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
-class ProcessEmbedsJob implements ShouldQueue
+class EmbedDocumentsForCollectionJob implements ShouldQueue
 {
     use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -24,30 +24,36 @@ class ProcessEmbedsJob implements ShouldQueue
      */
     public $tries = 1;
 
-    // protected $sqlConnection;
-    // protected $mongoConnection;
-
     public function __construct(
-        public $mainDocumentId,
-        public $recordObj,
-        public Collection $collection,
+        public Collection $pivot,
+        public Collection $first,
+        public Collection $second,
+        public $local1Fields,
+        public $local2Fields,
+        public $foreignFields,
         public $sqlDatabase,
         public $mongoDatabase,
     ) {
         //
     }
 
-    public function handle()
+    /**
+     * Execute the job.
+     */
+    public function handle(): void
     {
         $sqlConnection = ConnectionCreator::create($this->sqlDatabase);
-        $mongoConnection = ConnectionCreator::create($this->mongoDatabase); 
+        $mongoConnection = ConnectionCreator::create($this->mongoDatabase);
 
-        EtlService::processEmbeds(
-            $this->mainDocumentId,
-            $this->recordObj,
-            $this->collection,
+        EtlService::embedDocumentsForCollection(
+            $this->pivot,
+            $this->first,
+            $this->second,
+            $this->local1Fields,
+            $this->local2Fields,
+            $this->foreignFields,
             $sqlConnection,
-            $mongoConnection
+            $mongoConnection,
         );
     }
 }

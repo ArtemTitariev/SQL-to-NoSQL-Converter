@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs\Etl;
+namespace App\Jobs\Etl\Handlers;
 
 use Illuminate\Bus\Batch;
 use Illuminate\Queue\SerializesModels;
