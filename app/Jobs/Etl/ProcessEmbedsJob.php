@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
@@ -37,8 +38,15 @@ class ProcessEmbedsJob implements ShouldQueue
         //
     }
 
+    public function middleware(): array
+    {
+        return [new SkipIfBatchCancelled];
+    }
+
     public function handle()
     {
+        // Log::info("ProcessEmbedsJob, batch pending jobs = {$this->batch()->pendingJobs}");
+
         $sqlConnection = ConnectionCreator::create($this->sqlDatabase);
         $mongoConnection = ConnectionCreator::create($this->mongoDatabase); 
 

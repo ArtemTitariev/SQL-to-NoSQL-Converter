@@ -12,6 +12,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 
@@ -34,6 +35,11 @@ class ProcessCollectionJob implements ShouldQueue
         public ?array $identificationСolumns = null,
     ) {
         // 
+    }
+
+    public function middleware(): array
+    {
+        return [new SkipIfBatchCancelled];
     }
 
     public function handle(): void
@@ -73,9 +79,13 @@ class ProcessCollectionJob implements ShouldQueue
                 );
             });
 
-        Bus::batch($embedJobs)
-            ->catch(new BatchFailureHandler($this->collection))
-            ->onQueue('etl_operations')
-            ->dispatch();
+            $this->batch()->add($embedJobs);
+
+        // Bus::batch($embedJobs)
+        //     ->catch(new BatchFailureHandler(
+        //         "Fail ProcessEmbedsJob in ProcessCollectionJob for collection: {$this->collection->name}."
+        //     ))
+        //     ->onQueue('etl_operations')
+        //     ->dispatch();
     }
 }

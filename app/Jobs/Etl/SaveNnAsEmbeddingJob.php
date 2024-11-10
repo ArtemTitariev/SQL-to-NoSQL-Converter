@@ -2,14 +2,15 @@
 
 namespace App\Jobs\Etl;
 
+use App\Jobs\Etl\Handlers\BatchFailureHandler;
 use App\Models\MongoSchema\Collection;
 use App\Models\MongoSchema\ManyToManyLink;
-use App\Services\DatabaseConnections\ConnectionCreator;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
@@ -37,16 +38,17 @@ class SaveNnAsEmbeddingJob implements ShouldQueue
         //
     }
 
+    public function middleware(): array
+    {
+        return [new SkipIfBatchCancelled];
+    }
+
     public function handle(): void
     {
-        // $sqlConnection = ConnectionCreator::create($this->sqlDatabase);
-        // $mongoConnection = ConnectionCreator::create($this->mongoDatabase);
-
-        // $mongoConnection->dropCollection($this->pivot->name);
-
         // EMBEDDING
 
-        Bus::batch([
+        // Bus::batch([
+        $this->batch()->add([
             // First
             new EmbedDocumentsForCollectionJob(
                 $this->pivot,
@@ -69,7 +71,11 @@ class SaveNnAsEmbeddingJob implements ShouldQueue
                 $this->sqlDatabase,
                 $this->mongoDatabase,
             ),
-        ])->onQueue('etl_operations')
-            ->dispatch();
+        ]);
+        // ->catch(new BatchFailureHandler(
+        //     "Fail EmbedDocumentsForCollectionJob in SaveNnAsEmbeddingJob for N-N."
+        // ))
+        // ->onQueue('etl_operations')
+        //     ->dispatch();
     }
 }

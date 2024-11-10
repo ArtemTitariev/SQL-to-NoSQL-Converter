@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 
@@ -35,6 +36,11 @@ class EmbedDocumentsForCollectionJob implements ShouldQueue
         public $mongoDatabase,
     ) {
         //
+    }
+
+    public function middleware(): array
+    {
+        return [new SkipIfBatchCancelled];
     }
 
     /**

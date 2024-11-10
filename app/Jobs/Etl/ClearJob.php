@@ -17,12 +17,12 @@ class ClearJob implements ShouldQueue
 {
     use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * The job may be attempted only once
-     *
-     * @var int
-     */
-    public $tries = 1;
+    // /**
+    //  * The job may be attempted only once
+    //  *
+    //  * @var int
+    //  */
+    // public $tries = 1;
 
     /**
      * Create a new job instance.

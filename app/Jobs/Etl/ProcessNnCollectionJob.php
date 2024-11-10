@@ -3,14 +3,14 @@
 namespace App\Jobs\Etl;
 
 use App\Enums\MongoManyToManyRelation;
+use App\Jobs\Etl\Handlers\BatchFailureHandler;
 use App\Models\MongoSchema\Collection;
-use App\Services\DatabaseConnections\ConnectionCreator;
-use App\Services\Etl\EtlService;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
@@ -35,6 +35,11 @@ class ProcessNnCollectionJob implements ShouldQueue
         // 
     }
 
+    public function middleware(): array
+    {
+        return [new SkipIfBatchCancelled];
+    }
+
     public function handle(): void
     {
         $relation = $this->collection->manyToManyPivot()->first();
@@ -42,7 +47,8 @@ class ProcessNnCollectionJob implements ShouldQueue
         $first = $relation->collection1()->with(['fields', 'linksEmbeddsFrom', 'linksEmbeddsTo'])->first();
         $second = $relation->collection2()->with(['fields', 'linksEmbeddsFrom', 'linksEmbeddsTo'])->first();
 
-        Bus::batch([
+        // Bus::batch([
+        $this->batch()->add([
             // 1. First
             new ProcessCollectionJob($first, $this->sqlDatabase, $this->mongoDatabase, $first->hasEmbedds(), $relation->foreign1_fields),
             // 2. Second
@@ -75,7 +81,11 @@ class ProcessNnCollectionJob implements ShouldQueue
                 ),
                 default => null,
             },
-        ])->onQueue('etl_operations')
-            ->dispatch();
+        ]);
+        // ->catch(new BatchFailureHandler(
+        //     "Fail N-N processing in ProcessNnCollectionJob for collection: {$this->collection->name}."
+        // ))
+        //     ->onQueue('etl_operations')
+        //     ->dispatch();
     }
 }
