@@ -7,11 +7,14 @@ use App\Enums\MongoRelationType;
 use App\Jobs\Etl\ClearJob;
 use App\Jobs\Etl\ProcessCollectionJob;
 use App\Jobs\Etl\ProcessNnCollectionJob;
+use App\Mail\ConvertCompleted;
+use App\Mail\ConvertFailed;
 use App\Models\Convert;
 use App\Models\IdMapping;
 use App\Models\MongoSchema\Collection;
 use App\Models\MongoSchema\ManyToManyLink;
 use App\Models\SQLSchema\Table;
+use App\Services\ConversionService;
 use App\Services\DatabaseConnections\ConnectionCreator;
 use App\Services\DataTypes\Converter;
 
@@ -22,6 +25,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class TestEtlController extends Controller
 {
@@ -34,12 +38,12 @@ class TestEtlController extends Controller
 
         $sqlDatabase = $convert->sqlDatabase;
         $mongoDatabase = $convert->mongoDatabase;
-        $this->start($convert, $sqlDatabase, $mongoDatabase);
+        $this->processOrdinaryCollections($convert, $sqlDatabase, $mongoDatabase);
 
         return 'Processing started';
     }
 
-    protected function start($convert, $sqlDatabase, $mongoDatabase)
+    protected function processOrdinaryCollections($convert, $sqlDatabase, $mongoDatabase)
     {
         $collections = $mongoDatabase->collections()->with(['fields', 'linksEmbeddsFrom', 'manyToManyPivot'])
             ->whereDoesntHave('manyToManyPivot')
@@ -52,10 +56,14 @@ class TestEtlController extends Controller
                 $subquery->where('relation_type', MongoRelationType::EMBEDDING)
                     ->where('embed_in_main', false);
             })
-            // ->orderBy('name')
-            ->limit(5) // ------------------------
-            // ->where('name', 'tests')
+            ->orderBy('name')
+            ->limit(1) // -------------------
             ->get();
+
+        if ($collections->isEmpty()) {
+            $this->processNnCollections($convert, $sqlDatabase, $mongoDatabase);
+            return;
+        }
 
         $this->processOrdinaryCollectionsInBatch($collections, $sqlDatabase, $mongoDatabase, $convert);
     }
@@ -69,48 +77,23 @@ class TestEtlController extends Controller
         }
 
         $batch->then(function (Batch $batch) use ($convert, $sqlDatabase, $mongoDatabase) {
-            Log::info('All jobs in the first batch completed successfully.');
-            // After all jobs in first batch finish successfully
-            $this->continue($convert, $sqlDatabase, $mongoDatabase);
+            $this->processNnCollections($convert, $sqlDatabase, $mongoDatabase);
         })
             ->catch(function (Batch $batch, \Throwable $e) use ($convert) {
-                Log::error("Batch failed for ordinary collections: " . $e->getMessage());
-            })
-            ->finally(function (Batch $batch) use ($convert) {
-                Log::info('First batch processing is finished.');
+                Log::error("Batch failed for ordinary collections", [
+                    'exception' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'batch_id' => $batch->id,
+                ]);
+                $batch->cancel();
+                ClearJob::dispatch($convert)->onQueue('etl_operations');
+                $this->failConvert($convert);
             })
             ->onQueue('etl_operations')
             ->dispatch();
     }
-    // protected function processOrdinaryCollectionsInBatch($collections, $sqlDatabase, $mongoDatabase, Convert $convert)
-    // {
-    //     $this->processCollectionJob($collections, $sqlDatabase, $mongoDatabase, $convert, 0);
-    // }
 
-    // protected function processCollectionJob($collections, $sqlDatabase, $mongoDatabase, Convert $convert, $index)
-    // {
-    //     if ($index >= $collections->count()) {
-    //         return;
-    //     }
-
-    //     $collection = $collections[$index];
-
-    //     Bus::batch([new ProcessCollectionJob($collection, $sqlDatabase, $mongoDatabase, $collection->hasEmbedds()),])
-    //         ->then(function (Batch $batch) use ($collections, $sqlDatabase, $mongoDatabase, $convert, $index) {
-    //             // All jobs in batch completed successfully
-    //             $this->processCollectionJob($collections, $sqlDatabase, $mongoDatabase, $convert, $index + 1);
-    //         })->catch(function (Batch $batch, \Throwable $e) use ($convert, $collection, $index) {
-    //             // First batch job failure detected
-    //             ClearJob::dispatch($convert);
-    //             Log::error("--Batch failed for collection {$collection->name} (index {$index}): " . $e->getMessage());
-    //         })->finally(function (Batch $batch) use ($convert, $sqlDatabase, $mongoDatabase) {
-    //             // The batch has finished executing
-    //             $this->continue($convert, $sqlDatabase, $mongoDatabase);
-    //         })->onQueue('etl_operations')->dispatch();
-    // }
-
-
-    protected function continue($convert, $sqlDatabase, $mongoDatabase)
+    protected function processNnCollections($convert, $sqlDatabase, $mongoDatabase)
     {
         $collections = $mongoDatabase->collections()
             ->with(['fields', 'linksEmbeddsFrom', 'linksEmbeddsTo', 'manyToManyPivot'])
@@ -118,9 +101,16 @@ class TestEtlController extends Controller
             // ->whereDoesntHave('linksEmbeddsTo')
             ->whereDoesntHave('manyToManyFirst')
             ->whereDoesntHave('manyToManySecond')
-            ->where('name', 'post_tag') // ----------------------
-            // ->orderBy('name')
+            ->orderBy('name')
+            // ->where('name', 'post_tag') // ----------------------
             ->get();
+
+        if ($collections->isEmpty()) {
+            ClearJob::dispatch($convert)->onQueue('etl_operations');
+            $this->completeConvert($convert);
+
+            return;
+        }
 
         $this->processNnCollectionsInBatch($collections, $sqlDatabase, $mongoDatabase, $convert);
     }
@@ -134,38 +124,40 @@ class TestEtlController extends Controller
         }
 
         $batch->then(function (Batch $batch) use ($convert) {
-            Log::info('All jobs in the second batch completed successfully.');
-            // After all jobs in second batch finish successfully, call finish()
-            $this->finish($convert);
+            $this->completeConvert($convert);
         })
             ->catch(function (Batch $batch, \Throwable $e) use ($convert) {
-                Log::error("Batch failed for many-to-many pivot collections: " . $e->getMessage());
+                Log::error("Batch failed for many-to-many collections", [
+                    'exception' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'batch_id' => $batch->id,
+                ]);
+                $batch->cancel();
+                $this->failConvert($convert);
+
             })
             ->finally(function (Batch $batch) use ($convert) {
-                Log::info('Second batch processing is finished.');
+                ClearJob::dispatch($convert)->onQueue('etl_operations');
             })
             ->onQueue('etl_operations')
             ->dispatch();
     }
 
-    protected function finish($convert)
-    {
-        // mail to user
-        Log::info('Processing finished. Sending email to user.');
-
-        // Mail::to($user)->send(new ProcessingCompleted($convert));
+    protected function failConvert(
+        Convert $convert,
+        string $message = "An error occurred while loading, processing, or writing data.",
+    ) {
+        ConversionService::failConvert($convert, config('convert_steps.etl.name'), $message);
+        Mail::to($convert->user)->send(new ConvertFailed($convert, __($message)));
     }
 
-
-
-
-
-
-
-
-
-
-
+    protected function completeConvert(
+        Convert $convert,
+        string $message = 'Convert completed.',
+    ) {
+        ConversionService::completeConvert($convert, config('convert_steps.etl.name'), $message);
+        Mail::to($convert->user)->send(new ConvertCompleted($convert));
+    }
 
 
 
