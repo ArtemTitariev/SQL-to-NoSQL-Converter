@@ -73,7 +73,7 @@ class ConversionService
     }
 
     /**
-     * Fail current profress and whole convert
+     * Fail current progress and whole convert
      *
      * @param \App\Models\Convert $convert
      * @param string $step
@@ -91,5 +91,26 @@ class ConversionService
         );
 
         $convert->fail();
+    }
+
+    /**
+     * Mark as completed current progress and complete whole convert
+     *
+     * @param \App\Models\Convert $convert
+     * @param string $step
+     * @param string $message
+     * @return void
+     * @throws \Exception
+     */
+    public static function completeConvert($convert, $step, $message)
+    {
+        ConversionService::updateConversionProgress(
+            $convert,
+            $step,
+            ConversionProgress::STATUSES['COMPLETED'],
+            $message
+        );
+
+        $convert->complete();
     }
 }

@@ -44,7 +44,15 @@ class ConversionStepExecutor
 
         if (($this->steps[$step]['number'] !== 1) && (! $this->steps[$step]['is_manual'])) {
             // Створити запис про початок виконання кроку
-            ConversionService::createConversionProgress($convert, $step, ConversionProgress::STATUSES['IN_PROGRESS'], 'Step is in progress');
+
+            $status = ConversionProgress::STATUSES['IN_PROGRESS'];
+            $message = 'Step is in progress.';
+            if ($step === config('convert_steps.etl.name')) {
+                $status = ConversionProgress::STATUSES['PENDING'];
+                $message = 'Step in the pending process.';
+            }
+
+            ConversionService::createConversionProgress($convert, $step, $status, $message); //-----------
         }
 
         try {
@@ -93,7 +101,7 @@ class ConversionStepExecutor
     private function proceedToNextStep(Convert $convert, string $step, Request $request, array $data)
     {
         $nextStep = $this->steps[$step]['next'] ?? null;
-        // dd($nextStep);
+
         if ($nextStep !== null) {
             if ($this->steps[$nextStep]['is_manual'] ?? false) {
                 ConversionService::createConversionProgress($convert, $nextStep, ConversionProgress::STATUSES['CONFIGURING'], 'Configuring step');
