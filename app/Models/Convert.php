@@ -82,12 +82,33 @@ class Convert extends Model
     }
 
     /**
-     * Set status as `error`
+     * Set status as `Error`
      */
-    public function fail()
+    public function fail(): bool
     {
         $this->status = static::STATUSES['ERROR'];
-        $this->save();
+        return $this->save();
+    }
+
+    /**
+     * Set status as `Completed`
+     */
+    public function complete(): bool
+    {
+        $this->status = static::STATUSES['COMPLETED'];
+        return $this->save();
+    }
+
+    /**
+     * Set status as `In progress`
+     */
+    public function setStatusAsInProgress(): bool
+    {
+        $this->status = static::STATUSES['IN_PROGRESS'];
+        
+        $progress = $this->lastProgress();
+        
+        return $this->save() && $progress->setStatusAsInProgress();
     }
 
     public function isConfiguring(): bool

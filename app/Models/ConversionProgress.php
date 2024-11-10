@@ -91,4 +91,11 @@ class ConversionProgress extends Model
     {
         return $this->step === config('convert_steps.etl.number');
     }
+
+    public function setStatusAsInProgress(string $details = 'Step is in progress.'): bool
+    {
+        $this->status = static::STATUSES['IN_PROGRESS'];
+        $this->details = $details;
+        return $this->save();
+    }
 }
