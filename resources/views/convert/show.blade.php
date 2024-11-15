@@ -8,7 +8,18 @@
                 </x-link>
             </x-slot>
         @endif
+        @php($canBeDeleted = $convert->canBeDeleted())
+        @if ($canBeDeleted)
+            <x-slot name="modalButton">
+                <x-danger-button x-data=""
+                    x-on:click.prevent="$dispatch('open-modal', 'confirm-convert-deletion')">{{ __('Delete') }}</x-danger-button>
+            </x-slot>
+        @endif
     </x-header-content>
+
+    @if ($canBeDeleted)
+        @include('convert.partials.confirm-convert-deletion-modal')
+    @endif
 
     <x-container>
         <x-error-block />

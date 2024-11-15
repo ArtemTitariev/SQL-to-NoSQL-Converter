@@ -83,6 +83,18 @@ class ConversionProgress extends Model
     }
 
     /**
+     * Перевіряє, чи виконується зараз крок
+     * Статус 'IN_PROGRESS' або 'PENDING'
+     *
+     * @return bool
+     */
+    public function isProcessing()
+    {
+        return $this->status === self::STATUSES['IN_PROGRESS'] ||
+            $this->status === self::STATUSES['PENDING'];
+    }
+
+    /**
      * Перевіряє, чи є прогрес - кроком ETL
      *
      * @return bool
