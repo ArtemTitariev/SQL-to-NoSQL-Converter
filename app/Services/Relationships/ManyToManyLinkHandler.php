@@ -18,6 +18,10 @@ class ManyToManyLinkHandler
 
     public function handle(ManyToManyLink $relation, MongoManyToManyRelation $relationType, bool $isTesting)
     {
+        if ($relation->relation_type === $relationType) {
+            return ResponseHandler::noChangesResponse();
+        }
+
         $method = self::getMethod($relation->relation_type, $relationType);
 
         $messages = [
