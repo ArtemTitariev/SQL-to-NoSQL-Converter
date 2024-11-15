@@ -21,7 +21,7 @@ class ConvertFailed extends Mailable
      */
     public function __construct(
         protected Convert $convert,
-        protected string $message
+        protected string $errorMessage,
     ) {
         //
     }
@@ -45,7 +45,7 @@ class ConvertFailed extends Mailable
             view: 'mail.convert.failed',
             with: [
                 'convert' => $this->convert,
-                'message' => $this->message,
+                'errorMessage' => $this->errorMessage,
             ]
         );
     }
