@@ -27,7 +27,7 @@ class ConnectionCreator
         if (is_object($params)) {
             $params = $params->toArray();
         }
-        // dd($params);
+        
         $name = $params['connection_name'];
         unset($params['id']);
         unset($params['connection_name']);

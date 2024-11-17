@@ -13,13 +13,6 @@ class ForeignKey extends Model
 
     public $timestamps = false;
 
-    // public const RELATION_TYPES = [
-    //     'ONE-TO-ONE' => '1-1', 
-    //     'ONE-TO-MANY' => '1-N', 
-    //     'MANY-TO-MANY' => 'N-N', 
-    //     'COMPLEX' => 'Complex multiple',
-    // ];
-
     protected $fillable = [
         'table_id',
         'name',
@@ -27,7 +20,7 @@ class ForeignKey extends Model
         'foreign_schema',
         'foreign_table',
         'foreign_columns',
-        'relation_type'
+        'relation_type',
     ];
 
     protected $casts = [

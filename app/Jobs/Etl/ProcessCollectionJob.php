@@ -2,7 +2,6 @@
 
 namespace App\Jobs\Etl;
 
-use App\Jobs\Etl\Handlers\BatchFailureHandler;
 use App\Models\MongoSchema\Collection;
 use App\Services\DatabaseConnections\ConnectionCreator;
 use App\Services\Etl\EtlService;
@@ -13,8 +12,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 
 class ProcessCollectionJob implements ShouldQueue
 {
@@ -32,7 +30,7 @@ class ProcessCollectionJob implements ShouldQueue
         public $sqlDatabase,
         public $mongoDatabase,
         public bool $hasEmbedds,
-        public ?array $identificationСolumns = null,
+        public ?array $identificationColumns = null,
     ) {
         // 
     }
@@ -75,7 +73,7 @@ class ProcessCollectionJob implements ShouldQueue
                     $this->collection,
                     $mainDocumentId,
                     $recordObj,
-                    $this->identificationСolumns,
+                    $this->identificationColumns,
                 );
             });
 

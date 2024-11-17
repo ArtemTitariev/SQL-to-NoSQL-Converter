@@ -29,8 +29,6 @@ class EtlStrategy implements ConversionStrategyInterface
         TakeConvetrForProcessingJob::dispatch($convert)
             ->onQueue('etl_operations');
 
-        // $convert->setStatusAsInProgress();
-
         $sqlDatabase = $convert->sqlDatabase;
         $mongoDatabase = $convert->mongoDatabase;
 

@@ -31,7 +31,8 @@ class ConvertCompleted extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Convert Completed',
+            // subject: 'Convert Completed',
+            subject: 'Конвертування завершено',
         );
     }
 

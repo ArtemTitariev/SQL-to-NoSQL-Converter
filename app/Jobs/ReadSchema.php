@@ -56,21 +56,6 @@ class ReadSchema implements ShouldQueue
             $mapper->mapSchema($sqlDatabase);
 
             CompleteSchemaReadingStep::execute($this->convert, $this->step);
-            // ConversionService::updateConversionProgress(
-            //     $this->convert,
-            //     // config('convert_steps.read_schema.key'),
-            //     $this->step,
-            //     ConversionProgress::STATUSES['COMPLETED'],
-            //     'Relational database schema has been analyzed.'
-            // );
-
-            // ConversionService::createConversionProgress(
-            //     $this->convert,
-            //     config("convert_steps.{$this->step}.next"),
-            //     ConversionProgress::STATUSES['CONFIGURING'],
-            //     'Step is configuring'
-            // );
-
 
             // Трансляція події про успішне завершення
             ReadSchemaEvent::dispatch(

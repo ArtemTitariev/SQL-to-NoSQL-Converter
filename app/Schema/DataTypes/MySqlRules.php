@@ -2,19 +2,17 @@
 
 namespace App\Schema\DataTypes;
 
-use App\Models\SQLSchema\Column;
-
 class MySQLRules implements RdbDataTypeRulesInterface
 {
     use HasColumnNamePattern;
 
     protected $rules = [
-        //bool
+        // bool
         'tinyint(1)' => ['bool', 'int', 'string'],
         'tinyint(1) unsigned' => ['bool', 'int', 'string'],
         'bool' => ['bool', 'int', 'string'],
         
-        //integer numbers
+        // integer numbers
         'bigint unsigned' => ['long', 'string'],
         'bigint' => ['long', 'string'],
         'int unsigned' => ['long', 'string'],

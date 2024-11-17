@@ -3,7 +3,6 @@
 namespace App\Jobs\Etl;
 
 use App\Enums\MongoManyToManyRelation;
-use App\Jobs\Etl\Handlers\BatchFailureHandler;
 use App\Models\MongoSchema\Collection;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -12,8 +11,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 
 class ProcessNnCollectionJob implements ShouldQueue
 {

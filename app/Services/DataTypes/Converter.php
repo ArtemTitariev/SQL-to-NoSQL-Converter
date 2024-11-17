@@ -19,7 +19,6 @@ final class Converter
     {
         if (is_null($value)) return $value;
 
-        // try {
         return match ($dataType) {
             'bool' => static::toBoolean($value),
 
@@ -37,13 +36,10 @@ final class Converter
 
             default => static::toString($value),
         };
-        // } catch (\Exception $e) {
-        //     //
-        // }
     }
 
     /**
-     * Boolean
+     * @return bool
      */
     private static function toBoolean(&$value): bool
     {
@@ -51,11 +47,8 @@ final class Converter
     }
 
     /**
-     * Numbers
-     */
-
-    /**
      * int32 (int) or int64 (long)
+     * @return MongoDB\BSON\Int64
      */
     private static function toInt(&$value): Int64
     {
@@ -63,23 +56,15 @@ final class Converter
         return new Int64((string) $value);
     }
 
-    // /**
-    //  * long
-    //  */ 
-    // private static function toLong(&$value): Long {
-    //     return new Long((string) $value);
-    // }
-
     /**
-     * double
+     * @return float
      */
-    private static function toDouble(&$value)
+    private static function toDouble(&$value): float
     {
         return (float) $value;
     }
 
     /**
-     * decimal
      * @return MongoDB\BSON\Decimal128
      */
     private static function toDecimal128(&$value): Decimal128
@@ -88,7 +73,7 @@ final class Converter
     }
 
     /**
-     * String
+     * @return string
      */
     private static function toString(&$value): string
     {
@@ -96,7 +81,6 @@ final class Converter
     }
 
     /**
-     * UTCDateTime
      * @return MongoDB\BSON\UTCDateTime
      */
     private static function toUTCDateTime(string &$value): UTCDateTime
@@ -115,8 +99,8 @@ final class Converter
     }
 
     /**
-     * JSON string
-     * casts to Document
+     * casts JSON string to Document
+     * @return MongoDB\BSON\Document | null
      */
     private static function toDocumentFromJSON(string &$value): Document | null
     {

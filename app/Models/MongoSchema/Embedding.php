@@ -20,7 +20,7 @@ class Embedding extends Model
 
     protected $fillable = [
         'collection_id', 'local_fields', 'save_to', 'old_locals', 
-        'linked_collection', 'foreign_fields', 'relation_type'
+        'linked_collection', 'foreign_fields', 'relation_type',
     ];
 
     protected $casts = [

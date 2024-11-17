@@ -22,7 +22,7 @@ class Collection extends Model
         'mongo_database_id',
         'name',
         'sql_table_id',
-        'schema_validator'
+        'schema_validator',
     ];
 
     protected $casts = [

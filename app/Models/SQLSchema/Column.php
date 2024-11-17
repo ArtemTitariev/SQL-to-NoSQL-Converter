@@ -13,7 +13,9 @@ class Column extends Model
     public $timestamps = false;
     
     protected $fillable = [
-        'table_id', 'name', 'type_name', 'type', 'nullable', 'convertable_types'
+        'table_id', 'name', 
+        'type_name', 'type', 
+        'nullable', 'convertable_types',
     ];
 
     protected $casts = [

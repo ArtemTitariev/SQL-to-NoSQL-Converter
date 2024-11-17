@@ -2,8 +2,6 @@
 
 namespace App\Schema\DataTypes;
 
-use App\Models\SQLSchema\Column;
-
 class PostgreSQLRules implements RdbDataTypeRulesInterface
 {
     use HasColumnNamePattern;
@@ -12,7 +10,7 @@ class PostgreSQLRules implements RdbDataTypeRulesInterface
         //bool
         'boolean' => ['bool', 'string'],
 
-        //integer numbers
+        // integer numbers
         'bigint' => ['long', 'string'],
         'integer' => ['int', 'long', 'string'],
         'smallint' => ['int', 'long', 'string'],

@@ -2,17 +2,13 @@
 
 namespace App\Services\Etl;
 
-use App\Enums\MongoManyToManyRelation;
 use App\Enums\MongoRelationType;
-use App\Models\Convert;
 use App\Models\IdMapping;
 use App\Models\MongoSchema\Collection;
-use App\Models\MongoSchema\ManyToManyLink;
 use App\Models\SQLSchema\Table;
 use App\Services\DataTypes\Converter;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 use MongoDB\BSON\ObjectId;
 
 class EtlService
@@ -193,88 +189,6 @@ class EtlService
         }
     }
 
-    // public static function processPivotCollection(
-    //     Collection $pivot,
-    //     Collection $first,
-    //     Collection $second,
-    //     ManyToManyLink $relation,
-    //     $sqlConnection,
-    //     $mongoConnection,
-    // ) {
-
-    //     switch ($relation->relation_type) {
-    //         case MongoManyToManyRelation::LINKING_WITH_PIVOT:
-    //             static::saveAsLinkWithPivot(
-    //                 $pivot,
-    //                 $first,
-    //                 $second,
-    //                 $relation,
-    //                 $sqlConnection,
-    //                 $mongoConnection
-    //             );
-    //             break;
-    //         case MongoManyToManyRelation::EMBEDDING:
-    //             static::saveAsEmbedding(
-    //                 $pivot,
-    //                 $first,
-    //                 $second,
-    //                 $relation,
-    //                 $sqlConnection,
-    //                 $mongoConnection
-    //             );
-    //             break;
-    //         case MongoManyToManyRelation::HYBRID:
-    //             static::saveAsHybrid(
-    //                 $pivot,
-    //                 $first,
-    //                 $second,
-    //                 $relation,
-    //                 $sqlConnection,
-    //                 $mongoConnection
-    //             );
-    //             break;
-    //         default:
-    //             break;
-    //     }
-    // }
-
-    // public static function saveAsLinkWithPivot(
-    //     Collection $pivot,
-    //     Collection $first,
-    //     Collection $second,
-    //     ManyToManyLink $relation,
-    //     $sqlConnection,
-    //     $mongoConnection,
-    // ) {
-    //     // LINK WITH PIVOT
-    //     // 1. Process pivot like ordinary collection
-    //     // using IdMapping
-
-    //     static::processCollection( // As job
-    //         $pivot,
-    //         $sqlConnection,
-    //         $mongoConnection
-    //     );
-
-    //     static::syncMainIdsWithMapping(
-    //         $pivot,
-    //         $first,
-    //         $relation->foreign1_fields,
-    //         $relation->local1_fields,
-    //         $sqlConnection,
-    //         $mongoConnection,
-    //     );
-
-    //     static::syncMainIdsWithMapping(
-    //         $pivot,
-    //         $second,
-    //         $relation->foreign2_fields,
-    //         $relation->local2_fields,
-    //         $sqlConnection,
-    //         $mongoConnection,
-    //     );
-    // }
-
     public static function syncMainIdsWithMapping(
         Collection $pivotCollection,
         Collection $mainCollection,
@@ -320,41 +234,6 @@ class EtlService
                 ]);
         }
     }
-
-    // public static function saveAsEmbedding(
-    //     Collection $pivot,
-    //     Collection $first,
-    //     Collection $second,
-    //     ManyToManyLink $relation,
-    //     $sqlConnection,
-    //     $mongoConnection,
-    // ) {
-    //     // EMBEDDING
-
-    //     // First
-    //     static::embedDocumentsForCollection(
-    //         $pivot,
-    //         $first,
-    //         $second,
-    //         $relation->local1_fields,
-    //         $relation->local2_fields,
-    //         $relation->foreign2_fields,
-    //         $sqlConnection,
-    //         $mongoConnection
-    //     );
-
-    //     // Second
-    //     static::embedDocumentsForCollection(
-    //         $pivot,
-    //         $second,
-    //         $first,
-    //         $relation->local2_fields,
-    //         $relation->local1_fields,
-    //         $relation->foreign1_fields,
-    //         $sqlConnection,
-    //         $mongoConnection
-    //     );
-    // }
 
     public static function embedDocumentsForCollection(
         Collection $pivot,
@@ -422,41 +301,6 @@ class EtlService
                     });
             });
     }
-
-    // public static function saveAsHybrid(
-    //     Collection $pivot,
-    //     Collection $first,
-    //     Collection $second,
-    //     ManyToManyLink $relation,
-    //     $sqlConnection,
-    //     $mongoConnection,
-    // ) {
-    //     // HYBRID
-
-    //     // First
-    //     static::linkDocumentsForCollection(
-    //         $pivot,
-    //         $first,
-    //         $second,
-    //         $relation->local1_fields,
-    //         $relation->local2_fields,
-    //         $relation->foreign2_fields,
-    //         $sqlConnection,
-    //         $mongoConnection
-    //     );
-
-    //     // Second
-    //     static::linkDocumentsForCollection(
-    //         $pivot,
-    //         $second,
-    //         $first,
-    //         $relation->local2_fields,
-    //         $relation->local1_fields,
-    //         $relation->foreign1_fields,
-    //         $sqlConnection,
-    //         $mongoConnection
-    //     );
-    // }
 
     public static function linkDocumentsForCollection(
         Collection $pivot,
@@ -610,7 +454,7 @@ class EtlService
         $recordObj,
         ?array &$identificationСolumns
     ) {
-        if (! is_null($identificationСolumns) && ! empty($identificationСolumns)) {
+        if (!is_null($identificationСolumns) && !empty($identificationСolumns)) {
             return IdMapping::create([
                 'table_id' => $table->id,
                 'collection_id' => $collection->id,
@@ -623,8 +467,11 @@ class EtlService
         }
     }
 
-    public static function writeToMongo($mongoConnection, Collection $collection, $record)
-    {
+    public static function writeToMongo(
+        $mongoConnection,
+        Collection $collection,
+        $record
+    ) {
         return $mongoConnection
             ->collection($collection->name)
             ->insertGetId($record);

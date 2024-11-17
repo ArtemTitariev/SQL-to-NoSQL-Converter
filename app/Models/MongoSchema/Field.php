@@ -13,7 +13,7 @@ class Field extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'collection_id', 'name', 'type'
+        'collection_id', 'name', 'type',
     ];
 
     public function collection(): BelongsTo

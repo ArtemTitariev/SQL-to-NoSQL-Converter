@@ -21,7 +21,7 @@ class Reader
     /**
      * @var Illuminate\Database\Schema\Builder
      */
-    protected $builder;
+    protected Builder $builder;
 
     /**
      * Index types
@@ -228,7 +228,7 @@ class Reader
 
     Foreign key на іншу БД не дозволені - виникне помилки при спробі отримати 
         дані звідти. Тому вони просто ігноруються. Щоб уникнути помилок, 
-        масив з foreign kays фільтрується.
+        масив з foreign keys фільтрується.
     */
 
     /**

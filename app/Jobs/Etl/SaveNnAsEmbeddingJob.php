@@ -2,7 +2,6 @@
 
 namespace App\Jobs\Etl;
 
-use App\Jobs\Etl\Handlers\BatchFailureHandler;
 use App\Models\MongoSchema\Collection;
 use App\Models\MongoSchema\ManyToManyLink;
 use Illuminate\Bus\Batchable;
@@ -12,8 +11,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 
 class SaveNnAsEmbeddingJob implements ShouldQueue
 {

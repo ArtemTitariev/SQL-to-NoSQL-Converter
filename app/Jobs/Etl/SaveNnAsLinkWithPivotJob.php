@@ -2,11 +2,9 @@
 
 namespace App\Jobs\Etl;
 
-use App\Jobs\Etl\Handlers\BatchFailureHandler;
 use App\Jobs\Etl\SyncMainIdsWithMappingJob;
 use App\Models\MongoSchema\Collection;
 use App\Models\MongoSchema\ManyToManyLink;
-use App\Services\DatabaseConnections\ConnectionCreator;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -14,8 +12,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Log;
+// use Illuminate\Support\Facades\Log;
 
 class SaveNnAsLinkWithPivotJob implements ShouldQueue
 {
@@ -47,11 +44,6 @@ class SaveNnAsLinkWithPivotJob implements ShouldQueue
 
     public function handle(): void
     {
-        // $sqlConnection = ConnectionCreator::create($this->sqlDatabase);
-        // $mongoConnection = ConnectionCreator::create($this->mongoDatabase);
-
-        // $mongoConnection->dropCollection($this->pivot->name);
-
         // LINK WITH PIVOT
 
         // Bus::batch([

@@ -3,7 +3,6 @@
 namespace App\Jobs\Etl;
 
 use App\Models\Convert;
-use App\Services\Etl\EtlService;
 // use App\Models\IdMapping;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;

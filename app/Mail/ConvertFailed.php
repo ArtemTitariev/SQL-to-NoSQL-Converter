@@ -32,7 +32,8 @@ class ConvertFailed extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Convert Failed',
+            // subject: 'Convert Failed',
+            subject: 'Конвертування завершилося з помилкою',
         );
     }
 
