@@ -21,7 +21,9 @@
 
         <div class="flex">
             <!-- Language Dropdown -->
-            @include('partials.language_dropdown')
+            <div class="hidden sm:flex sm:items-center sm:ms-6">
+                @include('partials.language_dropdown')
+            </div>
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
