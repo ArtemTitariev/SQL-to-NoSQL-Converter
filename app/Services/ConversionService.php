@@ -29,8 +29,12 @@ class ConversionService
      * @param string $dateils
      * @return void
      */
-    public static function createConversionProgress(Convert $convert, string $step, string $status, string $details)
-    {
+    public static function createConversionProgress(
+        Convert $convert,
+        string $step,
+        string $status,
+        string $details
+    ) {
         self::initializeSteps();
 
         ConversionProgress::create([
@@ -53,8 +57,12 @@ class ConversionService
      * @param string $dateils
      * @return void
      */
-    public static function updateConversionProgress(Convert $convert, string $step, string $status, string $details)
-    {
+    public static function updateConversionProgress(
+        Convert $convert,
+        string $step,
+        string $status,
+        string $details
+    ) {
         self::initializeSteps();
 
         ConversionProgress::updateOrCreate(

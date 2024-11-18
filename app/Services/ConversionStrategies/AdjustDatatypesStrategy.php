@@ -8,7 +8,6 @@ use App\Models\Convert;
 use App\Models\MongoSchema\Collection;
 use App\Models\MongoSchema\Field;
 use App\Models\SQLSchema\CircularRef;
-use App\Models\SQLSchema\Table;
 use App\Models\SQLSchema\ForeignKey;
 use App\Models\SQLSchema\SQLDatabase;
 use Illuminate\Http\Request;
@@ -141,11 +140,18 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
                 $sqlColumn = $sqlColumns[$column] ?? null;
 
                 if (!$sqlColumn) {
-                    throw ValidationException::withMessages(['columns' =>  __('validation.superfluous_column', ['column' => $column, 'table' => $table])]);
+                    throw ValidationException::withMessages([
+                        'columns' =>  __(
+                            'validation.superfluous_column',
+                            ['column' => $column, 'table' => $table]
+                        )
+                    ]);
                 }
 
                 if (!in_array($type, $sqlColumn->convertable_types)) {
-                    throw ValidationException::withMessages(['columns' => __('validation.superfluous_datatypes')]);
+                    throw ValidationException::withMessages([
+                        'columns' => __('validation.superfluous_datatypes')
+                    ]);
                 }
             }
         }

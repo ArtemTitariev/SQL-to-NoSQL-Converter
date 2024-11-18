@@ -16,8 +16,11 @@ class ManyToManyLinkHandler
         $this->relationService = $relationService;
     }
 
-    public function handle(ManyToManyLink $relation, MongoManyToManyRelation $relationType, bool $isTesting)
-    {
+    public function handle(
+        ManyToManyLink $relation,
+        MongoManyToManyRelation $relationType,
+        bool $isTesting
+    ) {
         if ($relation->relation_type === $relationType) {
             return ResponseHandler::noChangesResponse();
         }
@@ -56,8 +59,11 @@ class ManyToManyLinkHandler
         return $map[$oldRelationType->value][$newRelationType->value] ?? null;
     }
 
-    protected function fromPivotToEmbedding(ManyToManyLink $relation, bool $isTesting, array &$messages)
-    {
+    protected function fromPivotToEmbedding(
+        ManyToManyLink $relation,
+        bool $isTesting,
+        array &$messages
+    ) {
         $result = $this->checkPivotLinks($relation->pivotCollection);
         if (! is_null($result)) {
             $messages['errors'][] = $result;
@@ -73,8 +79,11 @@ class ManyToManyLinkHandler
             $relation->changeToEmbedding();
     }
 
-    protected function fromPivotToHybrid(ManyToManyLink $relation, bool $isTesting, array &$messages)
-    {
+    protected function fromPivotToHybrid(
+        ManyToManyLink $relation,
+        bool $isTesting,
+        array &$messages
+    ) {
         $result = $this->checkPivotLinks($relation->pivotCollection);
         if (! is_null($result)) {
             $messages['errors'][] = $result;
@@ -91,34 +100,46 @@ class ManyToManyLinkHandler
             $relation->changeToHybrid();
     }
 
-    protected function fromEmbeddingToPivot(ManyToManyLink $relation, bool $isTesting, array &$messages)
-    {
+    protected function fromEmbeddingToPivot(
+        ManyToManyLink $relation,
+        bool $isTesting,
+        array &$messages
+    ) {
         $response = ResponseHandler::checkAndRespond($isTesting, $messages);
-        
+
         return $response ??
             $relation->changeToLinkingWithPivot();
     }
 
-    protected function fromEmbeddingToHybrid(ManyToManyLink $relation, bool $isTesting, array &$messages)
-    {
+    protected function fromEmbeddingToHybrid(
+        ManyToManyLink $relation,
+        bool $isTesting,
+        array &$messages
+    ) {
         $response = ResponseHandler::checkAndRespond($isTesting, $messages);
-        
+
         return $response ??
             $relation->changeToHybrid();
     }
 
-    protected function fromHybridToPivot(ManyToManyLink $relation, bool $isTesting, array &$messages)
-    {
+    protected function fromHybridToPivot(
+        ManyToManyLink $relation,
+        bool $isTesting,
+        array &$messages
+    ) {
         $response = ResponseHandler::checkAndRespond($isTesting, $messages);
-        
+
         return $response ??
             $relation->changeToLinkingWithPivot();
     }
 
-    protected function fromHybridToEmbedding(ManyToManyLink $relation, bool $isTesting, array &$messages)
-    {
+    protected function fromHybridToEmbedding(
+        ManyToManyLink $relation,
+        bool $isTesting,
+        array &$messages
+    ) {
         $response = ResponseHandler::checkAndRespond($isTesting, $messages);
-        
+
         return $response ??
             $relation->changeToEmbedding();
     }

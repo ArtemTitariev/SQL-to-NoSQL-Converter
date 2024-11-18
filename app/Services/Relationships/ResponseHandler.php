@@ -65,7 +65,10 @@ class ResponseHandler
         return [
             'status' => 'error',
             'type' => 'circular_reference',
-            'message' => __('The :collectionName collection is part of a circular dependency.', ['collectionName' => $collectionName]),
+            'message' => __(
+                'The :collectionName collection is part of a circular dependency.',
+                ['collectionName' => $collectionName]
+            ),
             'recommendation' => __('Embeddings are not supported with this relationships.'),
         ];
     }
@@ -75,7 +78,10 @@ class ResponseHandler
         return [
             'status' => 'error',
             'type' => 'self_ref',
-            'message' => __('The :collectionName collection has a self-reference.', ['collectionName' => $collectionName]),
+            'message' => __(
+                'The :collectionName collection has a self-reference.',
+                ['collectionName' => $collectionName]
+            ),
             'recommendation' => __('Embeddings are not supported with this relationships.'),
         ];
     }
@@ -90,7 +96,10 @@ class ResponseHandler
         return [
             'status' => 'warning',
             'type' => 'collection_is_embedded',
-            'message' => __('The :collectionName collection is emdedded. Queries may be slowed down by the complex structure and the need to expand documents.', ['collectionName' => $collectionName]),
+            'message' => __(
+                'The :collectionName collection is emdedded. Queries may be slowed down by the complex structure and the need to expand documents.',
+                ['collectionName' => $collectionName]
+            ),
             'related_collections' => $embeddedTo,
             'recommendation' => __('Consider changing relationships to references for better performance and easier queries.'),
         ];
@@ -106,7 +115,10 @@ class ResponseHandler
         return [
             'status' => 'warning',
             'type' => 'links_to_main_collection',
-            'message' => __('The :collectionName collection is linked. Changing to an embedding can complicate queries.', ['collectionName' => $collectionName]),
+            'message' => __(
+                'The :collectionName collection is linked. Changing to an embedding can complicate queries.',
+                ['collectionName' => $collectionName]
+            ),
             'related_collections' => $linkedWith,
             'recommendation' => __('Consider saving links to avoid complex queries.'),
         ];
@@ -122,7 +134,10 @@ class ResponseHandler
         return [
             'status' => 'warning',
             'type' => 'main_collection_has_links',
-            'message' => __('The :collectionName collection has link(s). If it becomes embedded, queries may be slowed down by the need to expand documents.', ['collectionName' => $collectionName]),
+            'message' => __(
+                'The :collectionName collection has link(s). If it becomes embedded, queries may be slowed down by the need to expand documents.',
+                ['collectionName' => $collectionName]
+            ),
             'related_collections' => $linkedWith,
             'recommendation' => __('Consider saving links to avoid complex queries.'),
         ];
@@ -149,7 +164,10 @@ class ResponseHandler
         return [
             'status' => 'error',
             'type' => 'many_to_many_link',
-            'message' => __('The :collectionName collection is part of a Many-to-Many relationship.', ['collectionName' => $collectionName]),
+            'message' => __(
+                'The :collectionName collection is part of a Many-to-Many relationship.',
+                ['collectionName' => $collectionName]
+            ),
             'related_collections' => $usedCollections,
             'recommendation' => __('Embeddings are not allowed with this relationship.'),
         ];
