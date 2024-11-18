@@ -64,12 +64,10 @@ class LinkEmbedHandler
             );
         }
 
-        $response = $this->checkAndRespond($isTesting, $messages);
-        if ($response) {
-            return $response;
-        }
+        $response = ResponseHandler::checkAndRespond($isTesting, $messages);
 
-        return $relation->changeToLinking();
+        return $response ??
+            $relation->changeToLinking();
     }
 
     protected function handleEmbedding(LinkEmbedd $relation, bool $embedInMain, bool $isTesting, array &$messages)
@@ -104,47 +102,91 @@ class LinkEmbedHandler
 
     protected function changeEmbeddingDirection(LinkEmbedd $relation, bool $embedInMain, bool $isTesting, array &$messages)
     {
-        $collection = $embedInMain ? $relation->pkCollection : $relation->fkCollection;
+        $this->checkEmbedding($relation, $embedInMain, $messages);
+        
+        // $collection = $embedInMain ? $relation->pkCollection : $relation->fkCollection;
 
-        if ($this->relationService->hasSelfRef($collection->id)) {
-            $responseContent = ResponseHandler::prepareSelfRefResponse($collection->name);
-            $messages['errors'][] = $responseContent;
-        }
+        // if ($this->relationService->hasSelfRef($collection->id)) {
+        //     $responseContent = ResponseHandler::prepareSelfRefResponse($collection->name);
+        //     $messages['errors'][] = $responseContent;
+        // }
 
-        $linksFrom = $this->relationService->checkLinksIn($collection->id);
-        if ($linksFrom->isNotEmpty()) {
-            $responseContent = ResponseHandler::prepareMainCollectionHasLinksResponse($linksFrom, $collection->name);
-            $messages['warnings'][] = $responseContent;
-        }
+        // $linksFrom = $this->relationService->checkLinksIn($collection->id);
+        // if ($linksFrom->isNotEmpty()) {
+        //     $responseContent = ResponseHandler::prepareMainCollectionHasLinksResponse($linksFrom, $collection->name);
+        //     $messages['warnings'][] = $responseContent;
+        // }
 
-        $linksTo = $this->relationService->checkLinksTo($collection->id);
-        if ($linksTo->isNotEmpty()) {
-            $responseContent = ResponseHandler::prepareLinksToMainCollectionResponse(
-                $linksTo,
-                $collection->name
-            );
-            $messages['warnings'][] = $responseContent;
-        }
+        // $linksTo = $this->relationService->checkLinksTo($collection->id);
+        // if ($linksTo->isNotEmpty()) {
+        //     $responseContent = ResponseHandler::prepareLinksToMainCollectionResponse(
+        //         $linksTo,
+        //         $collection->name
+        //     );
+        //     $messages['warnings'][] = $responseContent;
+        // }
 
-        $nn = $this->relationService->checkManyToManyLinks($collection->id);
-        if ($nn->isNotEmpty()) {
+        // $nn = $this->relationService->checkManyToManyLinks($collection->id);
+        // if ($nn->isNotEmpty()) {
 
-            $responseContent = ResponseHandler::prepareManyToManyLinkResponse(
-                $nn,
-                $collection->name
-            );
-            $messages['errors'][] = $responseContent;
-        }
+        //     $responseContent = ResponseHandler::prepareManyToManyLinkResponse(
+        //         $nn,
+        //         $collection->name
+        //     );
+        //     $messages['errors'][] = $responseContent;
+        // }
 
-        $response = $this->checkAndRespond($isTesting, $messages);
-        if ($response) {
-            return $response;
-        }
+        $response = ResponseHandler::checkAndRespond($isTesting, $messages);
 
-        return $relation->changeEmbeddingDirection();
+        return $response ??
+            $relation->changeEmbeddingDirection();
     }
 
     protected function changeToEmbedding(LinkEmbedd $relation, bool $embedInMain, bool $isTesting, array &$messages)
+    {
+        $this->checkEmbedding($relation, $embedInMain, $messages);
+        
+        // $collection = $embedInMain ? $relation->pkCollection : $relation->fkCollection;
+
+        // if ($this->relationService->hasSelfRef($collection->id)) {
+        //     $responseContent = ResponseHandler::prepareSelfRefResponse($collection->name);
+        //     $messages['errors'][] = $responseContent;
+        // }
+
+        // $linksFrom = $this->relationService->checkLinksIn($collection->id, $relation->id);
+        // if ($linksFrom->isNotEmpty()) {
+        //     $responseContent = ResponseHandler::prepareMainCollectionHasLinksResponse(
+        //         $linksFrom,
+        //         $collection->name
+        //     );
+        //     $messages['warnings'][] = $responseContent;
+        // }
+
+        // $linksTo = $this->relationService->checkLinksTo($collection->id, $relation->id);
+        // if ($linksTo->isNotEmpty()) {
+        //     $responseContent =  ResponseHandler::prepareLinksToMainCollectionResponse(
+        //         $linksTo,
+        //         $collection->name
+        //     );
+        //     $messages['warnings'][] = $responseContent;
+        // }
+
+        // $nn = $this->relationService->checkManyToManyLinks($collection->id);
+        // if ($nn->isNotEmpty()) {
+        //     $responseContent = ResponseHandler::prepareManyToManyLinkResponse(
+        //         $nn,
+        //         $collection->name
+        //     );
+        //     $messages['errors'][] = $responseContent;
+        // }
+
+        $response = ResponseHandler::checkAndRespond($isTesting, $messages);
+
+        return $response ??
+            $relation->changeToEmbedding($embedInMain);
+    }
+
+    protected function checkEmbedding(LinkEmbedd $relation, bool $embedInMain, array &$messages)
     {
         $collection = $embedInMain ? $relation->pkCollection : $relation->fkCollection;
 
@@ -164,7 +206,6 @@ class LinkEmbedHandler
 
         $linksTo = $this->relationService->checkLinksTo($collection->id, $relation->id);
         if ($linksTo->isNotEmpty()) {
-
             $responseContent =  ResponseHandler::prepareLinksToMainCollectionResponse(
                 $linksTo,
                 $collection->name
@@ -174,37 +215,11 @@ class LinkEmbedHandler
 
         $nn = $this->relationService->checkManyToManyLinks($collection->id);
         if ($nn->isNotEmpty()) {
-
             $responseContent = ResponseHandler::prepareManyToManyLinkResponse(
                 $nn,
                 $collection->name
             );
-
             $messages['errors'][] = $responseContent;
         }
-
-        $response = $this->checkAndRespond($isTesting, $messages);
-        if ($response) {
-            return $response;
-        }
-
-        return $relation->changeToEmbedding($embedInMain);
-    }
-
-    protected function checkAndRespond(bool $isTesting, array &$messages)
-    {
-        if (!empty($messages['errors'])) {
-            return ResponseHandler::messageResponse($messages, 422, 'error');
-        }
-
-        if ($isTesting) {
-            if (!empty($messages['warnings'])) {
-                return ResponseHandler::messageResponse($messages, 422, 'warning');
-            }
-
-            return ResponseHandler::testingSuccessResponse();
-        }
-
-        return null;
     }
 }

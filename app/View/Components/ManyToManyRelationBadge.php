@@ -42,7 +42,7 @@ class ManyToManyRelationBadge extends Component
         return match($this->relationType) {
             MongoManyToManyRelation::LINKING_WITH_PIVOT => __('Linking with pivot'),
             MongoManyToManyRelation::EMBEDDING => __('Embedding'),
-            MongoManyToManyRelation::HYBRID => __('Hybrid'),
+            MongoManyToManyRelation::HYBRID => __('Array of references'),
             default => (string) $this->relationType->value,
         };
     }

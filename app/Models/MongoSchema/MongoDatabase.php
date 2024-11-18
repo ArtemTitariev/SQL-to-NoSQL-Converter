@@ -16,10 +16,10 @@ class MongoDatabase extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['connection_name', 'dsn', 'database', 'options'];
+    protected $fillable = ['connection_name', 'dsn', 'database', 'options',];
 
     protected $casts = [
-        'options' => 'array'
+        'options' => 'array',
     ];
 
     /**

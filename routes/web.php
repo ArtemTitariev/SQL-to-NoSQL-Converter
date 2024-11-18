@@ -14,6 +14,8 @@ use App\Models\MongoSchema\LinkEmbedd;
 use App\Models\MongoSchema\ManyToManyLink;
 use Illuminate\Support\Facades\DB;
 
+use App\Services\DatabaseConnections\ConnectionCreator;
+
 Route::get('language/{locale}', function ($locale) {
 
     if (isset($locale) && in_array($locale, config('app.available_locales'))) {
@@ -65,6 +67,10 @@ Route::middleware('auth')->group(function () {
 require __DIR__ . '/auth.php';
 
 // FOR TESTING ONLY------------------
+
+Route::get('/etl', [TestEtlController::class, 'test']);
+Route::get('/etlo', [TestEtlController::class, 'testOrdinary']);
+
 Route::view('/test', 'test');
 
 Route::get('/delete', function (Request $request) {
@@ -191,8 +197,97 @@ Route::get('/reset', function (Request $request) {
     return 'done';
 });
 
-Route::get('/etl', [TestEtlController::class, 'test']);
+Route::get('/insert', function () {
+    $id = 1;
+    $convert = Convert::find($id);
 
+    $sqlDatabase = $convert->sqlDatabase;
+    $mongoDatabase = $convert->mongoDatabase;
+
+    $sqlConnection = ConnectionCreator::create($sqlDatabase);
+    $mongoConnection = ConnectionCreator::create($mongoDatabase);
+
+    $collectionName = "posts";
+
+    $mongoConnection->dropCollection($collectionName);
+
+    $record = [
+        "name" => "test",
+    ];
+
+    $doc = [
+        "_id" => "000",
+        "some_key" => 123,
+        'another' => 'fsdfsdfsd',
+    ];
+
+
+    $doc2 = [
+        "_id" => "111",
+        "abc" => 'cba',
+    ];
+
+    // $doc = [
+    //     [
+    //         "some_key" => 123,
+    //         'another' => 'fsdfsdfsd',
+    //     ],
+    //     [
+    //         "some_key" => 555,
+    //         'another' => '---------',
+    //     ],
+    // ];
+
+    $docId = $mongoConnection
+        ->collection($collectionName)
+        ->insertGetId($record);
+
+
+    $mongoConnection->collection($collectionName)->where('_id', $docId)
+        ->push('nested_documents', $doc);
+
+    $mongoConnection->collection($collectionName)->where('_id', '111')
+        ->push('nested', $doc2);
+
+    dd($docId->__toString());
+
+    return 'done';
+});
+
+Route::get('/search', function () {
+    $id = 1;
+    $convert = Convert::find($id);
+
+    $sqlDatabase = $convert->sqlDatabase;
+    $mongoDatabase = $convert->mongoDatabase;
+
+    $sqlConnection = ConnectionCreator::create($sqlDatabase);
+    $mongoConnection = ConnectionCreator::create($mongoDatabase);
+
+    $collectionName = "tags2";
+    $parentId = "672483cc0dac0bd4c30699e9";
+
+    $path = "related.0.nested";
+
+    $parentDoc = $mongoConnection
+        ->collection($collectionName)
+        ->where('_id', $parentId)
+        ->first();
+
+    $nestedArray = data_get($parentDoc, $path) ?? [];
+
+    $mongoConnection
+        ->collection($collectionName)
+        ->where('_id', $parentId)
+        ->push($path, ["key" => 123]);
+
+    $parentDoc = $mongoConnection
+        ->collection($collectionName)
+        ->where('_id', $parentId)
+        ->first();
+
+    dd($nestedArray, $parentDoc);
+});
 
 Route::get('/id-map', function () {
     dd(DB::table('id_mappings')->get());
@@ -204,7 +299,7 @@ Route::get('/id-map-find', function () {
         ->where('collection_id', 17)
         ->whereJsonContains('source_data', ["id" => 1])
         ->first();
-    
+
     dd($map);
 });
 

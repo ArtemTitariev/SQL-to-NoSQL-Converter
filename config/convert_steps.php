@@ -50,19 +50,13 @@ return [
 
     // тут ще можна додати крок (або два) для створення індексів + валідаторів для колекцій
 
-    'etl' => [ //ETL + mb send email??
+    'etl' => [ //ETL + send email
         'number' => 6,
         'key' => 'etl',
         'name' => 'Extract-transform-load operations',
-        'next' => 'finalize_conversion',
-        'is_manual' => false,
-        'route' => 'convert.process_etl',
-    ],
-
-    'finalize_conversion' => [ //send email ?????
-        'number' => 7,
         'next' => null,
         'is_manual' => false,
+        'route' => 'convert.process_etl',
     ],
 
 ];

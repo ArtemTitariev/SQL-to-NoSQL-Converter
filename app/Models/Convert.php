@@ -82,12 +82,33 @@ class Convert extends Model
     }
 
     /**
-     * Set status as `error`
+     * Set status as `Error`
      */
-    public function fail()
+    public function fail(): bool
     {
         $this->status = static::STATUSES['ERROR'];
-        $this->save();
+        return $this->save();
+    }
+
+    /**
+     * Set status as `Completed`
+     */
+    public function complete(): bool
+    {
+        $this->status = static::STATUSES['COMPLETED'];
+        return $this->save();
+    }
+
+    /**
+     * Set status as `In progress`
+     */
+    public function setStatusAsInProgress(): bool
+    {
+        $this->status = static::STATUSES['IN_PROGRESS'];
+
+        $progress = $this->lastProgress();
+
+        return $this->save() && $progress->setStatusAsInProgress();
     }
 
     public function isConfiguring(): bool
@@ -96,7 +117,7 @@ class Convert extends Model
     }
 
     /**
-     * For broadcasting channels. Check id user ca access to conversion
+     * For broadcasting channels. Check if user can access to conversion
      */
     public static function canAccess($user, $userId, $convertId): bool
     {
@@ -109,6 +130,15 @@ class Convert extends Model
         return (int) $user->id === (int) $userId &&
             // (int) $convert->id === (int) $convertId &&
             (int) $convert->user->id === (int) $userId;
+    }
+
+    public function canBeDeleted(): bool
+    {
+        if ($this->lastProgress()?->isProcessing()) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

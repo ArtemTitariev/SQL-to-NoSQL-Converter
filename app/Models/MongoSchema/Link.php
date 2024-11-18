@@ -22,7 +22,7 @@ class Link extends Model
     protected $fillable = [
         'collection_id', 'local_fields', 'save_to', 'old_locals', 
         'embedded_collection', 'foreign_fields', 'old_foreigns', 
-        'relation_type'
+        'relation_type',
     ];
 
     protected $casts = [

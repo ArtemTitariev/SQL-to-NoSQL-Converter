@@ -154,12 +154,21 @@
                                     </tbody>
                                 </x-table>
                             </div>
+                            @php
+                                $relationLabels = [
+                                    'Linking with pivot' => __('Linking with pivot'),
+                                    'Embedding' => __('Embedding'),
+                                    'Hybrid' => __('Array of references'),
+                                ];
+                            @endphp
                             <div class="flex justify-center py-2">
                                 <p class="break-all max-w-80 py-2 mx-2"><strong>{{ __('Relation Type:') }}</strong></p>
                                 <select id="modalRelationTypeManyToMany" name="relationTypeManyToMany"
                                     class="border rounded w-auto mx-2">
                                     @foreach (\App\Enums\MongoManyToManyRelation::cases() as $relation)
-                                        <option value="{{ $relation->value }}">{{ __($relation->value) }}</option>
+                                        <option value="{{ $relation->value }}">
+                                            {{ $relationLabels[$relation->value] ?? __($relation->value) }}
+                                        </option>
                                     @endforeach
                                     {{-- <option value="Linking with pivot">{{ __('Linking with pivot') }}</option>
                                 <option value="Embedding">{{ __('Embedding') }}</option>

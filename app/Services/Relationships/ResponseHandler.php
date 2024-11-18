@@ -154,4 +154,21 @@ class ResponseHandler
             'recommendation' => __('Embeddings are not allowed with this relationship.'),
         ];
     }
+
+    public static function checkAndRespond(bool $isTesting, array &$messages)
+    {
+        if (!empty($messages['errors'])) {
+            return ResponseHandler::messageResponse($messages, 422, 'error');
+        }
+
+        if ($isTesting) {
+            if (!empty($messages['warnings'])) {
+                return ResponseHandler::messageResponse($messages, 422, 'warning');
+            }
+
+            return ResponseHandler::testingSuccessResponse();
+        }
+
+        return null;
+    }
 }

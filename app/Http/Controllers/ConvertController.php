@@ -62,7 +62,13 @@ class ConvertController extends Controller
      */
     public function show(Convert $convert)
     {
-        $convert->load(['sqlDatabase', 'mongoDatabase', 'progresses']);
+        $convert->load([
+            'sqlDatabase',
+            'mongoDatabase',
+            'progresses' => function ($query) {
+                $query->oldest(); //orderBy('step', 'desc'); // або 'asc', якщо потрібне сортування за зростанням
+            },
+        ]);
 
         return view('convert.show', compact('convert'));
     }
@@ -73,7 +79,6 @@ class ConvertController extends Controller
     public function resume(Convert $convert)
     {
         $lastStep = $convert->lastProgress($convert);
-        // dd($lastStep);
         if ($lastStep->canContinue()) {
             $steps = config('convert_steps');
 
@@ -89,8 +94,6 @@ class ConvertController extends Controller
                 return redirect()->route('convert.step.show', ['convert' => $convert, 'step' => $stepKey]);
             }
         }
-
-        // dd($lastStep);
 
         if ($lastStep->isEtl() && ! $lastStep->isCompletedOrError()) {
             return redirect()->route(config('convert_steps.etl.route'), ['convert' => $convert]);
@@ -108,7 +111,6 @@ class ConvertController extends Controller
             return view($view, array_merge(compact('convert'), $request->all()));
         }
 
-        dd('showStep no step view');
         return redirect()->route('converts.index');
     }
 
@@ -128,6 +130,8 @@ class ConvertController extends Controller
      */
     public function destroy(Convert $convert)
     {
+        $convert->sqlDatabase()->delete();
+        $convert->mongoDatabase()->delete();
         $convert->delete();
 
         return redirect()->route('converts.index');
@@ -147,20 +151,4 @@ class ConvertController extends Controller
     {
         return view('convert.progress.process_etl', compact('convert'));
     }
-
-    // /**
-    //  * Show the form for editing the specified resource.
-    //  */
-    // public function edit(string $id)
-    // {
-    //     // 
-    // }
-
-    // /**
-    //  * Update the specified resource in storage.
-    //  */
-    // public function update(Request $request, string $id)
-    // {
-    //     //
-    // }
 }

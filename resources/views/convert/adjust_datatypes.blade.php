@@ -38,7 +38,7 @@
     @endphp
 
     <section class="space-y-6">
-        <x-modal name="select-action" :show="!empty(session('missingTables'))" focusable>
+        <x-modal class="z-60" name="select-action" :show="!empty(session('missingTables'))" focusable>
             <div class="p-6">
                 <div class="flex justify-between items-center border-b pb-4 mb-4">
                     <h2 class="text-2xl font-medium text-info">
@@ -101,7 +101,7 @@
     </section>
 
     <form action="{{ route('convert.step.store', [$convert, 'adjust_datatypes']) }}" method="POST" id="form">
-        <div class="sticky top-0 p-4 mb-4 flex justify-center space-x-2 bg-white z-50 shadow-md">
+        <div class="sticky top-0 p-4 mb-4 flex justify-center space-x-2 bg-white z-30 shadow-md">
             <div class="container mx-auto p-4">
 
                 <div class="flex flex-col space-y-3">
