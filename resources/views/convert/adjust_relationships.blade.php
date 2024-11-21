@@ -32,8 +32,10 @@
         $mongoDatabase = $convert->mongoDatabase;
         $collections = $mongoDatabase
             ->collections()
-            ->whereHas('linksEmbeddsFrom')
-            ->orWhereHas('manyToManyPivot')
+            ->where(function (\Illuminate\Database\Eloquent\Builder $query) {
+                $query->whereHas('linksEmbeddsFrom')
+                    ->orWhereHas('manyToManyPivot');
+            })
             ->with([
                 // 'fields',
                 //  'linksEmbeddsFrom',
