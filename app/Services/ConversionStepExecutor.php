@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 class ConversionStepExecutor
 {
     /**
-     * Array of 
+     * Array of strategies
      * @param array
      */
     protected $strategies;
@@ -48,7 +48,7 @@ class ConversionStepExecutor
         array $data = []
     ) {
         if (! isset($this->strategies[$step])) {
-            abort(403); // Невірний крок ----------------------
+            abort(403); // Невірний крок
         }
 
         if (($this->steps[$step]['number'] !== 1) && (! $this->steps[$step]['is_manual'])) {
@@ -61,7 +61,7 @@ class ConversionStepExecutor
                 $message = 'Step in the pending process.';
             }
 
-            ConversionService::createConversionProgress($convert, $step, $status, $message); //-----------
+            ConversionService::createConversionProgress($convert, $step, $status, $message);
         }
 
         try {
@@ -76,7 +76,6 @@ class ConversionStepExecutor
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()->withInput()->withErrors($e->getMessage());
         } catch (\Exception $e) {
-            // dd($e->getMessage());
             return $this->handleStepFailure($convert, $step, 'Error: ' . $e->getMessage(), $e);
         }
 
@@ -97,12 +96,11 @@ class ConversionStepExecutor
                 ConversionProgress::STATUSES['IN_PROGRESS'],
                 $result->getDetails()
             );
-            // return view($result->getView())->with($result->getWith());
             return redirect()->route($result->getRoute(), ['convert' => $convert->id]);
         }
 
         if ($result->isRedirect()) {
-            return redirect()->back()->with($result->getWith())->withInput(); //->withError();
+            return redirect()->back()->with($result->getWith())->withInput();
         }
 
         if ($result->isFailed()) {
