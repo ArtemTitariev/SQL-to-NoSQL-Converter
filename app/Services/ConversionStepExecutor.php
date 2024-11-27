@@ -48,7 +48,7 @@ class ConversionStepExecutor
         array $data = []
     ) {
         if (! isset($this->strategies[$step])) {
-            abort(403); // Невірний крок
+            abort(403); // Неправильний крок
         }
 
         if (($this->steps[$step]['number'] !== 1) && (! $this->steps[$step]['is_manual'])) {

@@ -23,8 +23,6 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
 
     public function execute(Convert $convert, Request $request, array $extraParams = []): StrategyResult
     {
-        // Логіка для кроку збереження типів даних
-
         $validated = TableColumnValidator::validate($request);
         $sqlDatabase = $convert->sqlDatabase()->with(['tables'])->first();
         $mongoDatabase = $convert->mongoDatabase;
@@ -122,7 +120,7 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
             $sqlTable = $tableMap[$table] ?? null;
 
             if (!$sqlTable) {
-                continue; // Якщо таблиця не знайдена, пропустити (можливо, це потрібно обробити окремо)
+                continue; // Якщо таблиця не знайдена, пропустити
             }
 
             $sqlColumns = $sqlTable->columns->keyBy('name');
