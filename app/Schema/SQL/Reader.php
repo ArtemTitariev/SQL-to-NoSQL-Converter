@@ -171,8 +171,6 @@ class Reader
     private function getFilteredForeignKeys(string $tableName)
     {
         $foreignKeys = $this->getForeignKeys($tableName);
-        // $tableNames = array_flip($this->getTableListing());
-        // $tableNames = array_flip($this->tableListing);
 
         return array_filter($foreignKeys, fn($fK) => isset($this->tableNames[$fK['foreign_table']]));
     }
@@ -240,8 +238,6 @@ class Reader
      */
     public function getForeignKeysWithRelationType(string $tableName): array
     {
-        // $relationTypes = config('constants.RELATION_TYPES');
-
         $foreignKeys = $this->getFilteredForeignKeys($tableName);
         $indexes = $this->getIndexes($tableName);
 
@@ -293,10 +289,10 @@ class Reader
                 if (count($relatedForeignKeys) == 2) {
                     $foreignTables = array_unique(array_column($relatedForeignKeys, 'foreign_table'));
                     if (count($foreignTables) == 2) {
-                        foreach ($foreignKeysWithTypes as $fKIndex => $fkWithType) { //use $index, not reference !!
+                        foreach ($foreignKeysWithTypes as $fKIndex => $fkWithType) {
                             if (
                                 in_array($fkWithType['columns'][0], $index['columns'])
-                                && $fkWithType['relation_type']->value !== RelationType::COMPLEX->value //----------------------------
+                                && $fkWithType['relation_type']->value !== RelationType::COMPLEX->value
                             ) {
 
                                 $foreignKeysWithTypes[$fKIndex]['relation_type'] = RelationType::MANY_TO_MANY;
@@ -311,7 +307,7 @@ class Reader
         // Handle complex relationships - 
         // якщо в таблиці є 2 та більше посилань 
         // на одну і ту ж foreign таблицю - це теж complex
-        foreach ($foreignKeysWithTypes as $index => $fkWithType) { //use $index, not reference !!
+        foreach ($foreignKeysWithTypes as $index => $fkWithType) {
             $foreignTable = $fkWithType['foreign_table'];
             if ($tableReferenceCount[$foreignTable] > 1) {
                 $foreignKeysWithTypes[$index]['relation_type'] = RelationType::COMPLEX;
@@ -319,16 +315,7 @@ class Reader
         }
 
         // Check for complex relationships by counting relation types
-        // $relationTypeCounts = [
-        //     RELATION_TYPES['ONE-TO-ONE'] => 0,
-        //     RELATION_TYPES['ONE-TO-MANY'] => 0,
-        //     RELATION_TYPES['MANY-TO-MANY'] => 0,
-        //     RELATION_TYPES['SELF-REF'] => 0,
-        //     RELATION_TYPES['COMPLEX'] => 0
-        // ];
-        // $relationTypeKeys = array_values($relationTypes);
         $relationTypeKeys = RelationType::getValues();
-
         $relationTypeCounts = array_fill_keys($relationTypeKeys, 0);
 
         foreach ($foreignKeysWithTypes as $fkWithType) {
@@ -336,21 +323,13 @@ class Reader
         }
 
         if (
-            // $relationTypeCounts[RELATION_TYPES['ONE-TO-MANY']] > 2 ||
-            // $relationTypeCounts[RELATION_TYPES['MANY-TO-MANY']] > 2 ||
-            // ($relationTypeCounts[RELATION_TYPES['ONE-TO-MANY']] > 0 && $relationTypeCounts[RELATION_TYPES['MANY-TO-MANY']] > 0) ||
-            // (
-            //     ($relationTypeCounts[RELATION_TYPES['ONE-TO-MANY']] >= 2 || $relationTypeCounts[RELATION_TYPES['MANY-TO-MANY']] >= 2)
-            //     && ($relationTypeCounts[RELATION_TYPES['ONE-TO-ONE']] > 0 || $relationTypeCounts[RELATION_TYPES['SELF-REF']] > 0)
-            // )
-
             // якщо є (2 N-N або 2 1-N) та ще якийсь
             array_sum($relationTypeCounts) > 2 &&
             ($relationTypeCounts[RelationType::MANY_TO_ONE->value] >= 2 ||
                 // $relationTypeCounts[RelationType::ONE_TO_MANY->value] >= 2 || // not used
                 $relationTypeCounts[RelationType::MANY_TO_MANY->value] >= 2)
         ) {
-            foreach ($foreignKeysWithTypes as $index => $fkWithType) { //use $index, not reference !!
+            foreach ($foreignKeysWithTypes as $index => $fkWithType) {
                 if ($fkWithType['relation_type']->value !== RelationType::COMPLEX->value) {
                     $foreignKeysWithTypes[$index]['relation_type'] = RelationType::COMPLEX;
                 }
@@ -402,8 +381,4 @@ class Reader
 
         return $foreignKeys;
     }
-
-    // Get the views that belong to the database.
-    // getViews()
-
 }

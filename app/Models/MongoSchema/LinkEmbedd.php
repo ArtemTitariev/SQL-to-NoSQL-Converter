@@ -28,8 +28,6 @@ class LinkEmbedd extends Model
         'sql_relation',
         'relation_type',
         'local_fields',
-        // 'new_field',
-        // 'removable_locals',
         'foreign_fields',
         'embed_in_main',
     ];
@@ -38,7 +36,6 @@ class LinkEmbedd extends Model
         'sql_relation' => RelationType::class,
         'relation_type' => MongoRelationType::class,
         'local_fields' => 'array',
-        // 'removable_locals' => 'array',
         'foreign_fields' => 'array',
         'embed_in_main' => 'boolean',
     ];

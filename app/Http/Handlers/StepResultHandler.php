@@ -20,7 +20,6 @@ class StepResultHandler
             return $result;
         }
 
-        dd('StepResultHendler not StrategyResult, not redirect and not view'); //------------
         return redirect()->route('converts.index');
     }
 }

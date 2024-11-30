@@ -14,8 +14,12 @@ class LinkEmbedHandler
         $this->relationService = $relationService;
     }
 
-    public function handle(LinkEmbedd $relation, MongoRelationType $relationType, ?bool $embedInMain = null, bool $isTesting = false)
-    {
+    public function handle(
+        LinkEmbedd $relation,
+        MongoRelationType $relationType,
+        ?bool $embedInMain = null,
+        bool $isTesting = false
+    ) {
         $messages = [
             'errors' => [],
             'warnings' => [],
@@ -70,8 +74,12 @@ class LinkEmbedHandler
             $relation->changeToLinking();
     }
 
-    protected function handleEmbedding(LinkEmbedd $relation, bool $embedInMain, bool $isTesting, array &$messages)
-    {
+    protected function handleEmbedding(
+        LinkEmbedd $relation,
+        bool $embedInMain,
+        bool $isTesting,
+        array &$messages
+    ) {
         if ($this->relationService->hasComplexRelation($relation)) {
             $responseContent = ResponseHandler::prepareComplexRelationResponse();
             $messages["errors"][] = $responseContent;
@@ -91,50 +99,31 @@ class LinkEmbedHandler
         return $this->changeToEmbedding($relation, $embedInMain, $isTesting, $messages);
     }
 
-    protected function handleExistingEmbedding(LinkEmbedd $relation, bool $embedInMain, bool $isTesting, array &$messages)
-    {
+    protected function handleExistingEmbedding(
+        LinkEmbedd $relation,
+        bool $embedInMain,
+        bool $isTesting,
+        array &$messages
+    ) {
         if ($relation->embed_in_main === $embedInMain) {
             return ResponseHandler::noChangesResponse();
         }
 
-        return $this->changeEmbeddingDirection($relation, $embedInMain, $isTesting, $messages);
+        return $this->changeEmbeddingDirection(
+            $relation,
+            $embedInMain,
+            $isTesting,
+            $messages
+        );
     }
 
-    protected function changeEmbeddingDirection(LinkEmbedd $relation, bool $embedInMain, bool $isTesting, array &$messages)
-    {
+    protected function changeEmbeddingDirection(
+        LinkEmbedd $relation,
+        bool $embedInMain,
+        bool $isTesting,
+        array &$messages
+    ) {
         $this->checkEmbedding($relation, $embedInMain, $messages);
-        
-        // $collection = $embedInMain ? $relation->pkCollection : $relation->fkCollection;
-
-        // if ($this->relationService->hasSelfRef($collection->id)) {
-        //     $responseContent = ResponseHandler::prepareSelfRefResponse($collection->name);
-        //     $messages['errors'][] = $responseContent;
-        // }
-
-        // $linksFrom = $this->relationService->checkLinksIn($collection->id);
-        // if ($linksFrom->isNotEmpty()) {
-        //     $responseContent = ResponseHandler::prepareMainCollectionHasLinksResponse($linksFrom, $collection->name);
-        //     $messages['warnings'][] = $responseContent;
-        // }
-
-        // $linksTo = $this->relationService->checkLinksTo($collection->id);
-        // if ($linksTo->isNotEmpty()) {
-        //     $responseContent = ResponseHandler::prepareLinksToMainCollectionResponse(
-        //         $linksTo,
-        //         $collection->name
-        //     );
-        //     $messages['warnings'][] = $responseContent;
-        // }
-
-        // $nn = $this->relationService->checkManyToManyLinks($collection->id);
-        // if ($nn->isNotEmpty()) {
-
-        //     $responseContent = ResponseHandler::prepareManyToManyLinkResponse(
-        //         $nn,
-        //         $collection->name
-        //     );
-        //     $messages['errors'][] = $responseContent;
-        // }
 
         $response = ResponseHandler::checkAndRespond($isTesting, $messages);
 
@@ -142,43 +131,13 @@ class LinkEmbedHandler
             $relation->changeEmbeddingDirection();
     }
 
-    protected function changeToEmbedding(LinkEmbedd $relation, bool $embedInMain, bool $isTesting, array &$messages)
-    {
+    protected function changeToEmbedding(
+        LinkEmbedd $relation,
+        bool $embedInMain,
+        bool $isTesting,
+        array &$messages
+    ) {
         $this->checkEmbedding($relation, $embedInMain, $messages);
-        
-        // $collection = $embedInMain ? $relation->pkCollection : $relation->fkCollection;
-
-        // if ($this->relationService->hasSelfRef($collection->id)) {
-        //     $responseContent = ResponseHandler::prepareSelfRefResponse($collection->name);
-        //     $messages['errors'][] = $responseContent;
-        // }
-
-        // $linksFrom = $this->relationService->checkLinksIn($collection->id, $relation->id);
-        // if ($linksFrom->isNotEmpty()) {
-        //     $responseContent = ResponseHandler::prepareMainCollectionHasLinksResponse(
-        //         $linksFrom,
-        //         $collection->name
-        //     );
-        //     $messages['warnings'][] = $responseContent;
-        // }
-
-        // $linksTo = $this->relationService->checkLinksTo($collection->id, $relation->id);
-        // if ($linksTo->isNotEmpty()) {
-        //     $responseContent =  ResponseHandler::prepareLinksToMainCollectionResponse(
-        //         $linksTo,
-        //         $collection->name
-        //     );
-        //     $messages['warnings'][] = $responseContent;
-        // }
-
-        // $nn = $this->relationService->checkManyToManyLinks($collection->id);
-        // if ($nn->isNotEmpty()) {
-        //     $responseContent = ResponseHandler::prepareManyToManyLinkResponse(
-        //         $nn,
-        //         $collection->name
-        //     );
-        //     $messages['errors'][] = $responseContent;
-        // }
 
         $response = ResponseHandler::checkAndRespond($isTesting, $messages);
 
@@ -186,8 +145,11 @@ class LinkEmbedHandler
             $relation->changeToEmbedding($embedInMain);
     }
 
-    protected function checkEmbedding(LinkEmbedd $relation, bool $embedInMain, array &$messages)
-    {
+    protected function checkEmbedding(
+        LinkEmbedd $relation,
+        bool $embedInMain,
+        array &$messages
+    ) {
         $collection = $embedInMain ? $relation->pkCollection : $relation->fkCollection;
 
         if ($this->relationService->hasSelfRef($collection->id)) {

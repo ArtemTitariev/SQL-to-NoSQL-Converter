@@ -2,7 +2,6 @@
 
 namespace App\Services\ConversionStrategies;
 
-use App\Models\ConversionProgress;
 use App\Models\Convert;
 use App\Models\MongoSchema\MongoDatabase;
 use App\Models\SQLSchema\SQLDatabase;
@@ -27,26 +26,16 @@ class InitializeConversionStrategy implements ConversionStrategyInterface
         try {
             ConnectionTester::testSQLConnection($sqlDatabaseParams);
         } catch (\Exception $e) {
-            // throw new \Exception(__('SQL database connection error: ') . $e->getMessage());
             return new StrategyResult (
                 result: StrategyResult::STATUSES['FAILED'],
                 details: __('SQL database connection error: ') . $e->getMessage(),
             );
-            // return [
-            //     'status' => 'failed',
-            //     'error' => __('SQL database connection error: ') . $e->getMessage(),
-            // ];
         }
 
         // Test MongoDB connection
         try {
             ConnectionTester::testMongoConnection($mongoDatabaseParams);
         } catch (\Exception $e) {
-            // throw new \Exception(__('MongoDB connection error: ') . $e->getMessage());
-            // return [
-            //     'status' => 'failed',
-            //     'error' => 
-            // ];
             return new StrategyResult (
                 result: StrategyResult::STATUSES['FAILED'],
                 details: __('MongoDB connection error: ') . $e->getMessage(),
@@ -73,10 +62,5 @@ class InitializeConversionStrategy implements ConversionStrategyInterface
             details: 'The databases connections have been successfully tested. The parameters have been saved.',
             next: config('convert_steps.initialize_conversion.next'),
         );
-        // return [
-        //     'status' => 'success',
-        //     'details' => 'The databases connections have been successfully tested. The parameters have been saved.',
-        //     'next' => config('convert_steps.initialize_conversion.next'),
-        // ];
     }
 }

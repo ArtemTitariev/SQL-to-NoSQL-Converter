@@ -4,7 +4,6 @@
         <form method="post" action="{{ route('converts.store') }}">
             @csrf
 
-
             {{-- RDB type --}}
             <div>
                 <x-input-label for="driver" :value="__('Select Relation Database Type')" class="" />
@@ -178,10 +177,5 @@
         if (selectedRadioButton) {
             showFields(selectedRadioButton.value);
         }
-
-        // // Викликати showFields з поточний вибраним значенням 
-        // // одразу після завантаження сторінки
-        // const selectedDbType = document.querySelector(radioButtonsSelector + ':checked').value;
-        // showFields(selectedDbType);
     });
 </script>

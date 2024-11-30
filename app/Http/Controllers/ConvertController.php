@@ -8,9 +8,12 @@ use App\Models\Convert;
 use App\Services\DatabaseConnections\SQLConnectionParamsProvider;
 use App\Services\ConversionStepExecutor;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ConvertController extends Controller
 {
+    use AuthorizesRequests;
+
     protected $conversionStepExecutor;
 
     public function __construct(ConversionStepExecutor $conversionStepExecutor)
@@ -23,7 +26,11 @@ class ConvertController extends Controller
      */
     public function index()
     {
-        $converts = Convert::with('user', 'sqlDatabase', 'mongoDatabase')->get();
+        $converts = Convert::where('user_id', auth()->id())
+        ->orderBy('status', 'desc')
+        ->orderBy('updated_at', 'desc')
+        ->with('user', 'sqlDatabase', 'mongoDatabase')
+        ->get();
 
         return view('convert.index', compact('converts'));
     }
@@ -60,13 +67,15 @@ class ConvertController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Convert $convert)
+    public function show(Request $request, Convert $convert)
     {
+        $this->authorize('view', $convert);
+
         $convert->load([
             'sqlDatabase',
             'mongoDatabase',
             'progresses' => function ($query) {
-                $query->oldest(); //orderBy('step', 'desc'); // або 'asc', якщо потрібне сортування за зростанням
+                $query->oldest();
             },
         ]);
 
@@ -78,6 +87,8 @@ class ConvertController extends Controller
      */
     public function resume(Convert $convert)
     {
+        $this->authorize('resume', $convert);
+
         $lastStep = $convert->lastProgress($convert);
         if ($lastStep->canContinue()) {
             $steps = config('convert_steps');
@@ -104,6 +115,8 @@ class ConvertController extends Controller
 
     public function showStep(Request $request, Convert $convert, string $step)
     {
+        $this->authorize('view', $convert);
+        
         $steps = config('convert_steps');
 
         $view = $steps[$step]['view'] ?? null;
@@ -116,6 +129,8 @@ class ConvertController extends Controller
 
     public function storeStep(Request $request, Convert $convert, string $step)
     {
+        $this->authorize('executeStep', $convert);
+
         try {
             // Валідація та збереження даних для кроку $step
             return $this->conversionStepExecutor
@@ -130,6 +145,8 @@ class ConvertController extends Controller
      */
     public function destroy(Convert $convert)
     {
+        $this->authorize('delete', $convert);
+
         $convert->sqlDatabase()->delete();
         $convert->mongoDatabase()->delete();
         $convert->delete();
@@ -139,16 +156,22 @@ class ConvertController extends Controller
 
     public function processReadSchema(Convert $convert)
     {
+        $this->authorize('process', $convert);
+
         return view('convert.progress.process_read_schema', compact('convert'));
     }
 
     public function processRelationships(Convert $convert)
     {
+        $this->authorize('process', $convert);
+
         return view('convert.progress.process_relationships', compact('convert'));
     }
 
     public function processEtl(Convert $convert)
     {
+        $this->authorize('process', $convert);
+        
         return view('convert.progress.process_etl', compact('convert'));
     }
 }

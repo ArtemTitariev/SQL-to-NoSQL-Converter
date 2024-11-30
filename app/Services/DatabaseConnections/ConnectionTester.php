@@ -2,9 +2,7 @@
 
 namespace App\Services\DatabaseConnections;
 
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
-use MongoDB\Exception\RuntimeException as MongoDBException;
 
 class ConnectionTester
 {

@@ -21,8 +21,8 @@ class MySQLRules implements RdbDataTypeRulesInterface
         'mediumint' => ['int', 'long', 'string'],
         'smallint unsigned' => ['int', 'long',  'string'],
         'smallint' => ['int', 'long', 'string'],
-        'tinyint unsigned' => ['int', 'long', 'string'],
-        'tinyint' => ['int', 'long', 'string'],
+        'tinyint unsigned' => ['int', 'long', 'bool', 'string'],
+        'tinyint' => ['int', 'long', 'bool', 'string'],
 
         // fractional numbers
         'decimal unsigned' => ['decimal128', 'string'],

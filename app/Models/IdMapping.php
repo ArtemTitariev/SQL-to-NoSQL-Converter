@@ -32,7 +32,6 @@ class IdMapping extends Model
         parent::boot();
 
         static::creating(function ($mapping) {
-            // $mapping->source_data_hash = hash('sha256', json_encode($mapping->source_data));
             $mapping->source_data_hash = static::makeHash($mapping->source_data);
         });
     }

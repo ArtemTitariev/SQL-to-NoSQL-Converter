@@ -47,14 +47,7 @@ class ForeignKey extends Model
         return Table::join('foreign_keys', 'foreign_keys.table_id', '=', 'tables.id')
             ->where('tables.sql_database_id', $databaseId)
             ->whereIn('foreign_keys.foreign_table', $toForeignTables)
-            // ->where('tables.name', '!=', $table->name)
             ->whereNotIn('foreign_keys.id', $excludeFkIds)
             ->exists();
     }
-
-    // public function isValidRelationType($type)
-    // {
-    //     // return in_array($type, self::RELATION_TYPES);
-    //     return in_array($type, config('constants.RELATION_TYPES'));
-    // }
 }

@@ -9,8 +9,6 @@
     </x-header-content>
 
     <x-container>
-        {{-- <x-h-info>{{ __('My Converts') }}</x-h-info> --}}
-
         @if (is_null($converts) || $converts->isEmpty())
             <x-no-records>
                 {{ __('No converts found.') }}

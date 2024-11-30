@@ -23,12 +23,10 @@ class StoreConvertRequest extends FormRequest
     {
         return [
             'sql_database.driver' => 'required|string|max:10',
-            // 'sql_database.url' => 'required|string',
             'sql_database.host' => 'required|string',
             'sql_database.port' => 'required|integer|gte:0|lte:65535',
             'sql_database.database' => 'required|string',
             'sql_database.username' => 'required|string',
-            // 'sql_database.password' => 'required|string',
             'sql_database.password' => 'nullable|string',
             'sql_database.charset' => 'required|string|max:10',
 

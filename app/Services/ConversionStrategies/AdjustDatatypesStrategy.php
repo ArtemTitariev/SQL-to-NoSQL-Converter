@@ -8,7 +8,6 @@ use App\Models\Convert;
 use App\Models\MongoSchema\Collection;
 use App\Models\MongoSchema\Field;
 use App\Models\SQLSchema\CircularRef;
-use App\Models\SQLSchema\Table;
 use App\Models\SQLSchema\ForeignKey;
 use App\Models\SQLSchema\SQLDatabase;
 use Illuminate\Http\Request;
@@ -24,8 +23,6 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
 
     public function execute(Convert $convert, Request $request, array $extraParams = []): StrategyResult
     {
-        // Логіка для кроку збереження типів даних
-
         $validated = TableColumnValidator::validate($request);
         $sqlDatabase = $convert->sqlDatabase()->with(['tables'])->first();
         $mongoDatabase = $convert->mongoDatabase;
@@ -123,7 +120,7 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
             $sqlTable = $tableMap[$table] ?? null;
 
             if (!$sqlTable) {
-                continue; // Якщо таблиця не знайдена, пропустити (можливо, це потрібно обробити окремо)
+                continue; // Якщо таблиця не знайдена, пропустити
             }
 
             $sqlColumns = $sqlTable->columns->keyBy('name');
@@ -141,11 +138,18 @@ class AdjustDatatypesStrategy implements ConversionStrategyInterface
                 $sqlColumn = $sqlColumns[$column] ?? null;
 
                 if (!$sqlColumn) {
-                    throw ValidationException::withMessages(['columns' =>  __('validation.superfluous_column', ['column' => $column, 'table' => $table])]);
+                    throw ValidationException::withMessages([
+                        'columns' =>  __(
+                            'validation.superfluous_column',
+                            ['column' => $column, 'table' => $table]
+                        )
+                    ]);
                 }
 
                 if (!in_array($type, $sqlColumn->convertable_types)) {
-                    throw ValidationException::withMessages(['columns' => __('validation.superfluous_datatypes')]);
+                    throw ValidationException::withMessages([
+                        'columns' => __('validation.superfluous_datatypes')
+                    ]);
                 }
             }
         }

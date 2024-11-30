@@ -24,9 +24,9 @@
                         </p>
                         <ul style="font-size: 18px; color: #374151; font-family: 'Open Sans', Arial, sans-serif;">
                             <li><strong style="color: #005073;">База даних SQL:</strong>
-                                {{ $convert->sqlDatabase->name }}</li>
+                                {{ $convert->sqlDatabase->database }}</li>
                             <li><strong style="color: #005073;">База даних MongoDB:</strong>
-                                {{ $convert->mongoDatabase->name }}</li>
+                                {{ $convert->mongoDatabase->database }}</li>
                             @if ($convert->description)
                                 <li><strong style="color: #005073;">Опис:</strong> {{ $convert->description }}</li>
                             @endif

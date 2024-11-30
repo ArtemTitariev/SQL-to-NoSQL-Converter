@@ -21,7 +21,6 @@ class EtlStrategy implements ConversionStrategyInterface
 {
     public function execute(Convert $convert, Request $request, array $extraParams = []): StrategyResult
     {
-
         // PerformEtlJob::dispatch($convert)
         //     ->onQueue('etl_operations')
         //     ->delay(now()->addSeconds(2));
@@ -54,7 +53,6 @@ class EtlStrategy implements ConversionStrategyInterface
                 $subquery->where('relation_type', MongoRelationType::EMBEDDING)
                     ->where('embed_in_main', false);
             })
-            // ->limit(1)
             ->orderBy('name')
             ->get();
 
@@ -100,7 +98,6 @@ class EtlStrategy implements ConversionStrategyInterface
             ->whereDoesntHave('manyToManyFirst')
             ->whereDoesntHave('manyToManySecond')
             ->orderBy('name')
-            // ->limit(0)
             ->get();
 
         if ($collections->isEmpty()) {

@@ -24,8 +24,6 @@ class ProcessRelationshipsStrategy implements ConversionStrategyInterface
             result: StrategyResult::STATUSES['PROCESSING'],
             details: 'Primary processing of relationships is performed.',
             route: config('convert_steps.process_relationships.route'),
-            // view: 'convert.process_relationships-loading',
-            // with: ['convert' => $convert],
         );
     }
 }
