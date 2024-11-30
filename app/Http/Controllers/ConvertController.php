@@ -75,7 +75,7 @@ class ConvertController extends Controller
             'sqlDatabase',
             'mongoDatabase',
             'progresses' => function ($query) {
-                $query->oldest(); //orderBy('step', 'desc'); // або 'asc', якщо потрібне сортування за зростанням
+                $query->oldest();
             },
         ]);
 

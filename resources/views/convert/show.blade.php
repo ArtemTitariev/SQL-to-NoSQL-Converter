@@ -26,8 +26,6 @@
     </x-container>
 
     <x-container>
-        {{-- <x-h-info>{{ __('Conversion Details') }}</x-h-info> --}}
-
         <!-- Status Blocks -->
         <div class="bg-white p-6 rounded-lg shadow-lg mb-5">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -98,7 +96,6 @@
         <!-- Progress Information -->
         <div class="bg-white p-6 rounded-lg shadow-lg">
             <h2 class="text-xl font-bold mb-4 text-info font-sans">{{ __('Progress Information') }}</h2>
-            {{-- @if ($convert->progresses->isEmpty()) --}}
             @if ($convert->progresses->isEmpty())
                 <x-no-records>
                     {{ __('No records found.') }}
