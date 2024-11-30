@@ -45,6 +45,24 @@ class CollectionRelationService
         return $query->get();
     }
 
+    public function checkEmbeddingChain($collectionId, $excludeCollectionId, $visited)
+    {
+        return LinkEmbedd::where('relation_type', MongoRelationType::EMBEDDING->value)
+            ->where(function ($query) use ($collectionId, $excludeCollectionId) {
+                $query->where('fk_collection_id', $collectionId)
+                    ->orWhere('pk_collection_id', $collectionId)
+                    ->orWhere('fk_collection_id', $excludeCollectionId)
+                    ->orWhere('pk_collection_id', $excludeCollectionId);
+            })
+            // ->where(function ($query) use ($collectionId, $excludeCollectionId) {
+            //     $query->where('pk_collection_id', '<>', $excludeCollectionId)
+            //         // ->where('fk_collection_id', '<>', $collectionId);
+            //         ->orWhere('fk_collection_id', '<>', $excludeCollectionId);
+            // })
+            ->whereNotIn('id', $visited)
+            ->get();
+    }
+
     public function checkLinksIn($collectionId, $excludeRelationId = null)
     {
         $query = LinkEmbedd::where('fk_collection_id', $collectionId)

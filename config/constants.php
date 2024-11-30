@@ -54,4 +54,5 @@ return [
 
     'MAX_COLLECTION_EMBEDDED_FIELDS' => 100,
 
+    'MAX_EMBEDDING_DEPTH' => 5,
 ];

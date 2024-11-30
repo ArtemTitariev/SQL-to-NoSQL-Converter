@@ -183,5 +183,14 @@ class LinkEmbedHandler
             );
             $messages['errors'][] = $responseContent;
         }
+
+        $maxEmbeddingDepth = config('constants.MAX_EMBEDDING_DEPTH');
+        // check embedding depth
+
+    }
+
+    public function checkEmbeddingDepth($collectionId, $relation, $maxDebth)
+    {
+        //
     }
 }

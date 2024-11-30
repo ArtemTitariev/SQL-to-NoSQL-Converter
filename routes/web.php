@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\MongoRelationType;
 use App\Http\Controllers\ConvertController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RelationshipController;
@@ -10,7 +11,11 @@ use Illuminate\Support\Facades\Session;
 
 use App\Http\Controllers\TestEtlController;
 use App\Models\ConversionProgress;
+use App\Models\MongoSchema\Collection;
+use App\Models\MongoSchema\LinkEmbedd;
+use App\Services\Relationships\CollectionRelationService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 Route::get('language/{locale}', function ($locale) {
 
@@ -155,4 +160,94 @@ Route::get('/reset', function (Request $request) {
 Route::get('/id-map-del', function () {
     DB::table('id_mappings')->truncate();
     return 'done';
+});
+
+Route::get('/em', function () {
+
+    $convert = Convert::find(6);
+
+    $mongoId = $convert->mongo_database_id;
+
+    // $emb = $service->checkEmbeddings($collection->id, 'mainInRelated')[0]; // 'relatedInMain'
+
+    // $emb2 = $service->checkEmbeddings($emb->fk_collection_id, 'mainInRelated')[0]; // 'relatedInMain'
+
+    // $emb3 = $service->checkEmbeddings($emb2->fk_collection_id, 'mainInRelated'); // 'relatedInMain'
+
+    // dd($emb3);
+
+    // dd(Collection::find($emb3->fk_collection_id)->name, Collection::find($emb3->pk_collection_id)->name);
+
+    // $emb0 = $service->checkEmbedding($collection->id, 'mainInRelated')[0];
+
+    // $emb01 = $service->checkToEmbeddings($emb0->pk_collection_id, 'mainInRelated')[0];
+
+    // $emb02 = $service->checkToEmbeddings($emb01->pk_collection_id, 'mainInRelated');
+
+    // dd($emb02);
+    // dd(Collection::find($emb01->fk_collection_id)->name, Collection::find($emb01->pk_collection_id)->name);
+
+    function findDepth($service, $emb, &$visited, &$depth, $currentDepth = 1)
+    {
+        Log::info("currentDepth = $currentDepth");
+
+        if ($depth >= 6) return false;
+
+        foreach ($emb as $e) {
+            // Перевірка вкладення
+            Log::info("id = $e->id; pk = $e->pk_collection_id; fk = $e->fk_collection_id");
+            if (in_array($e->id, $visited)) {
+                Log::info("visited");
+                continue;
+            }
+
+            $visited[] = $e->id;
+
+            $emb1 = $service->checkEmbeddingChain($e->pk_collection_id, $e->fk_collection_id, $visited);
+            Log::warning($emb1);
+            // dd($emb1);
+
+            if ((!$emb1->isEmpty()) && (!findDepth($service, $emb1, $visited, $depth, $currentDepth + 1))) {
+                continue;
+            }
+        }
+
+        Log::info("--\n");
+        $depth = max($depth, $currentDepth); // Оновлення глибини
+
+        if ($depth >= 6) return false;
+        
+        return true; // Глибина в межах допустимої
+    }
+
+    $collection = Collection::where('name', 'related4')->where('mongo_database_id', $mongoId)->first();
+
+    $service = new CollectionRelationService();
+
+    $emb = LinkEmbedd::where('relation_type', MongoRelationType::EMBEDDING->value)
+        ->where('fk_collection_id', $collection->id)
+        ->orWhere('pk_collection_id', $collection->id)
+        ->get();
+
+    // dd($emb);
+    
+    // $count = $emb->count();
+
+    // $num = $count > 0 ? 1 : 0;
+
+    // if ($count > 1) {
+    //     $count2 = $emb->where('fk_collection_id', $collection->id)->count();
+    //     if ($count2 !== $count) {
+    //         $num = 2;
+    //     }
+    // }
+    // dd($count, $num);
+
+    // $depth = $num;
+
+    $depth = 0;
+    $visited = [];
+    $result = findDepth($service, $emb, $visited, $depth, $depth);
+
+    dd((string) $result, $depth);
 });

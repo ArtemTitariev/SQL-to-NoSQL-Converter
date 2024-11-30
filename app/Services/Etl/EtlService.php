@@ -13,8 +13,6 @@ use MongoDB\BSON\ObjectId;
 
 class EtlService
 {
-    const maxEmbeddingDepth = 5;
-
     // public static  function processCollection(
     //     Collection $collection,
     //     $sqlConnection,
@@ -96,12 +94,14 @@ class EtlService
         $sqlConnection,
         $mongoConnection,
     ) {
+        $maxEmbeddingDepth = config('constants.MAX_EMBEDDING_DEPTH');
+
         // Перший рівень вкладень починається з основного запису
         $currentLevel = collect([['record' => $recordObj, 'path' => '', 'parentCollection' => $mainCollection]]);
         $currentDepth = 0;
 
         // Поки є дані на поточному рівні, продовжуємо обробку
-        while ($currentLevel->isNotEmpty() && $currentDepth < static::maxEmbeddingDepth) {
+        while ($currentLevel->isNotEmpty() && $currentDepth < $maxEmbeddingDepth) {
             $nextLevel = collect();
 
             foreach ($currentLevel as $item) {
