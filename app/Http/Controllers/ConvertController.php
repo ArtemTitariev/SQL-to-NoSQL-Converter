@@ -26,7 +26,11 @@ class ConvertController extends Controller
      */
     public function index()
     {
-        $converts = Convert::where('user_id', auth()->id())->with('user', 'sqlDatabase', 'mongoDatabase')->get();
+        $converts = Convert::where('user_id', auth()->id())
+        ->orderBy('status', 'desc')
+        ->orderBy('updated_at', 'desc')
+        ->with('user', 'sqlDatabase', 'mongoDatabase')
+        ->get();
 
         return view('convert.index', compact('converts'));
     }
