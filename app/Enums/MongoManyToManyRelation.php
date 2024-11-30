@@ -24,8 +24,4 @@ enum MongoManyToManyRelation: string
     {
         return $this === self::HYBRID;
     }
-
-    // public static function getValues(): array {
-    //     return array_map(fn($case) => $case->value, self::cases());
-    // }
 }

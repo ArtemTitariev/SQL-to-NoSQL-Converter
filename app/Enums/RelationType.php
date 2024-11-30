@@ -42,8 +42,4 @@ enum RelationType: string
     {
         return $this === self::COMPLEX;
     }
-
-    // public static function getValues(): array {
-    //     return array_map(fn($case) => $case->value, self::cases());
-    // }
 }

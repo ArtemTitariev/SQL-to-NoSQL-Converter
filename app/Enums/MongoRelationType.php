@@ -18,8 +18,4 @@ enum MongoRelationType: string
     {
         return $this === self::EMBEDDING;
     }
-
-    // public static function getValues(): array {
-    //     return array_map(fn($case) => $case->value, self::cases());
-    // }
 }
