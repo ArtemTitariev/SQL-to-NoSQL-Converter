@@ -3,14 +3,8 @@
 use App\Http\Controllers\ConvertController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RelationshipController;
-use App\Models\Convert;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
-
-use App\Http\Controllers\TestEtlController;
-use App\Models\ConversionProgress;
-use Illuminate\Support\Facades\DB;
 
 Route::get('language/{locale}', function ($locale) {
 
@@ -61,98 +55,3 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__ . '/auth.php';
-
-// FOR TESTING ONLY------------------
-
-Route::get('/etl', [TestEtlController::class, 'test']);
-Route::get('/etlo', [TestEtlController::class, 'testOrdinary']);
-
-Route::get('/delete', function (Request $request) {
-    $id = $request->input('id');
-    $convert = Convert::find($id);
-
-    $convert->sqlDatabase->delete();
-    $convert->mongoDatabase->delete();
-    $convert->delete();
-
-    return 'deleted';
-});
-
-Route::get('/delete-data', function (Request $request) {
-
-    $id = $request->input('id');
-    $convert = Convert::find($id);
-
-    $sqlDatabase = $convert->sqlDatabase;
-    $sqlDatabase->circularRefs()->delete();
-    $sqlDatabase->tables()->delete();
-
-    $mongoDatabase = $convert->mongoDatabase;
-    $mongoDatabase->collections()->delete();
-    return 'data deleted';
-});
-
-Route::get('/delete-all', function (Request $request) {
-    DB::table('converts')->truncate();
-    DB::table('sql_databases')->truncate();
-    DB::table('mongo_databases')->truncate();
-    DB::table('id_mappings')->truncate();
-    DB::table('links_embedds')->truncate();
-    DB::table('many_to_many_links')->truncate();
-    DB::table('foreign_keys')->truncate();
-    DB::table('fields')->truncate();
-    // DB::table('embeddings')->truncate();
-    // DB::table('links')->truncate();
-    DB::table('conversion_progresses')->truncate();
-    DB::table('columns')->truncate();
-    DB::table('collections')->truncate();
-    DB::table('circular_refs')->truncate();
-
-    return 'all converts deleted';
-});
-
-Route::get('/clear-step4', function (Request $request) {
-
-    $id = $request->input('id');
-    $convert = Convert::find($id);
-
-    $mongoDatabase = $convert->mongoDatabase()
-        ->with(['collections'])
-        ->first();
-
-    $collections = $mongoDatabase->collections()->pluck('id');
-
-    DB::table('links_embedds')
-        ->whereIn('pk_collection_id', $collections)
-        ->orWhereIn('fk_collection_id', $collections)
-        ->delete();
-
-    DB::table('many_to_many_links')
-        ->whereIn('collection1_id', $collections)
-        ->orWhereIn('collection2_id', $collections)
-        ->orWhereIn('pivot_collection_id', $collections)
-        ->delete();
-
-    dd(DB::table('links_embedds')->count(), DB::table('many_to_many_links')->count());
-    return 'done';
-});
-
-Route::get('/reset', function (Request $request) {
-    $id = $request->input('id');
-    $convert = Convert::find($id);
-
-    $convert->updateStatus(Convert::STATUSES['CONFIGURING']);
-
-    $convert->lastProgress()->delete(); //delete etl
-
-    $progress = $convert->lastProgress(); // set previous as configuring
-    $progress->status = ConversionProgress::STATUSES['CONFIGURING'];
-    $progress->save();
-
-    return 'done';
-});
-
-Route::get('/id-map-del', function () {
-    DB::table('id_mappings')->truncate();
-    return 'done';
-});
