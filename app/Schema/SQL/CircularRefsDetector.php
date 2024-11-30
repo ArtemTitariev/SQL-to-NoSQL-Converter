@@ -21,8 +21,6 @@ final class CircularRefsDetector
             }
 
             foreach ($keys as $key) {
-                // $foreignTable = $key['foreign_table'];
-                // $graph[$table][] = $foreignTable;
                 $graph[$table][] = $key['foreign_table'];
             }
         }
@@ -69,39 +67,4 @@ final class CircularRefsDetector
 
         array_pop($path);
     }
-
-    // private static function hasCycles($graph)
-    // {
-    //     $visited = [];
-    //     $recStack = [];
-
-    //     foreach (array_keys($graph) as $node) {
-    //         if (static::isCyclicUtil($node, $visited, $recStack, $graph)) {
-    //             return true;
-    //         }
-    //     }
-
-    //     return false;
-    // }
-
-    // private static function isCyclicUtil($node, &$visited, &$recStack, $graph)
-    // {
-    //     if (!isset($visited[$node])) {
-    //         $visited[$node] = true;
-    //         $recStack[$node] = true;
-
-    //         if (isset($graph[$node])) {
-    //             foreach ($graph[$node] as $neighbor) {
-    //                 if (!isset($visited[$neighbor]) && static::isCyclicUtil($neighbor, $visited, $recStack, $graph)) {
-    //                     return true;
-    //                 } elseif (isset($recStack[$neighbor])) {
-    //                     return true;
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     $recStack[$node] = false;
-    //     return false;
-    // }
 }

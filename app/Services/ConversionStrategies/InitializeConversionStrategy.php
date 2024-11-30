@@ -26,7 +26,6 @@ class InitializeConversionStrategy implements ConversionStrategyInterface
         try {
             ConnectionTester::testSQLConnection($sqlDatabaseParams);
         } catch (\Exception $e) {
-            // throw new \Exception(__('SQL database connection error: ') . $e->getMessage());
             return new StrategyResult (
                 result: StrategyResult::STATUSES['FAILED'],
                 details: __('SQL database connection error: ') . $e->getMessage(),

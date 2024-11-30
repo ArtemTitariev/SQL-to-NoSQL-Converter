@@ -3,10 +3,6 @@
 namespace App\Services\ConversionStrategies;
 
 use App\Models\Convert;
-// use App\Models\SQLSchema\SQLDatabase;
-// use App\Schema\SQL\Mapper;
-// use App\Schema\SQL\Reader;
-// use App\Services\DatabaseConnections\ConnectionCreator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
