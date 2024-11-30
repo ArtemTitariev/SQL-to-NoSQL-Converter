@@ -296,7 +296,6 @@
 
                 // Якщо таблиця вибрана, перевіряємо її зв'язки
                 if (isChecked) {
-                    console.log(relatedTables);
                     relatedTables.forEach(function(relatedTable) {
                         // Якщо зв'язана таблиця не обрана, підсвічуємо її
                         if (!selectedTables.includes(relatedTable)) {
@@ -406,8 +405,6 @@
             let form = document.querySelector('#form');
             if (form) {
                 form.requestSubmit();
-            } else {
-                console.error('Error sumbit form');
             }
         }
 
