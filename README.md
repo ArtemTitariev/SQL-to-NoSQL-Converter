@@ -6,6 +6,8 @@ The user can customize the conversion process, namely:
 - change data types;
 - and set up relationships between entities.
 
+Additionally, a user profile has been implemented. For convenience, a bilingual interface is provided. English and Ukrainian are supported.
+
 #### Supported relational databases:
 - MySQL;
 - PostgreSQL.
@@ -13,6 +15,7 @@ The user can customize the conversion process, namely:
 #### Supported non-relational database - MongoDB.
 
 ## Important!
+
 To perform the migration (conversion), the system will need to create connections to the relational and non-relational databases. The parameters are entered through the web interface at the stage of creating the conversion. 
 <strong>These parameters will be stored in encrypted form and will be used only during the cofiguration and data migration process</strong>.
 
