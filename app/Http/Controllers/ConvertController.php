@@ -7,6 +7,7 @@ use App\Http\Requests\StoreConvertRequest;
 use App\Models\Convert;
 use App\Services\DatabaseConnections\SQLConnectionParamsProvider;
 use App\Services\ConversionStepExecutor;
+use App\Services\StepDataProvider;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
@@ -15,10 +16,15 @@ class ConvertController extends Controller
     use AuthorizesRequests;
 
     protected $conversionStepExecutor;
+    protected $stepDataProvider;
 
-    public function __construct(ConversionStepExecutor $conversionStepExecutor)
+    public function __construct(
+        ConversionStepExecutor $conversionStepExecutor,
+        StepDataProvider $stepDataProvider,
+        )
     {
         $this->conversionStepExecutor = $conversionStepExecutor;
+        $this->stepDataProvider = $stepDataProvider;
     }
 
     /**
@@ -121,7 +127,9 @@ class ConvertController extends Controller
 
         $view = $steps[$step]['view'] ?? null;
         if ($view) {
-            return view($view, array_merge(compact('convert'), $request->all()));
+            $stepData = $this->stepDataProvider->getDataForStep($convert, $step);
+
+            return view($view, array_merge(compact('convert'), $stepData, $request->all()));
         }
 
         return redirect()->route('converts.index');
