@@ -18,16 +18,6 @@
 
             return false;
         }
-
-        $sqlDatabase = $convert
-            ->sqlDatabase()
-            ->with(['circularRefs'])
-            ->first();
-
-        $tables = $sqlDatabase
-            ->tables()
-            ->with(['columns', 'foreignKeys'])
-            ->get();
     @endphp
 
     @include('convert.partials.select-table-action-modal')

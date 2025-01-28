@@ -28,26 +28,6 @@
         const DEFAULT_MODE = 'default';
     </script>
 
-    @php
-        $mongoDatabase = $convert->mongoDatabase;
-        $collections = $mongoDatabase
-            ->collections()
-            ->where(function (\Illuminate\Database\Eloquent\Builder $query) {
-                $query->whereHas('linksEmbeddsFrom')
-                    ->orWhereHas('manyToManyPivot');
-            })
-            ->with([
-                // 'fields',
-                //  'linksEmbeddsFrom',
-                //  'manyToManyPivot',
-                'linksEmbeddsFrom.pkCollection',
-                // 'linksEmbeddsTo.fkCollection',
-                'manyToManyPivot.collection1',
-                'manyToManyPivot.collection2',
-            ])
-            ->get();
-    @endphp
-
     @include('convert.partials.edit-relationship-modal')
 
     <div class="container mx-auto p-4">
